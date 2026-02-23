@@ -1,0 +1,131 @@
+openapi: 3.0.0
+info:
+    title: SUPCONTENT API
+    version: 1.0.0
+    description: Cinema social network API
+
+servers:
+    - url: http://localhost:3000/api
+
+components:
+    securitySchemes:
+        BearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        User:
+            type: object
+            properties:
+                user_id:
+                    type: integer
+                email:
+                    type: string
+                username:
+                    type: string
+
+paths:
+    /auth/register:
+        post:
+            tags:
+                - Auth
+            summary: Register a new user
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - email
+                                - username
+                                - password
+                            properties:
+                                email:
+                                    type: string
+                                    example: test@test.com
+                                username:
+                                    type: string
+                                    example: testuser
+                                password:
+                                    type: string
+                                    example: Test1234!
+            responses:
+                '201':
+                    description: Registration successful
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    message:
+                                        type: string
+                                    userId:
+                                        type: integer
+                '400':
+                    description: All fields are required
+                '409':
+                    description: Email already in use
+
+    /auth/login:
+        post:
+            tags:
+                - Auth
+            summary: Login with email and password
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - email
+                                - password
+                            properties:
+                                email:
+                                    type: string
+                                    example: test@test.com
+                                password:
+                                    type: string
+                                    example: Test1234!
+            responses:
+                '200':
+                    description: Login successful
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                    user:
+                                        $ref: '#/components/schemas/User'
+                '401':
+                    description: Invalid email or password
+
+    /auth/google:
+        get:
+            tags:
+                - Auth
+            summary: Login with Google OAuth
+            responses:
+                '302':
+                    description: Redirects to Google login page
+
+    /auth/google/callback:
+        get:
+            tags:
+                - Auth
+            summary: Google OAuth callback
+            responses:
+                '200':
+                    description: Login successful, returns JWT token
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                    user:
+                                        $ref: '#/components/schemas/User'
