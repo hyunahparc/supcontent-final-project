@@ -1,16 +1,12 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const db = require('../config/db');
+const generateToken = require('../utils/token');
 
 
 // Register
 const register = async (req, res) => {
     const { email, username, password } = req.body;
-
-    if (!email || !username || !password) {
-        return res.status(400).json({ message: 'All fields are required.' });
-    }
 
     try {
         // Check for duplicate email
@@ -41,11 +37,7 @@ const login = (req, res, next) => {
         if (err) return res.status(500).json({ message: 'Server error.', error: err.message });
         if (!user) return res.status(401).json({ message: info?.message || 'Login failed.' });
 
-        const token = jwt.sign(
-            { user_id: user.user_id, email: user.email },
-            process.env.JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = generateToken(user);
 
         return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username } });
     })(req, res, next);
@@ -55,11 +47,7 @@ const login = (req, res, next) => {
 const googleCallback = (req, res) => {
     const user = req.user;
 
-    const token = jwt.sign(
-        { user_id: user.user_id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     // Return token to web/app client
     return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username } });
