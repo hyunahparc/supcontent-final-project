@@ -1,14 +1,16 @@
 const express = require('express');
 const passport = require('passport');
 const { register, login, googleCallback } = require('../controllers/auth.controller');
+const validate = require('../middleware/validate');
+const { registerSchema, loginSchema } = require('../validations/auth.validation');
 
 const router = express.Router();
 
 // POST /api/auth/register
-router.post('/register', register);
+router.post('/register', validate(registerSchema), register);
 
 // POST /api/auth/login
-router.post('/login', login);
+router.post('/login', validate(loginSchema), login);
 
 // GET /api/auth/google
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
