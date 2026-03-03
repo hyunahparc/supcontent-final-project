@@ -15,8 +15,10 @@ app.use(passport.initialize());
 
 // Routes
 const authRouter = require('./src/routes/auth.route');
+const filmsRouter = require('./src/routes/films.route');
 
 app.use('/api/auth', authRouter);
+app.use('/api/films', filmsRouter);
 
 // Swagger
 const swaggerDocument = yaml.load(fs.readFileSync('./swagger.yaml', 'utf8'));
