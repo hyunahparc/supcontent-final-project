@@ -129,3 +129,73 @@ paths:
                                         type: string
                                     user:
                                         $ref: '#/components/schemas/User'
+
+    /films/{id}:
+        get:
+            tags:
+                - Films
+            summary: Get film detail by TMDB ID
+            description: Returns film metadata from DB cache. Fetches from TMDB and caches if not found or expired (7 days).
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                  description: TMDB movie ID
+                  example: 550
+            responses:
+                '200':
+                    description: Film detail
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    id:
+                                        type: integer
+                                        example: 550
+                                    title:
+                                        type: string
+                                        example: Fight Club
+                                    overview:
+                                        type: string
+                                    poster_path:
+                                        type: string
+                                        example: /pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg
+                                    release_date:
+                                        type: string
+                                        example: '1999-10-15'
+                                    runtime:
+                                        type: integer
+                                        example: 139
+                                    vote_average:
+                                        type: number
+                                        example: 8.4
+                                    genres:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                id:
+                                                    type: integer
+                                                name:
+                                                    type: string
+                                    director:
+                                        type: string
+                                        example: David Fincher
+                                    cast:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                id:
+                                                    type: integer
+                                                name:
+                                                    type: string
+                                                character:
+                                                    type: string
+                '404':
+                    description: Film not found
+                '500':
+                    description: Server error

@@ -1,9 +1,7 @@
 CREATE DATABASE IF NOT EXISTS cine_db;
 USE cine_db;
 
--- =================================
 -- 1. USERS
--- =================================
 CREATE TABLE users (
     user_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     provider ENUM('local','google','github','facebook') NOT NULL DEFAULT 'local',
@@ -38,16 +36,12 @@ CREATE TABLE follows (
         ON UPDATE NO ACTION
 );
 
--- =================================
 -- 3. MEDIA_CACHE
--- =================================
 CREATE TABLE media_cache (
     external_id BIGINT NOT NULL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    poster VARCHAR(255),
-    release_date DATE,
-    media_type ENUM('Movie','Series') NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    media_type  ENUM('Movie','Series') NOT NULL,
+    full_data   JSON,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- =================================
