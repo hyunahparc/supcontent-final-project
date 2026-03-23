@@ -10,13 +10,17 @@ require('./src/config/passport');
 
 const app = express();
 
+const cors = require('cors');
+app.use(cors({ origin: 'http://localhost:5173' }));
+
 app.use(express.json());
 app.use(passport.initialize());
 
 // Routes
 const authRouter = require('./src/routes/auth.route');
 const filmsRouter = require('./src/routes/films.route');
-
+const searchRouter = require('./src/routes/search.route');
+app.use('/api/search', searchRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/films', filmsRouter);
 
