@@ -48,9 +48,10 @@ const googleCallback = (req, res) => {
     const user = req.user;
 
     const token = generateToken(user);
+    const userData = encodeURIComponent(JSON.stringify({ user_id: user.user_id, email: user.email, username: user.username }));
 
-    // Return token to web/app client
-    return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username } });
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    return res.redirect(`${clientUrl}/oauth/callback?token=${token}&user=${userData}`);
 };
 
 module.exports = { register, login, googleCallback };
