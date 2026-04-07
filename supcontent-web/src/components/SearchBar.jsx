@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchMedia } from '../api/search';
+import { searchMedia } from '../api/films'; // ← corrigé : plus de ../api/search
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w92';
 
@@ -12,6 +12,7 @@ export default function SearchBar() {
     const [type,    setType]    = useState('all');
 
     const debounceRef = useRef(null);
+    const abortRef    = useRef(null);
     const wrapperRef  = useRef(null);
     const navigate    = useNavigate();
 
@@ -22,17 +23,23 @@ export default function SearchBar() {
             return;
         }
         clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(async () => {
+        debounceRef.current = setTimeout(() => {
+            // Annule la requête précédente (race condition)
+            abortRef.current?.abort();
+            abortRef.current = new AbortController();
+
             setLoading(true);
-            try {
-                const data = await searchMedia(query, type, 10);
-                setResults(data);
-                setOpen(true);
-            } catch {
-                setResults([]);
-            } finally {
-                setLoading(false);
-            }
+            searchMedia(query, type, 10, abortRef.current.signal)
+                .then(data => {
+                    setResults(data);
+                    setOpen(true);
+                })
+                .catch(err => {
+                    if (err.name !== 'CanceledError' && err.name !== 'AbortError') {
+                        setResults([]);
+                    }
+                })
+                .finally(() => setLoading(false));
         }, 300);
         return () => clearTimeout(debounceRef.current);
     }, [query, type]);
@@ -45,6 +52,14 @@ export default function SearchBar() {
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Nettoyage à la destruction
+    useEffect(() => {
+        return () => {
+            clearTimeout(debounceRef.current);
+            abortRef.current?.abort();
+        };
     }, []);
 
     function handleSelect(item) {
@@ -106,7 +121,12 @@ export default function SearchBar() {
                             onKeyDown={e => e.key === 'Enter' && handleSelect(item)}
                         >
                             {item.poster_path ? (
-                                <img src={`${POSTER_BASE}${item.poster_path}`} alt={item.title} style={styles.poster} />
+                                <img
+                                    src={`${POSTER_BASE}${item.poster_path}`}
+                                    alt={item.title}
+                                    style={styles.poster}
+                                    onError={e => { e.target.style.display = 'none'; }}
+                                />
                             ) : (
                                 <div style={styles.posterPlaceholder} />
                             )}
@@ -132,23 +152,9 @@ const styles = {
         width: '100%',
         margin: '0 auto',
     },
-    inputRow: {
-        display: 'flex',
-        gap: '8px',
-    },
-    inputWrap: {
-        flex: 1,
-        position: 'relative',
-        display: 'flex',
-        alignItems: 'center',
-    },
-    searchIcon: {
-        position: 'absolute',
-        left: '12px',
-        width: '16px',
-        height: '16px',
-        pointerEvents: 'none',
-    },
+    inputRow: { display: 'flex', gap: '8px' },
+    inputWrap: { flex: 1, position: 'relative', display: 'flex', alignItems: 'center' },
+    searchIcon: { position: 'absolute', left: '12px', width: '16px', height: '16px', pointerEvents: 'none' },
     input: {
         width: '100%',
         padding: '9px 12px 9px 36px',
@@ -160,13 +166,7 @@ const styles = {
         transition: 'border-color 0.2s',
         boxSizing: 'border-box',
     },
-    spinner: {
-        position: 'absolute',
-        right: '12px',
-        fontSize: '14px',
-        color: '#bbb',
-        animation: 'spin 1s linear infinite',
-    },
+    spinner: { position: 'absolute', right: '12px', fontSize: '14px', color: '#bbb' },
     select: {
         padding: '9px 12px',
         fontSize: '13px',
@@ -180,8 +180,7 @@ const styles = {
     dropdown: {
         position: 'absolute',
         top: 'calc(100% + 6px)',
-        left: 0,
-        right: 0,
+        left: 0, right: 0,
         zIndex: 100,
         margin: 0,
         padding: '6px 0',
@@ -193,44 +192,11 @@ const styles = {
         maxHeight: '400px',
         overflowY: 'auto',
     },
-    message: {
-        padding: '12px 16px',
-        color: '#aaa',
-        fontSize: '13px',
-    },
-    item: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '8px 14px',
-        cursor: 'pointer',
-    },
-    poster: {
-        width: '40px',
-        height: '58px',
-        objectFit: 'cover',
-        borderRadius: '6px',
-        flexShrink: 0,
-    },
-    posterPlaceholder: {
-        width: '40px',
-        height: '58px',
-        borderRadius: '6px',
-        backgroundColor: '#f0f0f0',
-        flexShrink: 0,
-    },
-    info: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '3px',
-    },
-    itemTitle: {
-        fontWeight: '600',
-        fontSize: '13px',
-        color: '#111',
-    },
-    itemMeta: {
-        fontSize: '12px',
-        color: '#999',
-    },
+    message: { padding: '12px 16px', color: '#aaa', fontSize: '13px' },
+    item: { display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 14px', cursor: 'pointer' },
+    poster: { width: '40px', height: '58px', objectFit: 'cover', borderRadius: '6px', flexShrink: 0 },
+    posterPlaceholder: { width: '40px', height: '58px', borderRadius: '6px', backgroundColor: '#f0f0f0', flexShrink: 0 },
+    info: { display: 'flex', flexDirection: 'column', gap: '3px' },
+    itemTitle: { fontWeight: '600', fontSize: '13px', color: '#111' },
+    itemMeta: { fontSize: '12px', color: '#999' },
 };
