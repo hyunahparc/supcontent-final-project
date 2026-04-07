@@ -23,7 +23,8 @@ export default function LoginPage() {
             login(data.user, data.token);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la connexion.');
+            // client.js normalise l'erreur en Error simple, pas Axios
+            setError(err.message || 'Échec de la connexion.');
         } finally {
             setLoading(false);
         }

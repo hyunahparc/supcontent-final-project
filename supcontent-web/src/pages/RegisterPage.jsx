@@ -5,9 +5,9 @@ import { authStyles as s, inputStyle } from '../styles/authStyles';
 
 const rules = [
     { label: '8 caractères minimum', test: (p) => p.length >= 8 },
-    { label: 'Une lettre majuscule', test: (p) => /[A-Z]/.test(p) },
-    { label: 'Une lettre minuscule', test: (p) => /[a-z]/.test(p) },
-    { label: 'Un chiffre', test: (p) => /\d/.test(p) },
+    { label: 'Une lettre majuscule',  test: (p) => /[A-Z]/.test(p) },
+    { label: 'Une lettre minuscule',  test: (p) => /[a-z]/.test(p) },
+    { label: 'Un chiffre',            test: (p) => /\d/.test(p) },
 ];
 
 export default function RegisterPage() {
@@ -19,7 +19,6 @@ export default function RegisterPage() {
     const [pwFocused, setPwFocused] = useState(false);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
     const passwordValid = rules.every((r) => r.test(form.password));
 
     const handleSubmit = async (e) => {
@@ -31,7 +30,8 @@ export default function RegisterPage() {
             await register(form);
             navigate('/login');
         } catch (err) {
-            setError(err.response?.data?.message || "Échec de l'inscription.");
+            // client.js normalise l'erreur en Error simple, pas Axios
+            setError(err.message || "Échec de l'inscription.");
         } finally {
             setLoading(false);
         }
@@ -87,7 +87,7 @@ export default function RegisterPage() {
                             value={form.password}
                             onChange={handleChange}
                             onFocus={() => { setFocused('password'); setPwFocused(true); }}
-                            onBlur={() => setFocused('')}
+                            onBlur={() => { setFocused(''); setPwFocused(false); }}
                             required
                             style={inputStyle(focused, 'password')}
                             placeholder="••••••••"
