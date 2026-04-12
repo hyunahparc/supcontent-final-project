@@ -37,12 +37,12 @@ export default function LoginPage() {
                     <span style={s.brandName}>SupContent</span>
                 </div>
 
-                <h1 style={s.title}>Bon retour</h1>
-                <p style={s.subtitle}>Connectez-vous à votre compte</p>
+                <h1 style={s.title}>Welcome back</h1>
+                <p style={s.subtitle}>Sign in to your account</p>
 
                 <form onSubmit={handleSubmit} style={s.form}>
                     <div style={s.field}>
-                        <label style={s.label}>Adresse e-mail</label>
+                        <label style={s.label}>Email</label>
                         <input
                             type="email"
                             name="email"
@@ -57,7 +57,7 @@ export default function LoginPage() {
                     </div>
 
                     <div style={s.field}>
-                        <label style={s.label}>Mot de passe</label>
+                        <label style={s.label}>Password</label>
                         <input
                             type="password"
                             name="password"
@@ -74,24 +74,24 @@ export default function LoginPage() {
                     {error && <div style={s.errorBox}>{error}</div>}
 
                     <button type="submit" disabled={loading} style={s.button}>
-                        {loading ? 'Connexion...' : 'Se connecter'}
+                        {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
 
                 <div style={s.divider}>
                     <div style={s.dividerLine} />
-                    <span style={s.dividerText}>ou</span>
+                    <span style={s.dividerText}>or</span>
                     <div style={s.dividerLine} />
                 </div>
 
                 <a href="/api/auth/google" style={s.googleButton}>
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 18, height: 18 }} />
-                    Continuer avec Google
+                    Continue with Google
                 </a>
 
                 <p style={s.footer}>
-                    Pas encore de compte ?{' '}
-                    <Link to="/register" style={s.link}>S'inscrire</Link>
+                    Don't have an account?{' '}
+                    <Link to="/register" style={s.link}>Sign up</Link>
                 </p>
             </div>
         </div>

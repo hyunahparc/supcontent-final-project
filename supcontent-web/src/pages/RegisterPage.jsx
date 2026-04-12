@@ -4,10 +4,10 @@ import { register } from '../api/auth';
 import { authStyles as s, inputStyle } from '../styles/authStyles';
 
 const rules = [
-    { label: '8 caractères minimum', test: (p) => p.length >= 8 },
-    { label: 'Une lettre majuscule', test: (p) => /[A-Z]/.test(p) },
-    { label: 'Une lettre minuscule', test: (p) => /[a-z]/.test(p) },
-    { label: 'Un chiffre', test: (p) => /\d/.test(p) },
+    { label: 'At least 8 characters', test: (p) => p.length >= 8 },
+    { label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
+    { label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
+    { label: 'One number', test: (p) => /\d/.test(p) },
 ];
 
 export default function RegisterPage() {
@@ -45,12 +45,12 @@ export default function RegisterPage() {
                     <span style={s.brandName}>SupContent</span>
                 </div>
 
-                <h1 style={s.title}>Créer un compte</h1>
-                <p style={s.subtitle}>Rejoignez SupContent dès aujourd'hui</p>
+                <h1 style={s.title}>Create an account</h1>
+                <p style={s.subtitle}>Join SupContent today</p>
 
                 <form onSubmit={handleSubmit} style={s.form}>
                     <div style={s.field}>
-                        <label style={s.label}>Adresse e-mail</label>
+                        <label style={s.label}>Email</label>
                         <input
                             type="email"
                             name="email"
@@ -65,7 +65,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div style={s.field}>
-                        <label style={s.label}>Nom d'utilisateur</label>
+                        <label style={s.label}>Username</label>
                         <input
                             type="text"
                             name="username"
@@ -80,7 +80,7 @@ export default function RegisterPage() {
                     </div>
 
                     <div style={s.field}>
-                        <label style={s.label}>Mot de passe</label>
+                        <label style={s.label}>Password</label>
                         <input
                             type="password"
                             name="password"
@@ -114,24 +114,24 @@ export default function RegisterPage() {
                         disabled={loading || !passwordValid}
                         style={{ ...s.button, opacity: passwordValid ? 1 : 0.45, cursor: passwordValid ? 'pointer' : 'not-allowed' }}
                     >
-                        {loading ? 'Création du compte...' : "S'inscrire"}
+                        {loading ? 'Creating account...' : 'Sign Up'}
                     </button>
                 </form>
 
                 <div style={s.divider}>
                     <div style={s.dividerLine} />
-                    <span style={s.dividerText}>ou</span>
+                    <span style={s.dividerText}>or</span>
                     <div style={s.dividerLine} />
                 </div>
 
                 <a href="/api/auth/google" style={s.googleButton}>
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: 18, height: 18 }} />
-                    Continuer avec Google
+                    Continue with Google
                 </a>
 
                 <p style={s.footer}>
-                    Vous avez déjà un compte ?{' '}
-                    <Link to="/login" style={s.link}>Se connecter</Link>
+                    Already have an account?{' '}
+                    <Link to="/login" style={s.link}>Sign in</Link>
                 </p>
             </div>
         </div>
