@@ -10,9 +10,9 @@ const register = async (req, res) => {
 
     try {
         // Check for duplicate email
-        const [existing] = await db.query(
-            'SELECT user_id FROM users WHERE email = ? AND provider = "local"',
-            [email]
+        const { rows: existing } = await db.query(
+            'SELECT user_id FROM users WHERE email = $1 AND provider = $2',
+            [email, 'local']
         );
         if (existing.length > 0) {
             return res.status(409).json({ message: 'Email already in use.' });
@@ -20,12 +20,12 @@ const register = async (req, res) => {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const [result] = await db.query(
-            'INSERT INTO users (provider, email, username, password) VALUES ("local", ?, ?, ?)',
-            [email, username, hashedPassword]
+        const { rows } = await db.query(
+            'INSERT INTO users (provider, email, username, password) VALUES ($1, $2, $3, $4) RETURNING user_id',
+            ['local', email, username, hashedPassword]
         );
 
-        return res.status(201).json({ message: 'Registration successful.', userId: result.insertId });
+        return res.status(201).json({ message: 'Registration successful.', userId: rows[0].user_id });
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
     }
