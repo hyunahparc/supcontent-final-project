@@ -1,18 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getFilmById } from '../api/films';
+import { useAuth } from '../context/AuthContext';
+import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
 
 const POSTER_BASE   = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 const PROFILE_BASE  = 'https://image.tmdb.org/t/p/w185';
 
+const STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
+
 export default function FilmDetailPage() {
     const { id } = useParams();
-    const [film, setFilm]       = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError]     = useState(null);
-    const [wished, setWished]   = useState(false);
+    const { user } = useAuth();
+    const [film, setFilm]                   = useState(null);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState(null);
+    const [collectionStatus, setCollectionStatus] = useState(null);
+    const [showStatusMenu, setShowStatusMenu]     = useState(false);
 
+    // Fetch film data
     useEffect(() => {
         setLoading(true);
         setError(null);
@@ -22,7 +29,28 @@ export default function FilmDetailPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    if (loading) return <div style={styles.state}>Chargement...</div>;
+    // Fetch current collection status if logged in
+    useEffect(() => {
+        if (user) {
+            getCollectionStatus(id).then(setCollectionStatus);
+        } else {
+            setCollectionStatus(null);
+        }
+    }, [id, user]);
+
+    async function handleStatusSelect(status) {
+        // Clicking the active status removes the film from the collection
+        if (status === collectionStatus) {
+            await removeFromCollection(id);
+            setCollectionStatus(null);
+        } else {
+            await upsertCollection(id, status);
+            setCollectionStatus(status);
+        }
+        setShowStatusMenu(false);
+    }
+
+    if (loading) return <div style={styles.state}>Loading...</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
     if (!film)   return null;
 
@@ -67,20 +95,44 @@ export default function FilmDetailPage() {
                     )}
 
                     <div style={styles.actions}>
-                        <button style={styles.watchBtn}>▶ Regarder</button>
-                        <button
-                            onClick={() => setWished(w => !w)}
-                            style={{ ...styles.wishBtn, borderColor: wished ? '#e50914' : 'rgba(255,255,255,0.4)' }}
-                        >
-                            <span style={{ color: wished ? '#e50914' : '#fff', fontSize: '18px' }}>
-                                {wished ? '♥' : '♡'}
-                            </span>
-                        </button>
+                        <button style={styles.watchBtn}>▶ Watch</button>
+
+                        {/* Collection status button — disabled for guests */}
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={() => user && setShowStatusMenu(m => !m)}
+                                style={{
+                                    ...styles.collectionBtn,
+                                    backgroundColor: collectionStatus ? '#fff' : 'transparent',
+                                    color: collectionStatus ? '#111' : '#fff',
+                                    opacity: user ? 1 : 0.4,
+                                    cursor: user ? 'pointer' : 'default',
+                                }}
+                            >
+                                {collectionStatus ?? '+ Collection'}
+                            </button>
+                            {showStatusMenu && (
+                                <div style={styles.statusMenu}>
+                                    {STATUSES.map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => handleStatusSelect(s)}
+                                            style={{
+                                                ...styles.statusOption,
+                                                backgroundColor: s === collectionStatus ? '#333' : 'transparent',
+                                            }}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {film.director && (
                         <p style={styles.director}>
-                            <span style={styles.directorLabel}>Réalisateur </span>
+                            <span style={styles.directorLabel}>Director </span>
                             {film.director}
                         </p>
                     )}
@@ -93,7 +145,7 @@ export default function FilmDetailPage() {
 
             {film.cast?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>Distribution</h2>
+                    <h2 style={styles.sectionTitle}>Cast</h2>
                     <div style={styles.castGrid}>
                         {film.cast.map(actor => (
                             <div key={actor.id} style={styles.castCard}>
@@ -118,7 +170,7 @@ export default function FilmDetailPage() {
 
             {film.similar?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>Films similaires</h2>
+                    <h2 style={styles.sectionTitle}>Similar Films</h2>
                     <div style={styles.similarGrid}>
                         {film.similar.map(m => (
                             <a key={m.id} href={`/films/${m.id}`} style={styles.similarCard}>
@@ -144,21 +196,25 @@ export default function FilmDetailPage() {
     );
 }
 
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
 const styles = {
     page: {
-        backgroundColor: '#141414',
+        backgroundColor: '#121212',
         minHeight: '100vh',
         color: '#fff',
+        fontFamily: font,
         paddingBottom: '60px',
     },
     state: {
-        backgroundColor: '#141414',
+        backgroundColor: '#121212',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#999',
+        color: '#b3b3b3',
         fontSize: '14px',
+        fontFamily: font,
     },
     backdrop: {
         position: 'relative',
@@ -170,7 +226,7 @@ const styles = {
     backdropOverlay: {
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(to bottom, rgba(20,20,20,0.2) 0%, rgba(20,20,20,0.7) 60%, rgba(20,20,20,1) 100%)',
+        background: 'linear-gradient(to bottom, rgba(18,18,18,0.2) 0%, rgba(18,18,18,0.7) 60%, rgba(18,18,18,1) 100%)',
     },
     hero: {
         maxWidth: '1200px',
@@ -184,8 +240,8 @@ const styles = {
     poster: {
         width: '350px',
         flexShrink: 0,
-        borderRadius: '10px',
-        boxShadow: '0 16px 48px rgba(0,0,0,0.6)',
+        borderRadius: '8px',
+        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
     },
     info: {
         flex: 1,
@@ -194,7 +250,7 @@ const styles = {
     title: {
         margin: '0 0 10px',
         fontSize: '48px',
-        fontWeight: '800',
+        fontWeight: '700',
         letterSpacing: '-0.5px',
         lineHeight: 1.1,
         textShadow: '0 2px 8px rgba(0,0,0,0.5)',
@@ -204,12 +260,12 @@ const styles = {
         alignItems: 'center',
         gap: '4px',
         fontSize: '14px',
-        color: '#aaa',
+        color: '#b3b3b3',
         marginBottom: '14px',
     },
     dot: {
         margin: '0 4px',
-        color: '#555',
+        color: '#4d4d4d',
     },
     rating: {
         color: '#f5c518',
@@ -222,10 +278,10 @@ const styles = {
     },
     genre: {
         padding: '4px 12px',
-        border: '1px solid rgba(255,255,255,0.2)',
-        borderRadius: '20px',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
         fontSize: '12px',
-        color: '#ccc',
+        color: '#b3b3b3',
     },
     actions: {
         display: 'flex',
@@ -235,44 +291,66 @@ const styles = {
     },
     watchBtn: {
         padding: '11px 28px',
-        backgroundColor: '#e50914',
-        color: '#fff',
+        backgroundColor: '#1ed760',
+        color: '#000',
         border: 'none',
-        borderRadius: '8px',
+        borderRadius: '9999px',
         fontSize: '14px',
         fontWeight: '700',
         cursor: 'pointer',
-        letterSpacing: '0.3px',
+        letterSpacing: '1.4px',
+        textTransform: 'uppercase',
     },
-    wishBtn: {
-        width: '42px',
-        height: '42px',
-        backgroundColor: 'transparent',
-        border: '2px solid',
-        borderRadius: '50%',
+    collectionBtn: {
+        padding: '11px 24px',
+        border: '1px solid #7c7c7c',
+        borderRadius: '9999px',
+        fontSize: '14px',
+        fontWeight: '700',
+        letterSpacing: '1.4px',
+        textTransform: 'uppercase',
+        transition: 'border-color 0.15s',
+    },
+    statusMenu: {
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: 0,
+        backgroundColor: '#181818',
+        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        zIndex: 100,
+        minWidth: '180px',
+    },
+    statusOption: {
+        display: 'block',
+        width: '100%',
+        padding: '12px 16px',
+        textAlign: 'left',
+        border: 'none',
+        color: '#fff',
+        fontSize: '14px',
+        fontWeight: '400',
         cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'border-color 0.2s',
+        fontFamily: font,
     },
     director: {
         fontSize: '14px',
-        color: '#ccc',
+        color: '#b3b3b3',
         marginBottom: '14px',
     },
     directorLabel: {
-        color: '#888',
-        fontWeight: '600',
+        color: '#b3b3b3',
+        fontWeight: '700',
         textTransform: 'uppercase',
         fontSize: '11px',
-        letterSpacing: '0.5px',
-        marginRight: '6px',
+        letterSpacing: '1.4px',
+        marginRight: '8px',
     },
     overview: {
-        fontSize: '15px',
-        color: '#bbb',
-        lineHeight: 1.7,
+        fontSize: '14px',
+        color: '#b3b3b3',
+        lineHeight: 1.6,
         margin: 0,
         maxWidth: '600px',
     },
@@ -283,7 +361,7 @@ const styles = {
     },
     sectionTitle: {
         margin: '0 0 20px',
-        fontSize: '20px',
+        fontSize: '24px',
         fontWeight: '700',
         color: '#fff',
     },
@@ -295,10 +373,10 @@ const styles = {
     castCard: {
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#1f1f1f',
-        borderRadius: '10px',
+        backgroundColor: '#181818',
+        borderRadius: '8px',
         overflow: 'hidden',
-        border: '1px solid #2a2a2a',
+        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
     },
     castAvatar: {
         width: '100%',
@@ -308,18 +386,18 @@ const styles = {
     castAvatarFallback: {
         width: '100%',
         aspectRatio: '3/4',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: '#1f1f1f',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '32px',
         fontWeight: '700',
-        color: '#555',
+        color: '#4d4d4d',
     },
     actorName: {
         fontSize: '12px',
-        fontWeight: '600',
-        color: '#eee',
+        fontWeight: '700',
+        color: '#fff',
         padding: '8px 10px 2px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -327,7 +405,7 @@ const styles = {
     },
     actorRole: {
         fontSize: '11px',
-        color: '#777',
+        color: '#b3b3b3',
         padding: '0 10px 10px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -338,7 +416,6 @@ const styles = {
         gap: '12px',
         overflowX: 'auto',
         scrollbarWidth: 'none',
-        flex: 1,
     },
     similarCard: {
         display: 'flex',
@@ -352,19 +429,20 @@ const styles = {
         width: '160px',
         height: '240px',
         objectFit: 'cover',
-        borderRadius: '8px',
+        borderRadius: '6px',
         display: 'block',
+        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
     },
     similarPosterFallback: {
         width: '160px',
         height: '240px',
-        backgroundColor: '#2a2a2a',
-        borderRadius: '8px',
+        backgroundColor: '#181818',
+        borderRadius: '6px',
     },
     similarTitle: {
         fontSize: '12px',
-        fontWeight: '600',
-        color: '#eee',
+        fontWeight: '700',
+        color: '#fff',
         marginTop: '8px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -372,7 +450,7 @@ const styles = {
     },
     similarRating: {
         fontSize: '11px',
-        color: '#f5c518',
+        color: '#b3b3b3',
         marginTop: '3px',
     },
 };
