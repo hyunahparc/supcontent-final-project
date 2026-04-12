@@ -34,9 +34,27 @@ CREATE TABLE reviews (
     review_id   SERIAL PRIMARY KEY,
     user_id     INT    REFERENCES users(user_id) ON DELETE SET NULL,
     external_id BIGINT NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
-    rating      SMALLINT,
+    rating      NUMERIC(2,1),
     comment     TEXT,
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT reviews_user_media_unique UNIQUE (user_id, external_id)
+);
+
+-- 4a. REVIEW_LIKES
+CREATE TABLE review_likes (
+    review_id INT NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,
+    user_id   INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    PRIMARY KEY (review_id, user_id)
+);
+
+-- 4b. REVIEW_COMMENTS
+CREATE TABLE review_comments (
+    comment_id SERIAL PRIMARY KEY,
+    review_id  INT  NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,
+    user_id    INT  NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    content    TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- 5. COLLECTIONS
