@@ -20,9 +20,13 @@ app.use(passport.initialize());
 const authRouter = require('./src/routes/auth.route');
 const filmsRouter = require('./src/routes/films.route');
 const searchRouter = require('./src/routes/search.route');
+const collectionsRouter = require('./src/routes/collections.route');
+const usersRouter = require('./src/routes/users.route');
 app.use('/api/search', searchRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/films', filmsRouter);
+app.use('/api/collections', collectionsRouter);
+app.use('/api/users', usersRouter);
 
 // Swagger
 const swaggerDocument = yaml.load(fs.readFileSync('./swagger.yaml', 'utf8'));

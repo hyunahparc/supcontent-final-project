@@ -45,7 +45,8 @@ CREATE TABLE collections (
     user_id       INT         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     external_id   BIGINT      NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
     status        VARCHAR(20) NOT NULL,
-    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT collections_user_media_unique UNIQUE (user_id, external_id)
 );
 
 -- 6. NOTIFICATIONS
