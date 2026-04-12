@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { getFilmById } from '../api/films';
 import { useAuth } from '../context/AuthContext';
 import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
+import ReviewsSection from '../components/ReviewsSection';
 
 const POSTER_BASE   = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -192,6 +193,8 @@ export default function FilmDetailPage() {
                     </div>
                 </section>
             )}
+
+            <ReviewsSection externalId={id} />
         </div>
     );
 }
