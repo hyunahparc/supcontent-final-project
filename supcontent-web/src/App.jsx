@@ -79,8 +79,6 @@ export default function App() {
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
-const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
-
 const styles = {
     header: {
         width: '100%',
