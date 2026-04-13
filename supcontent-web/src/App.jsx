@@ -45,11 +45,11 @@ export default function App() {
                                     {user.username}
                                 </Link>
                                 <button onClick={handleLogout} style={styles.logoutBtn}>
-                                    Déconnexion
+                                    Sign Out
                                 </button>
                             </>
                         ) : (
-                            <Link to="/login" style={styles.loginLink}>Connexion</Link>
+                            <Link to="/login" style={styles.loginLink}>Sign In</Link>
                         )}
                     </div>
                 </div>
@@ -79,10 +79,14 @@ export default function App() {
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
 const styles = {
     header: {
         width: '100%',
         padding: '14px 24px',
+        borderBottom: '1px solid #1f1f1f',
+        backgroundColor: '#121212',
         borderBottom: '1px solid #1f1f1f',
         backgroundColor: '#121212',
         boxSizing: 'border-box',
@@ -117,7 +121,6 @@ const styles = {
         fontSize: '13px',
         fontWeight: '700',
         color: '#fff',
-        textDecoration: 'none',
     },
     logoutBtn: {
         padding: '6px 16px',
@@ -130,6 +133,13 @@ const styles = {
         cursor: 'pointer',
         letterSpacing: '0.5px',
         fontFamily: font,
+    },
+    libraryLink: {
+        fontSize: '13px',
+        fontWeight: '700',
+        color: '#b3b3b3',
+        textDecoration: 'none',
+        letterSpacing: '0.3px',
     },
     loginLink: {
         padding: '8px 20px',

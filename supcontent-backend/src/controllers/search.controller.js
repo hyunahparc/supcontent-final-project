@@ -18,7 +18,7 @@ async function searchTMDB(q, type) {
     overview:     item.overview ?? null,
     release_date: item.release_date ?? item.first_air_date ?? null,
     vote_average: item.vote_average ?? null,
-    from_tmdb:    true, // flag so frontend knows it's not cached yet
+    from_tmdb:    true,
   }));
 }
 
@@ -32,46 +32,49 @@ exports.search = async (req, res) => {
   }
 
   const term = `%${q.trim()}%`;
-  const lim  = Math.min(Number(limit) || 10, 50);
-  const off  = Number(offset) || 0;
+  const lim  = parseInt(Math.min(Number(limit) || 10, 50));
+  const off  = parseInt(Number(offset) || 0);
 
   try {
+    const params = [term, term];
     let typeFilter = '';
-    const params   = [];
 
     if (type === 'Movie' || type === 'Series') {
-      typeFilter = 'AND media_type = ?';
+      typeFilter = `AND media_type = $${params.length + 1}`;
       params.push(type);
     }
 
-    // 1. Search local cache first
+    const startPrefix = `${q.trim()}%`;
+    params.push(startPrefix);
+    const prefixIdx = params.length;
+
+    // 1. Search local cache first (PostgreSQL JSON operators)
     const query = `
       SELECT
         external_id,
         media_type,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.title'))        AS title,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.poster_path'))  AS poster_path,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.overview'))     AS overview,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.release_date')) AS release_date,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.vote_average')) AS vote_average
+        full_data->>'title'        AS title,
+        full_data->>'poster_path'  AS poster_path,
+        full_data->>'overview'     AS overview,
+        full_data->>'release_date' AS release_date,
+        full_data->>'vote_average' AS vote_average
       FROM media_cache
       WHERE (
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.title'))    LIKE ?
+        full_data->>'title'    ILIKE $1
         OR
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.overview')) LIKE ?
+        full_data->>'overview' ILIKE $2
       )
       ${typeFilter}
       ORDER BY
         CASE
-          WHEN JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.title')) LIKE ? THEN 0
+          WHEN full_data->>'title' ILIKE $${prefixIdx} THEN 0
           ELSE 1
         END,
-        JSON_UNQUOTE(JSON_EXTRACT(full_data, '$.vote_average')) DESC
-      LIMIT ? OFFSET ?
+        (full_data->>'vote_average')::numeric DESC
+      LIMIT ${lim} OFFSET ${off}
     `;
 
-    const values = [term, term, ...params, `${q.trim()}%`, lim, off];
-    const [rows] = await pool.execute(query, values);
+    const { rows } = await pool.query(query, params);
 
     // 2. If local cache has results, return them
     if (rows.length > 0) {
@@ -89,12 +92,10 @@ exports.search = async (req, res) => {
     // 3. Nothing in cache — fall back to TMDB
     let tmdbResults = [];
     if (type === 'all') {
-      // Search both movies and series in parallel
       const [movies, series] = await Promise.all([
         searchTMDB(q, 'Movie'),
         searchTMDB(q, 'Series'),
       ]);
-      // Interleave results: movie, series, movie, series...
       const maxLen = Math.max(movies.length, series.length);
       for (let i = 0; i < maxLen; i++) {
         if (movies[i])  tmdbResults.push(movies[i]);

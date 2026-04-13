@@ -1,15 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getFilmById } from '../api/films';
+import { useAuth } from '../context/AuthContext';
+import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
+import ReviewsSection from '../components/ReviewsSection';
 
-const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
+const POSTER_BASE   = 'https://image.tmdb.org/t/p/w500';
+const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
+const PROFILE_BASE  = 'https://image.tmdb.org/t/p/w185';
+
+const STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
 
 export default function FilmDetailPage() {
     const { id } = useParams();
-    const [film, setFilm] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const { user } = useAuth();
+    const [film, setFilm]                   = useState(null);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState(null);
+    const [collectionStatus, setCollectionStatus] = useState(null);
+    const [showStatusMenu, setShowStatusMenu]     = useState(false);
 
+    // Fetch film data
     useEffect(() => {
         setLoading(true);
         setError(null);
@@ -19,12 +30,43 @@ export default function FilmDetailPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    if (loading) return <div style={styles.state}>Chargement...</div>;
+    // Fetch current collection status if logged in
+    useEffect(() => {
+        if (user) {
+            getCollectionStatus(id).then(setCollectionStatus);
+        } else {
+            setCollectionStatus(null);
+        }
+    }, [id, user]);
+
+    async function handleStatusSelect(status) {
+        // Clicking the active status removes the film from the collection
+        if (status === collectionStatus) {
+            await removeFromCollection(id);
+            setCollectionStatus(null);
+        } else {
+            await upsertCollection(id, status);
+            setCollectionStatus(status);
+        }
+        setShowStatusMenu(false);
+    }
+
+    if (loading) return <div style={styles.state}>Loading...</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
     if (!film)   return null;
 
     return (
         <div style={styles.page}>
+            <div style={{
+                ...styles.backdrop,
+                backgroundImage: film.backdrop_path
+                    ? `url(${BACKDROP_BASE}${film.backdrop_path})`
+                    : 'none',
+                backgroundColor: film.backdrop_path ? undefined : '#1a1a1a',
+            }}>
+                <div style={styles.backdropOverlay} />
+            </div>
+
             <div style={styles.hero}>
                 {film.poster_path && (
                     <img
@@ -39,7 +81,10 @@ export default function FilmDetailPage() {
                     <div style={styles.meta}>
                         {film.release_date?.slice(0, 4)}
                         {film.runtime && <><span style={styles.dot}>·</span>{film.runtime} min</>}
-                        {film.vote_average && <><span style={styles.dot}>·</span>⭐ {film.vote_average.toFixed(1)}</>}
+                        {film.vote_average && (
+                            <><span style={styles.dot}>·</span>
+                            <span style={styles.rating}>⭐ {film.vote_average.toFixed(1)}</span></>
+                        )}
                     </div>
 
                     {film.genres?.length > 0 && (
@@ -50,9 +95,45 @@ export default function FilmDetailPage() {
                         </div>
                     )}
 
+                    <div style={styles.actions}>
+                        <button style={styles.watchBtn}>▶ Watch</button>
+
+                        {/* Collection status button — disabled for guests */}
+                        <div style={{ position: 'relative' }}>
+                            <button
+                                onClick={() => user && setShowStatusMenu(m => !m)}
+                                style={{
+                                    ...styles.collectionBtn,
+                                    backgroundColor: collectionStatus ? '#fff' : 'transparent',
+                                    color: collectionStatus ? '#111' : '#fff',
+                                    opacity: user ? 1 : 0.4,
+                                    cursor: user ? 'pointer' : 'default',
+                                }}
+                            >
+                                {collectionStatus ?? '+ Collection'}
+                            </button>
+                            {showStatusMenu && (
+                                <div style={styles.statusMenu}>
+                                    {STATUSES.map(s => (
+                                        <button
+                                            key={s}
+                                            onClick={() => handleStatusSelect(s)}
+                                            style={{
+                                                ...styles.statusOption,
+                                                backgroundColor: s === collectionStatus ? '#333' : 'transparent',
+                                            }}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     {film.director && (
                         <p style={styles.director}>
-                            <span style={styles.directorLabel}>Réalisateur</span>
+                            <span style={styles.directorLabel}>Director </span>
                             {film.director}
                         </p>
                     )}
@@ -65,67 +146,132 @@ export default function FilmDetailPage() {
 
             {film.cast?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>Distribution</h2>
+                    <h2 style={styles.sectionTitle}>Cast</h2>
                     <div style={styles.castGrid}>
-                        {film.cast.slice(0, 10).map(actor => (
+                        {film.cast.map(actor => (
                             <div key={actor.id} style={styles.castCard}>
-                                <span style={styles.actorName}>{actor.name}</span>
-                                <span style={styles.actorRole}>{actor.character}</span>
+                                {actor.profile_path ? (
+                                    <img
+                                        src={`${PROFILE_BASE}${actor.profile_path}`}
+                                        alt={actor.name}
+                                        style={styles.castAvatar}
+                                    />
+                                ) : (
+                                    <div style={styles.castAvatarFallback}>
+                                        {actor.name.charAt(0)}
+                                    </div>
+                                )}
+                                <div style={styles.actorName}>{actor.name}</div>
+                                <div style={styles.actorRole}>{actor.character}</div>
                             </div>
                         ))}
                     </div>
                 </section>
             )}
+
+            {film.similar?.length > 0 && (
+                <section style={styles.castSection}>
+                    <h2 style={styles.sectionTitle}>Similar Films</h2>
+                    <div style={styles.similarGrid}>
+                        {film.similar.map(m => (
+                            <a key={m.id} href={`/films/${m.id}`} style={styles.similarCard}>
+                                {m.poster_path ? (
+                                    <img
+                                        src={`${POSTER_BASE}${m.poster_path}`}
+                                        alt={m.title}
+                                        style={styles.similarPoster}
+                                    />
+                                ) : (
+                                    <div style={styles.similarPosterFallback} />
+                                )}
+                                <div style={styles.similarTitle}>{m.title}</div>
+                                {m.vote_average && (
+                                    <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
+                                )}
+                            </a>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            <ReviewsSection externalId={id} />
         </div>
     );
 }
 
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
 const styles = {
     page: {
-        maxWidth: '960px',
-        margin: '0 auto',
-        padding: '40px 24px 60px',
+        backgroundColor: '#121212',
+        minHeight: '100vh',
+        color: '#fff',
+        fontFamily: font,
+        paddingBottom: '60px',
     },
     state: {
-        padding: '60px 24px',
-        textAlign: 'center',
-        color: '#999',
+        backgroundColor: '#121212',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#b3b3b3',
         fontSize: '14px',
+        fontFamily: font,
+    },
+    backdrop: {
+        position: 'relative',
+        width: '100%',
+        height: '520px',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center top',
+    },
+    backdropOverlay: {
+        position: 'absolute',
+        inset: 0,
+        background: 'linear-gradient(to bottom, rgba(18,18,18,0.2) 0%, rgba(18,18,18,0.7) 60%, rgba(18,18,18,1) 100%)',
     },
     hero: {
+        maxWidth: '1200px',
+        margin: '-180px auto 0',
+        padding: '0 40px',
+        position: 'relative',
         display: 'flex',
         gap: '40px',
-        alignItems: 'flex-start',
+        alignItems: 'flex-end',
     },
     poster: {
-        width: '240px',
+        width: '350px',
         flexShrink: 0,
-        borderRadius: '14px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+        borderRadius: '8px',
+        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
     },
     info: {
         flex: 1,
-        paddingTop: '8px',
+        paddingBottom: '8px',
     },
     title: {
-        margin: '0 0 12px',
-        fontSize: '32px',
+        margin: '0 0 10px',
+        fontSize: '48px',
         fontWeight: '700',
-        color: '#111',
         letterSpacing: '-0.5px',
-        lineHeight: 1.2,
+        lineHeight: 1.1,
+        textShadow: '0 2px 8px rgba(0,0,0,0.5)',
     },
     meta: {
         display: 'flex',
         alignItems: 'center',
         gap: '4px',
         fontSize: '14px',
-        color: '#888',
-        marginBottom: '16px',
+        color: '#b3b3b3',
+        marginBottom: '14px',
     },
     dot: {
         margin: '0 4px',
-        color: '#ccc',
+        color: '#4d4d4d',
+    },
+    rating: {
+        color: '#f5c518',
     },
     genres: {
         display: 'flex',
@@ -135,64 +281,179 @@ const styles = {
     },
     genre: {
         padding: '4px 12px',
-        backgroundColor: '#f3f3f3',
-        borderRadius: '20px',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
         fontSize: '12px',
-        fontWeight: '500',
-        color: '#555',
+        color: '#b3b3b3',
+    },
+    actions: {
+        display: 'flex',
+        gap: '12px',
+        marginBottom: '20px',
+        alignItems: 'center',
+    },
+    watchBtn: {
+        padding: '11px 28px',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        border: 'none',
+        borderRadius: '9999px',
+        fontSize: '14px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        letterSpacing: '1.4px',
+        textTransform: 'uppercase',
+    },
+    collectionBtn: {
+        padding: '11px 24px',
+        border: '1px solid #7c7c7c',
+        borderRadius: '9999px',
+        fontSize: '14px',
+        fontWeight: '700',
+        letterSpacing: '1.4px',
+        textTransform: 'uppercase',
+        transition: 'border-color 0.15s',
+    },
+    statusMenu: {
+        position: 'absolute',
+        top: 'calc(100% + 8px)',
+        left: 0,
+        backgroundColor: '#181818',
+        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        zIndex: 100,
+        minWidth: '180px',
+    },
+    statusOption: {
+        display: 'block',
+        width: '100%',
+        padding: '12px 16px',
+        textAlign: 'left',
+        border: 'none',
+        color: '#fff',
+        fontSize: '14px',
+        fontWeight: '400',
+        cursor: 'pointer',
+        fontFamily: font,
     },
     director: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
         fontSize: '14px',
-        color: '#333',
-        marginBottom: '16px',
+        color: '#b3b3b3',
+        marginBottom: '14px',
     },
     directorLabel: {
-        fontSize: '12px',
-        fontWeight: '600',
-        color: '#999',
+        color: '#b3b3b3',
+        fontWeight: '700',
         textTransform: 'uppercase',
-        letterSpacing: '0.5px',
+        fontSize: '11px',
+        letterSpacing: '1.4px',
+        marginRight: '8px',
     },
     overview: {
-        fontSize: '15px',
-        color: '#555',
-        lineHeight: 1.7,
+        fontSize: '14px',
+        color: '#b3b3b3',
+        lineHeight: 1.6,
         margin: 0,
+        maxWidth: '600px',
     },
     castSection: {
-        marginTop: '48px',
+        maxWidth: '1200px',
+        margin: '48px auto 0',
+        padding: '0 40px',
     },
     sectionTitle: {
         margin: '0 0 20px',
-        fontSize: '18px',
+        fontSize: '24px',
         fontWeight: '700',
-        color: '#111',
-        letterSpacing: '-0.3px',
+        color: '#fff',
     },
     castGrid: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-        gap: '12px',
+        gridTemplateColumns: 'repeat(8, 1fr)',
+        gap: '10px',
     },
     castCard: {
-        padding: '14px 16px',
-        backgroundColor: '#fafafa',
-        border: '1px solid #f0f0f0',
-        borderRadius: '10px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px',
+        backgroundColor: '#181818',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
+    },
+    castAvatar: {
+        width: '100%',
+        aspectRatio: '3/4',
+        objectFit: 'cover',
+    },
+    castAvatarFallback: {
+        width: '100%',
+        aspectRatio: '3/4',
+        backgroundColor: '#1f1f1f',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '32px',
+        fontWeight: '700',
+        color: '#4d4d4d',
     },
     actorName: {
-        fontSize: '13px',
-        fontWeight: '600',
-        color: '#111',
+        fontSize: '12px',
+        fontWeight: '700',
+        color: '#fff',
+        padding: '8px 10px 2px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
     },
     actorRole: {
+        fontSize: '11px',
+        color: '#b3b3b3',
+        padding: '0 10px 10px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    },
+    similarGrid: {
+        display: 'flex',
+        gap: '12px',
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+    },
+    similarCard: {
+        display: 'flex',
+        flexDirection: 'column',
+        textDecoration: 'none',
+        cursor: 'pointer',
+        flexShrink: 0,
+        width: '160px',
+    },
+    similarPoster: {
+        width: '160px',
+        height: '240px',
+        objectFit: 'cover',
+        borderRadius: '6px',
+        display: 'block',
+        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
+    },
+    similarPosterFallback: {
+        width: '160px',
+        height: '240px',
+        backgroundColor: '#181818',
+        borderRadius: '6px',
+    },
+    similarTitle: {
         fontSize: '12px',
-        color: '#999',
+        fontWeight: '700',
+        color: '#fff',
+        marginTop: '8px',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    },
+    similarRating: {
+        fontSize: '11px',
+        color: '#b3b3b3',
+        marginTop: '3px',
     },
 };

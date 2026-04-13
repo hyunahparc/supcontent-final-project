@@ -10,9 +10,9 @@ passport.use(new LocalStrategy(
     { usernameField: 'email' },
     async (email, password, done) => {
         try {
-            const [rows] = await db.query(
-                'SELECT * FROM users WHERE email = ? AND provider = "local"',
-                [email]
+            const { rows } = await db.query(
+                'SELECT * FROM users WHERE email = $1 AND provider = $2',
+                [email, 'local']
             );
 
             const user = rows[0];
@@ -41,21 +41,20 @@ passport.use(new GoogleStrategy(
             const avatar = profile.photos[0]?.value || null;
 
             // Check if user already exists
-            const [rows] = await db.query(
-                'SELECT * FROM users WHERE provider = "google" AND provider_id = ?',
-                [profile.id]
+            const { rows } = await db.query(
+                'SELECT * FROM users WHERE provider = $1 AND provider_id = $2',
+                ['google', profile.id]
             );
 
             if (rows[0]) return done(null, rows[0]);
 
             // Auto-register on first login
-            const [result] = await db.query(
-                'INSERT INTO users (provider, provider_id, email, username, avatar) VALUES (?, ?, ?, ?, ?)',
+            const { rows: newRows } = await db.query(
+                'INSERT INTO users (provider, provider_id, email, username, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *',
                 ['google', profile.id, email, profile.displayName, avatar]
             );
 
-            const [newUser] = await db.query('SELECT * FROM users WHERE user_id = ?', [result.insertId]);
-            return done(null, newUser[0]);
+            return done(null, newRows[0]);
         } catch (err) {
             return done(err);
         }

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { searchMedia } from '../api/search';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w92';
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 export default function SearchBar() {
     const [query,   setQuery]   = useState('');
@@ -62,12 +63,12 @@ export default function SearchBar() {
             <div style={styles.inputRow}>
                 <div style={styles.inputWrap}>
                     <svg style={styles.searchIcon} viewBox="0 0 20 20" fill="none">
-                        <circle cx="9" cy="9" r="6" stroke="#bbb" strokeWidth="1.8" />
-                        <path d="M13.5 13.5L17 17" stroke="#bbb" strokeWidth="1.8" strokeLinecap="round" />
+                        <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
+                        <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
                     <input
                         type="text"
-                        placeholder="Rechercher un film, une série…"
+                        placeholder="Search for a film or series…"
                         value={query}
                         onChange={e => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
@@ -85,16 +86,16 @@ export default function SearchBar() {
                     style={styles.select}
                     aria-label="Filtrer par type"
                 >
-                    <option value="all">Tout</option>
-                    <option value="Movie">Films</option>
-                    <option value="Series">Séries</option>
+                    <option value="all">All</option>
+                    <option value="Movie">Movies</option>
+                    <option value="Series">Series</option>
                 </select>
             </div>
 
             {open && (
                 <ul style={styles.dropdown} role="listbox">
                     {!loading && results.length === 0 && (
-                        <li style={styles.message}>Aucun résultat pour « {query} »</li>
+                        <li style={styles.message}>No results for "{query}"</li>
                     )}
                     {!loading && results.map(item => (
                         <li
@@ -128,9 +129,8 @@ export default function SearchBar() {
 const styles = {
     wrapper: {
         position: 'relative',
-        maxWidth: '560px',
-        width: '100%',
-        margin: '0 auto',
+        width: '480px',
+        fontFamily: font,
     },
     inputRow: {
         display: 'flex',
@@ -144,59 +144,61 @@ const styles = {
     },
     searchIcon: {
         position: 'absolute',
-        left: '12px',
+        left: '14px',
         width: '16px',
         height: '16px',
         pointerEvents: 'none',
     },
     input: {
         width: '100%',
-        padding: '9px 12px 9px 36px',
+        padding: '10px 12px 10px 40px',
         fontSize: '14px',
-        borderRadius: '10px',
-        border: '1.5px solid #e5e5e5',
+        borderRadius: '500px',
+        border: 'none',
         outline: 'none',
-        backgroundColor: '#fafafa',
-        transition: 'border-color 0.2s',
+        backgroundColor: '#1f1f1f',
+        color: '#fff',
         boxSizing: 'border-box',
+        fontFamily: font,
     },
     spinner: {
         position: 'absolute',
-        right: '12px',
+        right: '14px',
         fontSize: '14px',
-        color: '#bbb',
-        animation: 'spin 1s linear infinite',
+        color: '#b3b3b3',
     },
     select: {
-        padding: '9px 12px',
+        padding: '10px 14px',
         fontSize: '13px',
-        borderRadius: '10px',
-        border: '1.5px solid #e5e5e5',
-        backgroundColor: '#fafafa',
-        color: '#555',
+        borderRadius: '500px',
+        border: 'none',
+        backgroundColor: '#1f1f1f',
+        color: '#fff',
         cursor: 'pointer',
         outline: 'none',
+        fontFamily: font,
+        fontWeight: '700',
     },
     dropdown: {
         position: 'absolute',
-        top: 'calc(100% + 6px)',
+        top: 'calc(100% + 8px)',
         left: 0,
         right: 0,
         zIndex: 100,
         margin: 0,
         padding: '6px 0',
         listStyle: 'none',
-        backgroundColor: '#fff',
-        border: '1px solid #f0f0f0',
-        borderRadius: '12px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+        backgroundColor: '#181818',
+        borderRadius: '8px',
+        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
         maxHeight: '400px',
         overflowY: 'auto',
     },
     message: {
         padding: '12px 16px',
-        color: '#aaa',
+        color: '#b3b3b3',
         fontSize: '13px',
+        fontFamily: font,
     },
     item: {
         display: 'flex',
@@ -209,14 +211,14 @@ const styles = {
         width: '40px',
         height: '58px',
         objectFit: 'cover',
-        borderRadius: '6px',
+        borderRadius: '4px',
         flexShrink: 0,
     },
     posterPlaceholder: {
         width: '40px',
         height: '58px',
-        borderRadius: '6px',
-        backgroundColor: '#f0f0f0',
+        borderRadius: '4px',
+        backgroundColor: '#1f1f1f',
         flexShrink: 0,
     },
     info: {
@@ -225,12 +227,14 @@ const styles = {
         gap: '3px',
     },
     itemTitle: {
-        fontWeight: '600',
+        fontWeight: '700',
         fontSize: '13px',
-        color: '#111',
+        color: '#fff',
+        fontFamily: font,
     },
     itemMeta: {
         fontSize: '12px',
-        color: '#999',
+        color: '#b3b3b3',
+        fontFamily: font,
     },
 };

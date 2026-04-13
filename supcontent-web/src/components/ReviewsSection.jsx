@@ -1,0 +1,572 @@
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
+import {
+    getReviews,
+    getMyReview,
+    upsertReview,
+    deleteReview,
+    toggleLike,
+    getComments,
+    addComment,
+    deleteComment,
+} from '../api/reviews';
+
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
+// --- Star Rating Component (supports 0.5 increments) ---
+function StarRating({ value, onChange, readOnly = false, size = 20 }) {
+    const [hovered, setHovered] = useState(0);
+
+    const display = hovered || value || 0;
+
+    function getType(n) {
+        if (display >= n)       return 'full';
+        if (display >= n - 0.5) return 'half';
+        return 'empty';
+    }
+
+    function pickValue(e, n) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        return e.clientX - rect.left < rect.width / 2 ? n - 0.5 : n;
+    }
+
+    return (
+        <div style={{ display: 'flex', gap: '2px' }}>
+            {[1, 2, 3, 4, 5].map(n => {
+                const type = getType(n);
+                return (
+                    <div
+                        key={n}
+                        onMouseMove={e => !readOnly && setHovered(pickValue(e, n))}
+                        onMouseLeave={() => !readOnly && setHovered(0)}
+                        onClick={e => !readOnly && onChange && onChange(pickValue(e, n))}
+                        style={{
+                            position: 'relative',
+                            width: size,
+                            height: size,
+                            fontSize: size,
+                            lineHeight: 1,
+                            cursor: readOnly ? 'default' : 'pointer',
+                            userSelect: 'none',
+                            flexShrink: 0,
+                        }}
+                    >
+                        {/* Base layer: empty star */}
+                        <span style={{ color: '#4d4d4d', position: 'absolute', left: 0, top: 0 }}>★</span>
+                        {/* Fill layer: full or half width */}
+                        {type !== 'empty' && (
+                            <span style={{
+                                color: '#f5c518',
+                                position: 'absolute',
+                                left: 0,
+                                top: 0,
+                                overflow: 'hidden',
+                                width: type === 'half' ? '50%' : '100%',
+                                display: 'block',
+                                whiteSpace: 'nowrap',
+                            }}>★</span>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// --- Single Review Card ---
+function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onCommentAdded, onCommentDeleted }) {
+    const [showComments, setShowComments] = useState(false);
+    const [comments, setComments]         = useState([]);
+    const [commentInput, setCommentInput] = useState('');
+    const [loadingComments, setLoadingComments] = useState(false);
+
+    async function handleToggleComments() {
+        if (!showComments && comments.length === 0) {
+            setLoadingComments(true);
+            try {
+                const data = await getComments(review.review_id);
+                setComments(data);
+            } finally {
+                setLoadingComments(false);
+            }
+        }
+        setShowComments(v => !v);
+    }
+
+    async function handleAddComment(e) {
+        e.preventDefault();
+        if (!commentInput.trim()) return;
+        const newComment = await addComment(review.review_id, commentInput.trim());
+        setComments(prev => [...prev, newComment]);
+        setCommentInput('');
+        onCommentAdded(review.review_id);
+    }
+
+    async function handleDeleteComment(commentId) {
+        await deleteComment(review.review_id, commentId);
+        setComments(prev => prev.filter(c => c.comment_id !== commentId));
+        onCommentDeleted(review.review_id);
+    }
+
+    const isOwner = currentUserId === review.user_id;
+
+    return (
+        <div style={{ ...cardStyles.card, position: 'relative' }}>
+            {isOwner && (
+                <div style={cardStyles.ownerActions}>
+                    <button onClick={onEdit} style={cardStyles.ownerBtn}>Edit</button>
+                    <button onClick={() => onDelete(review.review_id)} style={{ ...cardStyles.ownerBtn, color: '#f3727f' }}>Delete</button>
+                </div>
+            )}
+            <div style={cardStyles.header}>
+                <div style={cardStyles.avatar}>
+                    {review.avatar
+                        ? <img src={review.avatar} alt={review.username} style={cardStyles.avatarImg} />
+                        : <span style={cardStyles.avatarFallback}>{review.username?.charAt(0).toUpperCase()}</span>
+                    }
+                </div>
+                <div style={{ flex: 1 }}>
+                    <div style={cardStyles.username}>{review.username}</div>
+                    <div style={cardStyles.date}>
+                        {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {review.updated_at !== review.created_at && ' (edited)'}
+                    </div>
+                </div>
+            </div>
+
+            {review.rating && (
+                <div style={{ marginBottom: '10px' }}>
+                    <StarRating value={parseFloat(review.rating)} readOnly size={22} />
+                </div>
+            )}
+
+            {review.comment && <p style={cardStyles.comment}>{review.comment}</p>}
+
+            <div style={cardStyles.actions}>
+                {currentUserId && (
+                    <button
+                        onClick={() => onLike(review.review_id)}
+                        style={{ ...cardStyles.actionBtn, color: review.liked_by_me ? '#1ed760' : '#b3b3b3' }}
+                    >
+                        ♥ {review.likes_count}
+                    </button>
+                )}
+                {!currentUserId && review.likes_count > 0 && (
+                    <span style={{ ...cardStyles.actionBtn, cursor: 'default', color: '#b3b3b3' }}>
+                        ♥ {review.likes_count}
+                    </span>
+                )}
+                <button onClick={handleToggleComments} style={cardStyles.actionBtn}>
+                    💬 {review.comments_count} {showComments ? '▲' : '▼'}
+                </button>
+            </div>
+
+            {showComments && (
+                <div style={cardStyles.commentsBox}>
+                    {loadingComments && <p style={{ fontSize: '13px', color: '#b3b3b3' }}>Loading…</p>}
+                    {comments.map(c => (
+                        <div key={c.comment_id} style={cardStyles.commentRow}>
+                            <span style={cardStyles.commentUser}>{c.username}</span>
+                            <span style={cardStyles.commentText}>{c.content}</span>
+                            {currentUserId === c.user_id && (
+                                <button onClick={() => handleDeleteComment(c.comment_id)} style={cardStyles.commentDelete}>×</button>
+                            )}
+                        </div>
+                    ))}
+                    {currentUserId && (
+                        <form onSubmit={handleAddComment} style={cardStyles.commentForm}>
+                            <input
+                                value={commentInput}
+                                onChange={e => setCommentInput(e.target.value)}
+                                placeholder="Add a comment…"
+                                style={cardStyles.commentInput}
+                            />
+                            <button type="submit" style={cardStyles.commentSubmit}>Send</button>
+                        </form>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// --- Main ReviewsSection ---
+export default function ReviewsSection({ externalId }) {
+    const { user } = useAuth();
+    const [reviews, setReviews]   = useState([]);
+    const [myReview, setMyReview] = useState(null);
+
+    // Write/edit form state
+    const [formRating,  setFormRating]  = useState(0);
+    const [formComment, setFormComment] = useState('');
+    const [submitting,  setSubmitting]  = useState(false);
+    const [showForm,    setShowForm]    = useState(false);
+
+    const fetchReviews = useCallback(() => {
+        getReviews(externalId).then(setReviews).catch(() => setReviews([]));
+    }, [externalId]);
+
+    useEffect(() => { fetchReviews(); }, [fetchReviews]);
+
+    // Pre-fill form if user already has a review
+    useEffect(() => {
+        if (!user) { setMyReview(null); return; }
+        getMyReview(externalId).then(r => {
+            setMyReview(r);
+            if (r) { setFormRating(r.rating ?? 0); setFormComment(r.comment ?? ''); }
+        });
+    }, [externalId, user]);
+
+    async function handleSubmitReview(e) {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await upsertReview(externalId, formRating || null, formComment || null);
+            setShowForm(false);
+            fetchReviews();
+            const updated = await getMyReview(externalId);
+            setMyReview(updated);
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    async function handleDeleteReview(reviewId) {
+        await deleteReview(reviewId);
+        setMyReview(null);
+        setFormRating(0);
+        setFormComment('');
+        fetchReviews();
+    }
+
+    async function handleLike(reviewId) {
+        const { liked } = await toggleLike(reviewId);
+        setReviews(prev => prev.map(r =>
+            r.review_id === reviewId
+                ? { ...r, liked_by_me: liked, likes_count: r.likes_count + (liked ? 1 : -1) }
+                : r
+        ));
+    }
+
+    // Update comment counts in the list after add/delete
+    function adjustCommentCount(reviewId, delta) {
+        setReviews(prev => prev.map(r =>
+            r.review_id === reviewId
+                ? { ...r, comments_count: r.comments_count + delta }
+                : r
+        ));
+    }
+
+    // Average rating from community reviews
+    const ratedReviews = reviews.filter(r => r.rating);
+    const avgRating = ratedReviews.length
+        ? (ratedReviews.reduce((s, r) => s + parseFloat(r.rating), 0) / ratedReviews.length).toFixed(1)
+        : null;
+
+    return (
+        <section style={sectionStyles.section}>
+            <div style={sectionStyles.header}>
+                <h2 style={sectionStyles.title}>Community Reviews</h2>
+                {avgRating && (
+                    <div style={sectionStyles.avg}>
+                        <StarRating value={Math.round(parseFloat(avgRating) * 2) / 2} readOnly size={18} />
+                        <span style={sectionStyles.avgText}>{avgRating} / 5</span>
+                        <span style={sectionStyles.dim}>({ratedReviews.length} ratings)</span>
+                    </div>
+                )}
+            </div>
+
+            {/* Write / Edit review — logged-in only */}
+            {user && (
+                <div style={sectionStyles.writeBox}>
+                    {!showForm && !myReview && (
+                        <button onClick={() => setShowForm(true)} style={sectionStyles.writeBtn}>
+                            + Write a Review
+                        </button>
+                    )}
+                    {!showForm && myReview && (
+                        <button onClick={() => setShowForm(true)} style={sectionStyles.writeBtn}>
+                            ✏ Edit My Review
+                        </button>
+                    )}
+                    {showForm && (
+                        <form onSubmit={handleSubmitReview} style={sectionStyles.form}>
+                            <StarRating value={formRating} onChange={setFormRating} size={28} />
+                            <textarea
+                                value={formComment}
+                                onChange={e => setFormComment(e.target.value)}
+                                placeholder="Share your thoughts… (optional)"
+                                rows={4}
+                                style={sectionStyles.textarea}
+                            />
+                            <div style={{ display: 'flex', gap: '10px' }}>
+                                <button type="submit" disabled={submitting || (!formRating && !formComment)} style={sectionStyles.submitBtn}>
+                                    {submitting ? 'Saving…' : myReview ? 'Update Review' : 'Post Review'}
+                                </button>
+                                <button type="button" onClick={() => setShowForm(false)} style={sectionStyles.cancelBtn}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    )}
+                </div>
+            )}
+
+            {/* Review list */}
+            {reviews.length === 0 && (
+                <p style={sectionStyles.dim}>No reviews yet. Be the first!</p>
+            )}
+            {reviews.map(review => (
+                <ReviewCard
+                    key={review.review_id}
+                    review={review}
+                    currentUserId={user?.user_id}
+                    onLike={handleLike}
+                    onDelete={handleDeleteReview}
+                    onEdit={() => setShowForm(true)}
+                    onCommentAdded={(id) => adjustCommentCount(id, +1)}
+                    onCommentDeleted={(id) => adjustCommentCount(id, -1)}
+                />
+            ))}
+        </section>
+    );
+}
+
+const sectionStyles = {
+    section: {
+        maxWidth: '1200px',
+        margin: '48px auto 0',
+        padding: '0 40px',
+        fontFamily: font,
+    },
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '20px',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+    },
+    title: {
+        margin: 0,
+        fontSize: '24px',
+        fontWeight: '700',
+        color: '#fff',
+    },
+    avg: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+    },
+    avgText: {
+        fontSize: '16px',
+        fontWeight: '700',
+        color: '#f5c518',
+    },
+    dim: {
+        fontSize: '13px',
+        color: '#b3b3b3',
+    },
+    writeBox: {
+        marginBottom: '28px',
+    },
+    writeBtn: {
+        padding: '10px 22px',
+        backgroundColor: 'transparent',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
+        color: '#fff',
+        fontSize: '13px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        fontFamily: font,
+        letterSpacing: '0.5px',
+    },
+    form: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+        backgroundColor: '#181818',
+        padding: '20px',
+        borderRadius: '8px',
+        maxWidth: '600px',
+    },
+    textarea: {
+        padding: '12px 14px',
+        backgroundColor: '#1f1f1f',
+        border: '1px solid #4d4d4d',
+        borderRadius: '6px',
+        color: '#fff',
+        fontSize: '14px',
+        fontFamily: font,
+        resize: 'vertical',
+        outline: 'none',
+    },
+    submitBtn: {
+        padding: '10px 22px',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        border: 'none',
+        borderRadius: '9999px',
+        fontSize: '13px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        fontFamily: font,
+    },
+    cancelBtn: {
+        padding: '10px 22px',
+        backgroundColor: 'transparent',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
+        color: '#b3b3b3',
+        fontSize: '13px',
+        cursor: 'pointer',
+        fontFamily: font,
+    },
+};
+
+const cardStyles = {
+    card: {
+        backgroundColor: '#1e1e1e',
+        borderRadius: '8px',
+        padding: '20px',
+        marginBottom: '16px',
+        fontFamily: font,
+    },
+    ownerActions: {
+        position: 'absolute',
+        top: '16px',
+        right: '16px',
+        display: 'flex',
+        gap: '8px',
+    },
+    ownerBtn: {
+        background: 'none',
+        border: 'none',
+        fontSize: '12px',
+        color: '#b3b3b3',
+        cursor: 'pointer',
+        fontFamily: font,
+        padding: '2px 4px',
+    },
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '12px',
+    },
+    avatar: {
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        overflow: 'hidden',
+        flexShrink: 0,
+        backgroundColor: '#333',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    avatarImg: {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+    },
+    avatarFallback: {
+        fontSize: '16px',
+        fontWeight: '700',
+        color: '#fff',
+    },
+    username: {
+        fontSize: '14px',
+        fontWeight: '700',
+        color: '#fff',
+    },
+    date: {
+        fontSize: '12px',
+        color: '#b3b3b3',
+        marginTop: '2px',
+    },
+    comment: {
+        fontSize: '14px',
+        color: '#e0e0e0',
+        lineHeight: 1.6,
+        margin: '0 0 14px',
+    },
+    actions: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+    },
+    actionBtn: {
+        background: 'none',
+        border: 'none',
+        fontSize: '13px',
+        color: '#b3b3b3',
+        cursor: 'pointer',
+        padding: 0,
+        fontFamily: font,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+    },
+    commentsBox: {
+        marginTop: '16px',
+        borderTop: '1px solid #2a2a2a',
+        paddingTop: '14px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+    },
+    commentRow: {
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '8px',
+        fontSize: '13px',
+    },
+    commentUser: {
+        fontWeight: '700',
+        color: '#fff',
+        flexShrink: 0,
+    },
+    commentText: {
+        color: '#b3b3b3',
+        flex: 1,
+        lineHeight: 1.5,
+    },
+    commentDelete: {
+        background: 'none',
+        border: 'none',
+        color: '#4d4d4d',
+        cursor: 'pointer',
+        fontSize: '16px',
+        padding: '0 4px',
+        fontFamily: font,
+        flexShrink: 0,
+    },
+    commentForm: {
+        display: 'flex',
+        gap: '8px',
+        marginTop: '4px',
+    },
+    commentInput: {
+        flex: 1,
+        padding: '8px 12px',
+        backgroundColor: '#1f1f1f',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
+        color: '#fff',
+        fontSize: '13px',
+        fontFamily: font,
+        outline: 'none',
+    },
+    commentSubmit: {
+        padding: '8px 16px',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        border: 'none',
+        borderRadius: '9999px',
+        fontSize: '13px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        fontFamily: font,
+    },
+};
