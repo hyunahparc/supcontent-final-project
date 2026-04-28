@@ -130,6 +130,500 @@ paths:
                                     user:
                                         $ref: '#/components/schemas/User'
 
+    /search:
+        get:
+            tags:
+                - Search
+            summary: Search films and series
+            parameters:
+                - in: query
+                  name: q
+                  required: true
+                  schema:
+                      type: string
+                  description: Search query
+                  example: fight club
+                - in: query
+                  name: type
+                  schema:
+                      type: string
+                      enum: [all, Movie, Series]
+                      default: all
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 10
+            responses:
+                '200':
+                    description: List of matching media
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        external_id:
+                                            type: integer
+                                        title:
+                                            type: string
+                                        media_type:
+                                            type: string
+                                        poster_path:
+                                            type: string
+                                        release_date:
+                                            type: string
+                                        vote_average:
+                                            type: number
+
+    /collections:
+        post:
+            tags:
+                - Collections
+            summary: Add or update a film in collection
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - external_id
+                                - status
+                            properties:
+                                external_id:
+                                    type: integer
+                                    example: 550
+                                status:
+                                    type: string
+                                    enum: ['À voir', 'En cours', 'Terminé', 'Abandonné']
+            responses:
+                '200':
+                    description: Collection entry upserted
+                '400':
+                    description: Invalid status
+                '401':
+                    description: Unauthorized
+
+    /collections/{external_id}:
+        get:
+            tags:
+                - Collections
+            summary: Get collection status for a film
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: external_id
+                  required: true
+                  schema:
+                      type: integer
+                  example: 550
+            responses:
+                '200':
+                    description: Collection status
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        nullable: true
+        delete:
+            tags:
+                - Collections
+            summary: Remove a film from collection
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: external_id
+                  required: true
+                  schema:
+                      type: integer
+                  example: 550
+            responses:
+                '200':
+                    description: Removed from collection
+                '401':
+                    description: Unauthorized
+
+    /users/{id}/collection:
+        get:
+            tags:
+                - Collections
+            summary: Get a user's collection
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                - in: query
+                  name: status
+                  schema:
+                      type: string
+                      enum: ['À voir', 'En cours', 'Terminé', 'Abandonné']
+            responses:
+                '200':
+                    description: List of collection items
+
+    /reviews/{external_id}:
+        get:
+            tags:
+                - Reviews
+            summary: Get all reviews for a film
+            parameters:
+                - in: path
+                  name: external_id
+                  required: true
+                  schema:
+                      type: integer
+                  example: 550
+            responses:
+                '200':
+                    description: List of reviews with likes and comment counts
+
+    /reviews/{external_id}/my:
+        get:
+            tags:
+                - Reviews
+            summary: Get my review for a film
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: external_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: My review or null
+
+    /reviews:
+        post:
+            tags:
+                - Reviews
+            summary: Create or update own review
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - external_id
+                            properties:
+                                external_id:
+                                    type: integer
+                                    example: 550
+                                rating:
+                                    type: number
+                                    example: 4.5
+                                comment:
+                                    type: string
+                                    example: Great movie!
+            responses:
+                '200':
+                    description: Review created or updated
+                '401':
+                    description: Unauthorized
+
+    /reviews/{review_id}:
+        delete:
+            tags:
+                - Reviews
+            summary: Delete own review
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Review deleted
+                '404':
+                    description: Review not found or not yours
+
+    /reviews/{review_id}/like:
+        post:
+            tags:
+                - Reviews
+            summary: Toggle like on a review
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Like toggled
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    liked:
+                                        type: boolean
+
+    /reviews/{review_id}/comments:
+        get:
+            tags:
+                - Reviews
+            summary: Get comments on a review
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: List of comments
+        post:
+            tags:
+                - Reviews
+            summary: Add a comment to a review
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - content
+                            properties:
+                                content:
+                                    type: string
+                                    example: I agree!
+            responses:
+                '200':
+                    description: Comment added
+
+    /reviews/{review_id}/comments/{comment_id}:
+        delete:
+            tags:
+                - Reviews
+            summary: Delete own comment
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+                - in: path
+                  name: comment_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Comment deleted
+                '404':
+                    description: Comment not found or not yours
+
+    /lists:
+        get:
+            tags:
+                - Lists
+            summary: Get current user's custom lists
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: List of custom lists with film count and preview posters
+                '401':
+                    description: Unauthorized
+        post:
+            tags:
+                - Lists
+            summary: Create a new custom list
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - name
+                            properties:
+                                name:
+                                    type: string
+                                    example: My Horror Favorites
+                                is_public:
+                                    type: boolean
+                                    default: false
+            responses:
+                '201':
+                    description: List created
+                '400':
+                    description: List name is required
+                '401':
+                    description: Unauthorized
+
+    /lists/{id}:
+        get:
+            tags:
+                - Lists
+            summary: Get a list with its films
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: List detail with films
+                '403':
+                    description: This list is private
+                '404':
+                    description: List not found
+        put:
+            tags:
+                - Lists
+            summary: Update list name or visibility
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    example: Updated List Name
+                                is_public:
+                                    type: boolean
+            responses:
+                '200':
+                    description: List updated
+                '404':
+                    description: List not found or not yours
+        delete:
+            tags:
+                - Lists
+            summary: Delete a list
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: List deleted
+                '404':
+                    description: List not found or not yours
+
+    /lists/{id}/films:
+        post:
+            tags:
+                - Lists
+            summary: Add a film to a list
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - external_id
+                            properties:
+                                external_id:
+                                    type: integer
+                                    example: 550
+            responses:
+                '201':
+                    description: Film added to list
+                '404':
+                    description: List not found or not yours
+
+    /lists/{id}/films/{external_id}:
+        delete:
+            tags:
+                - Lists
+            summary: Remove a film from a list
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                - in: path
+                  name: external_id
+                  required: true
+                  schema:
+                      type: integer
+                  example: 550
+            responses:
+                '200':
+                    description: Film removed from list
+                '404':
+                    description: Film not found in list
+
+    /users/{id}/lists:
+        get:
+            tags:
+                - Lists
+            summary: Get a user's public lists
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: List of public custom lists
+
     /films/{id}:
         get:
             tags:
