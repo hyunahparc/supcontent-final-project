@@ -14,7 +14,7 @@ function authHeader() {
  * @param {number|string} userId
  */
 export const getUserProfile = (userId) =>
-    api.get(`/users/${userId}/profile`)
+    api.get(`/users/${userId}/profile`, { headers: authHeader() })
         .then(res => res.data);
 
 /**

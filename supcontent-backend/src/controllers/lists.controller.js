@@ -203,5 +203,38 @@ const removeFilmFromList = async (req, res) => {
     }
 };
 
-module.exports = { createList, getLists, getListById, updateList, deleteList, addFilmToList, removeFilmFromList };
+// GET /api/users/:id/lists  (public — only returns public lists)
+const getUserPublicLists = async (req, res) => {
+    const { id } = req.params;
+
+    if (isNaN(Number(id))) return res.status(400).json({ message: 'Invalid id.' });
+
+    try {
+        const { rows } = await db.query(
+            `SELECT cl.*,
+                    COUNT(cli.external_id)::int AS films_count,
+                    ARRAY(
+                        SELECT m.full_data->>'poster_path'
+                        FROM custom_list_items i
+                        JOIN media_cache m ON m.external_id = i.external_id
+                        WHERE i.list_id = cl.list_id
+                          AND m.full_data->>'poster_path' IS NOT NULL
+                        ORDER BY i.added_at DESC
+                        LIMIT 4
+                    ) AS preview_posters
+             FROM custom_lists cl
+             LEFT JOIN custom_list_items cli ON cli.list_id = cl.list_id
+             WHERE cl.user_id = $1
+               AND cl.is_public = true
+             GROUP BY cl.list_id
+             ORDER BY cl.created_at DESC`,
+            [id]
+        );
+        return res.json(rows);
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error.', error: err.message });
+    }
+};
+
+module.exports = { createList, getLists, getUserPublicLists, getListById, updateList, deleteList, addFilmToList, removeFilmFromList };
 
