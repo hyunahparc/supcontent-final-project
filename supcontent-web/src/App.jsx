@@ -1,4 +1,4 @@
-// App.jsx — routage principal et barre de navigation
+// App.jsx — main routing and navigation bar
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -34,16 +34,15 @@ export default function App() {
                         {user ? (
                             <>
                                 <Link to={`/users/${user.user_id}/collection`} style={styles.navLink}>
-                                    Ma collection
+                                    My Collection
                                 </Link>
                                 <Link to="/lists" style={styles.navLink}>
-                                    Mes listes
+                                    My Lists
                                 </Link>
-                                <Link to="/dashboard" style={styles.navLink}>
-                                    Tableau de bord
+                                <Link to={`/users/${user.user_id}/profile`} style={styles.navLink}>
+                                    Dashboard
                                 </Link>
-                                {/* Nom cliquable → tableau de bord */}
-                                <Link to="/dashboard" style={styles.usernameLink}>
+                                <Link to={`/users/${user.user_id}/profile`} style={styles.usernameLink}>
                                     {user.username}
                                 </Link>
                                 <button onClick={handleLogout} style={styles.logoutBtn}>
@@ -58,10 +57,10 @@ export default function App() {
             </header>
 
             <Routes>
-                {/* ── Route racine : redirige selon l'état de connexion ── */}
+                {/* ── Root: redirect based on auth state ── */}
                 <Route
                     path="/"
-                    element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
+                    element={user ? <Navigate to={`/users/${user.user_id}/profile`} replace /> : <Navigate to="/login" replace />}
                 />
 
                 <Route path="/films/:id" element={<FilmDetailPage />} />
@@ -70,8 +69,8 @@ export default function App() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
-                {/* ── Nouvelles routes profil ── */}
-                <Route path="/dashboard" element={<DashboardPage />} />
+                {/* ── Profile routes ── */}
+                <Route path="/users/:id/profile" element={<DashboardPage />} />
                 <Route path="/settings/profile" element={<ProfileSettingsPage />} />
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />

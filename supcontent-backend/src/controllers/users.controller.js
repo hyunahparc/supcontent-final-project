@@ -8,9 +8,10 @@ const path = require('path');
 // Le serveur démarre normalement même sans SUPABASE_URL dans le .env.
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── GET /api/users/:id/profile  (public) ─────────────────────────────────────
+// ── GET /api/users/:id/profile  (public, optionalAuth) ───────────────────────
 const getProfile = async (req, res) => {
     const { id } = req.params;
+    const viewerId = req.user?.user_id ?? null;
 
     if (isNaN(Number(id))) {
         return res.status(400).json({ message: 'Identifiant invalide.' });
@@ -26,14 +27,18 @@ const getProfile = async (req, res) => {
                 u.created_at,
                 COUNT(DISTINCT f_in.follower_id)::int  AS followers_count,
                 COUNT(DISTINCT f_out.followee_id)::int AS following_count,
-                COUNT(DISTINCT c.collection_id)::int   AS films_count
+                COUNT(DISTINCT c.collection_id)::int   AS films_count,
+                CASE WHEN $2::int IS NOT NULL
+                    THEN EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND followee_id = u.user_id)
+                    ELSE false
+                END AS is_following
              FROM users u
              LEFT JOIN follows     f_in  ON f_in.followee_id  = u.user_id
              LEFT JOIN follows     f_out ON f_out.follower_id = u.user_id
              LEFT JOIN collections c     ON c.user_id         = u.user_id
              WHERE u.user_id = $1
              GROUP BY u.user_id`,
-            [id]
+            [id, viewerId]
         );
 
         if (!rows[0]) {

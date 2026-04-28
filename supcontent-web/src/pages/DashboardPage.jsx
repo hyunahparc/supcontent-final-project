@@ -1,70 +1,108 @@
-// Page tableau de bord — profil de l'utilisateur connecté avec statistiques
+// Profile page — /users/:id/profile (own profile and public profiles)
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile, getUserStats } from '../api/users';
+import { getUserProfile } from '../api/users';
+import { getMyLists, getUserPublicLists } from '../api/lists';
+import { getLibrary } from '../api/collections';
+import { followUser, unfollowUser, getFollowers, getFollowing } from '../api/follows';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 
-// Ordre d'affichage et couleurs des statuts de collection
-const STATUS_CONFIG = [
-    { key: 'Terminé',    label: 'Terminé',   color: '#1ed760', emoji: '✅' },
-    { key: 'En cours',   label: 'En cours',  color: '#f5a623', emoji: '▶' },
-    { key: 'À voir',     label: 'À voir',    color: '#4a9eff', emoji: '🔖' },
-    { key: 'Abandonné',  label: 'Abandonné', color: '#f3727f', emoji: '✗'  },
-];
 
 export default function DashboardPage() {
+    const { id } = useParams();
     const { user } = useAuth();
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
 
-    const [profile, setProfile] = useState(null);
-    const [stats,   setStats]   = useState({});
-    const [loading, setLoading] = useState(true);
-    const [error,   setError]   = useState(null);
+    const resolvedId = Number(id);
+    const isOwnProfile = resolvedId === user?.user_id;
 
-    // Redirection si non connecté
+    const [profile, setProfile]                   = useState(null);
+    const [lists, setLists]                       = useState([]);
+    const [collection, setCollection]             = useState([]);
+    const [loading, setLoading]                   = useState(true);
+    const [error, setError]                       = useState(null);
+    const [followLoading, setFollowLoading]       = useState(false);
+    const [showUnfollowMenu, setShowUnfollowMenu] = useState(false);
+
+    // Modal: null | 'followers' | 'following'
+    const [modal, setModal]           = useState(null);
+    const [modalUsers, setModalUsers] = useState([]);
+    const [modalLoading, setModalLoading] = useState(false);
+
     useEffect(() => {
-        if (!user) navigate('/login', { replace: true });
-    }, [user, navigate]);
-
-    // Chargement du profil et des stats
-    useEffect(() => {
-        if (!user) return;
+        if (!resolvedId) {
+            navigate('/login', { replace: true });
+            return;
+        }
 
         setLoading(true);
         Promise.all([
-            getUserProfile(user.user_id),
-            getUserStats(user.user_id),
+            getUserProfile(resolvedId),
+            getLibrary(resolvedId),
+            isOwnProfile ? getMyLists() : getUserPublicLists(resolvedId),
         ])
-            .then(([prof, st]) => {
+            .then(([prof, col, userLists]) => {
                 setProfile(prof);
-                setStats(st);
+                setCollection(col.slice(0, 6));
+                setLists(userLists ?? []);
             })
-            .catch(() => setError('Impossible de charger le profil.'))
+            .catch(() => setError('Unable to load this profile.'))
             .finally(() => setLoading(false));
-    }, [user]);
+    }, [resolvedId, isOwnProfile]);
 
-    if (!user)    return null;
-    if (loading)  return <div style={s.state}>Chargement...</div>;
-    if (error)    return <div style={s.state}>{error}</div>;
+    const handleFollow = async () => {
+        if (!user) return navigate('/login');
+        setFollowLoading(true);
+        try {
+            await followUser(resolvedId);
+            setProfile(p => ({ ...p, is_following: true, followers_count: p.followers_count + 1 }));
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
+    const handleUnfollow = async () => {
+        setFollowLoading(true);
+        setShowUnfollowMenu(false);
+        try {
+            await unfollowUser(resolvedId);
+            setProfile(p => ({ ...p, is_following: false, followers_count: p.followers_count - 1 }));
+        } finally {
+            setFollowLoading(false);
+        }
+    };
+
+    const openModal = async (type) => {
+        setModal(type);
+        setModalLoading(true);
+        try {
+            const data = type === 'followers'
+                ? await getFollowers(resolvedId)
+                : await getFollowing(resolvedId);
+            setModalUsers(data);
+        } finally {
+            setModalLoading(false);
+        }
+    };
+
+    const closeModal = () => { setModal(null); setModalUsers([]); };
+
+    if (loading) return <div style={s.state}>Loading...</div>;
+    if (error)   return <div style={s.state}>{error}</div>;
     if (!profile) return null;
 
-    // Nombre total de films dans la collection
-    const totalFilms = Object.values(stats).reduce((sum, n) => sum + n, 0);
-
-    // Date d'inscription formatée
     const memberSince = profile.created_at
-        ? new Date(profile.created_at).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long' })
+        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
         : null;
 
     return (
         <div style={s.page}>
 
-            {/* ── Carte profil ── */}
+            {/* ── Profile card ── */}
             <div style={s.profileCard}>
-
-                {/* Avatar */}
                 <div style={s.avatarWrap}>
                     {profile.avatar ? (
                         <img src={profile.avatar} alt={profile.username} style={s.avatar} />
@@ -75,87 +113,178 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                {/* Infos textuelles */}
                 <div style={s.profileInfo}>
                     <h1 style={s.username}>{profile.username}</h1>
-
-                    {memberSince && (
-                        <p style={s.memberSince}>Membre depuis {memberSince}</p>
-                    )}
+                    {memberSince && <p style={s.memberSince}>Member since {memberSince}</p>}
 
                     {profile.bio ? (
                         <p style={s.bio}>{profile.bio}</p>
                     ) : (
-                        <p style={{ ...s.bio, ...s.bioEmpty }}>
-                            Aucune biographie pour l'instant.
-                        </p>
+                        <p style={{ ...s.bio, ...s.bioEmpty }}>No bio yet.</p>
                     )}
 
-                    {/* Abonnés / abonnements */}
                     <div style={s.socialRow}>
-                        <div style={s.socialStat}>
+                        <button style={s.socialBtn} onClick={() => openModal('followers')}>
                             <span style={s.socialNumber}>{profile.followers_count ?? 0}</span>
-                            <span style={s.socialLabel}>abonné{profile.followers_count !== 1 ? 's' : ''}</span>
-                        </div>
+                            <span style={s.socialLabel}>follower{profile.followers_count !== 1 ? 's' : ''}</span>
+                        </button>
                         <div style={s.socialDivider} />
-                        <div style={s.socialStat}>
+                        <button style={s.socialBtn} onClick={() => openModal('following')}>
                             <span style={s.socialNumber}>{profile.following_count ?? 0}</span>
-                            <span style={s.socialLabel}>abonnement{profile.following_count !== 1 ? 's' : ''}</span>
-                        </div>
+                            <span style={s.socialLabel}>following</span>
+                        </button>
                     </div>
                 </div>
 
-                {/* Bouton modifier le profil */}
-                <Link to="/settings/profile" style={s.editBtn}>
-                    ✏ Modifier le profil
-                </Link>
+                {/* Own profile: edit button — Other profile: follow/unfollow */}
+                {isOwnProfile ? (
+                    <Link to="/settings/profile" style={s.editBtn}>✏ Edit profile</Link>
+                ) : user && (
+                    <div style={s.followWrap}>
+                        {profile.is_following ? (
+                            <>
+                                <button onClick={() => setShowUnfollowMenu(v => !v)} disabled={followLoading} style={s.followingBtn}>
+                                    Following
+                                </button>
+                                {showUnfollowMenu && (
+                                    <div style={s.unfollowMenu}>
+                                        <button onClick={handleUnfollow} style={s.unfollowMenuItem}>Unfollow</button>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <button onClick={handleFollow} disabled={followLoading} style={s.followBtn}>
+                                Follow
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
 
-            {/* ── Statistiques de collection ── */}
-            <section style={s.section}>
-                <h2 style={s.sectionTitle}>Ma collection</h2>
 
-                <div style={s.statsGrid}>
-                    {/* Total */}
-                    <div style={{ ...s.statCard, ...s.statCardTotal }}>
-                        <span style={s.statNumber}>{totalFilms}</span>
-                        <span style={s.statLabel}>film{totalFilms !== 1 ? 's' : ''} au total</span>
+            {/* ── Collection preview ── */}
+            <section style={s.section}>
+                <div style={s.sectionHeader}>
+                    <h2 style={s.sectionTitle}>
+                        {isOwnProfile ? 'My collection' : `${profile.username}'s collection`}
+                    </h2>
+                    <Link to={`/users/${resolvedId}/collection`} style={s.seeAllLink}>
+                        See all ({profile.films_count ?? 0})
+                    </Link>
+                </div>
+                {collection.length === 0 ? (
+                    <p style={s.emptyText}>No films yet.</p>
+                ) : (
+                    <div style={s.posterGrid}>
+                        {collection.map(item => {
+                            const poster = item.full_data?.poster_path;
+                            return (
+                                <Link key={item.collection_id} to={`/films/${item.external_id}`} style={s.posterWrap}>
+                                    {poster ? (
+                                        <img src={`${TMDB_IMG}${poster}`} alt={item.full_data?.title ?? ''} style={s.poster} />
+                                    ) : (
+                                        <div style={s.posterFallback}>🎬</div>
+                                    )}
+                                </Link>
+                            );
+                        })}
                     </div>
-
-                    {/* Par statut */}
-                    {STATUS_CONFIG.map(({ key, label, color, emoji }) => (
-                        <Link
-                            key={key}
-                            to={`/users/${user.user_id}/collection?status=${encodeURIComponent(key)}`}
-                            style={{ ...s.statCard, textDecoration: 'none' }}
-                        >
-                            <span style={{ fontSize: '22px' }}>{emoji}</span>
-                            <span style={{ ...s.statNumber, color }}>{stats[key] ?? 0}</span>
-                            <span style={s.statLabel}>{label}</span>
-                        </Link>
-                    ))}
-                </div>
+                )}
             </section>
 
-            {/* ── Actions rapides ── */}
+            {/* ── Lists ── */}
             <section style={s.section}>
-                <h2 style={s.sectionTitle}>Actions rapides</h2>
-                <div style={s.actionsRow}>
-                    <Link to={`/users/${user.user_id}/collection`} style={s.actionCard}>
-                        <span style={s.actionIcon}>🎬</span>
-                        <span style={s.actionLabel}>Voir ma collection</span>
-                    </Link>
-                    <Link to="/settings/profile" style={s.actionCard}>
-                        <span style={s.actionIcon}>⚙</span>
-                        <span style={s.actionLabel}>Paramètres du profil</span>
-                    </Link>
+                    <div style={s.sectionHeader}>
+                        <h2 style={s.sectionTitle}>
+                            {isOwnProfile ? 'My lists' : `${profile.username}'s lists`}
+                        </h2>
+                        {isOwnProfile
+                            ? <Link to="/lists" style={s.seeAllLink}>See all ({lists.length})</Link>
+                            : <span style={s.seeAllLink}>{lists.length} lists</span>
+                        }
+                    </div>
+                    {lists.length === 0 ? (
+                        <p style={s.emptyText}>No lists yet.</p>
+                    ) : (
+                    <div style={s.listsGrid}>
+                        {lists.map(list => (
+                            <Link key={list.list_id} to={`/lists/${list.list_id}`} style={s.listCard}>
+                                <div style={s.listPosterStack}>
+                                    {[0, 1, 2, 3].map(i => {
+                                        const p = list.preview_posters?.[i];
+                                        const isLast = i === 3;
+                                        return (
+                                            <div key={i} style={{
+                                                position: 'absolute',
+                                                left: `${i * 95}px`,
+                                                right: isLast ? 0 : 'auto',
+                                                zIndex: 4 - i,
+                                                width: isLast ? 'auto' : '120px',
+                                                height: '100%',
+                                                borderRadius: '6px',
+                                                overflow: 'hidden',
+                                                boxShadow: '-4px 0 12px rgba(0,0,0,0.7)',
+                                            }}>
+                                                {p ? (
+                                                    <img src={`${TMDB_IMG}${p}`} alt="" style={s.listPoster} />
+                                                ) : (
+                                                    <div style={s.listPosterFallback} />
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                    <div style={s.listOverlayInner}>
+                                        <div style={s.listName}>{list.name}</div>
+                                        <div style={s.listCount}>{list.films_count ?? 0} films</div>
+                                    </div>
+                                </div>
+                                <div style={s.listInfo}>
+                                    <div style={s.listName}>{list.name}</div>
+                                    <div style={s.listCount}>{list.films_count ?? 0} films</div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                    )}
+                </section>
+
+
+            {/* ── Followers / Following modal ── */}
+            {modal && (
+                <div style={s.overlay} onClick={closeModal}>
+                    <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+                        <div style={s.modalHeader}>
+                            <h2 style={s.modalTitle}>{modal === 'followers' ? 'Followers' : 'Following'}</h2>
+                            <button style={s.modalClose} onClick={closeModal}>✕</button>
+                        </div>
+                        {modalLoading ? (
+                            <p style={s.modalEmpty}>Loading...</p>
+                        ) : modalUsers.length === 0 ? (
+                            <p style={s.modalEmpty}>No users yet.</p>
+                        ) : (
+                            <ul style={s.userList}>
+                                {modalUsers.map(u => (
+                                    <li key={u.user_id}>
+                                        <Link to={`/users/${u.user_id}/profile`} style={s.userLink} onClick={closeModal}>
+                                            {u.avatar ? (
+                                                <img src={u.avatar} alt={u.username} style={s.miniAvatar} />
+                                            ) : (
+                                                <div style={s.miniAvatarFallback}>
+                                                    {u.username?.charAt(0).toUpperCase()}
+                                                </div>
+                                            )}
+                                            <span style={s.userUsername}>{u.username}</span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
                 </div>
-            </section>
+            )}
         </div>
     );
 }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const s = {
     page: {
@@ -176,7 +305,7 @@ const s = {
         fontFamily: font,
     },
 
-    // ── Carte profil
+    // Profile card
     profileCard: {
         display: 'flex',
         alignItems: 'flex-start',
@@ -187,9 +316,7 @@ const s = {
         marginBottom: '40px',
         flexWrap: 'wrap',
     },
-    avatarWrap: {
-        flexShrink: 0,
-    },
+    avatarWrap: { flexShrink: 0 },
     avatar: {
         width: '120px',
         height: '120px',
@@ -210,57 +337,20 @@ const s = {
         color: '#fff',
         border: '3px solid #2a2a2a',
     },
-    profileInfo: {
-        flex: 1,
-        minWidth: '200px',
+    profileInfo: { flex: 1, minWidth: '200px' },
+    username: { margin: '0 0 4px', fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' },
+    memberSince: { margin: '0 0 14px', fontSize: '13px', color: '#b3b3b3' },
+    bio: { margin: '0 0 20px', fontSize: '14px', color: '#e0e0e0', lineHeight: 1.6, maxWidth: '480px' },
+    bioEmpty: { color: '#4d4d4d', fontStyle: 'italic' },
+    socialRow: { display: 'flex', alignItems: 'center', gap: '20px' },
+    socialBtn: {
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '2px',
     },
-    username: {
-        margin: '0 0 4px',
-        fontSize: '32px',
-        fontWeight: '700',
-        letterSpacing: '-0.5px',
-    },
-    memberSince: {
-        margin: '0 0 14px',
-        fontSize: '13px',
-        color: '#b3b3b3',
-    },
-    bio: {
-        margin: '0 0 20px',
-        fontSize: '14px',
-        color: '#e0e0e0',
-        lineHeight: 1.6,
-        maxWidth: '480px',
-    },
-    bioEmpty: {
-        color: '#4d4d4d',
-        fontStyle: 'italic',
-    },
-    socialRow: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-    },
-    socialStat: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-    },
-    socialNumber: {
-        fontSize: '20px',
-        fontWeight: '700',
-        color: '#fff',
-    },
-    socialLabel: {
-        fontSize: '12px',
-        color: '#b3b3b3',
-        marginTop: '2px',
-    },
-    socialDivider: {
-        width: '1px',
-        height: '36px',
-        backgroundColor: '#333',
-    },
+    socialNumber: { fontSize: '20px', fontWeight: '700', color: '#fff' },
+    socialLabel: { fontSize: '12px', color: '#b3b3b3' },
+    socialDivider: { width: '1px', height: '36px', backgroundColor: '#333' },
+
     editBtn: {
         padding: '10px 22px',
         border: '1px solid #4d4d4d',
@@ -280,76 +370,93 @@ const s = {
         flexShrink: 0,
         whiteSpace: 'nowrap',
     },
+    followWrap: { position: 'relative', alignSelf: 'flex-start', flexShrink: 0 },
+    followBtn: {
+        padding: '10px 28px', border: 'none', borderRadius: '9999px',
+        backgroundColor: '#1ed760', color: '#000', fontSize: '13px', fontWeight: '700',
+        cursor: 'pointer', fontFamily: font, letterSpacing: '0.5px',
+    },
+    followingBtn: {
+        padding: '10px 28px', border: '1px solid #4d4d4d', borderRadius: '9999px',
+        backgroundColor: 'transparent', color: '#fff', fontSize: '13px', fontWeight: '700',
+        cursor: 'pointer', fontFamily: font, letterSpacing: '0.5px',
+    },
+    unfollowMenu: {
+        position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+        backgroundColor: '#2a2a2a', borderRadius: '8px', border: '1px solid #3a3a3a',
+        overflow: 'hidden', zIndex: 10, minWidth: '140px',
+    },
+    unfollowMenuItem: {
+        display: 'block', width: '100%', padding: '12px 16px',
+        background: 'none', border: 'none', color: '#f3727f',
+        fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+        fontFamily: font, textAlign: 'left',
+    },
 
-    // ── Sections
-    section: {
-        marginBottom: '40px',
+    // Sections
+    section: { marginBottom: '40px' },
+    sectionHeader: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px',
     },
-    sectionTitle: {
-        margin: '0 0 20px',
-        fontSize: '20px',
-        fontWeight: '700',
-        color: '#fff',
+    sectionTitle: { margin: 0, fontSize: '20px', fontWeight: '700', color: '#fff' },
+    seeAllLink: { fontSize: '13px', color: '#b3b3b3', textDecoration: 'none', fontWeight: '600' },
+    emptyText: { color: '#4d4d4d', fontSize: '14px', fontStyle: 'italic', margin: 0 },
+
+    // Collection preview
+    posterGrid: {
+        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+    },
+    posterWrap: {
+        borderRadius: '8px', overflow: 'hidden', display: 'block',
+        aspectRatio: '2 / 3', backgroundColor: '#2a2a2a',
+    },
+    poster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+    posterFallback: {
+        width: '100%', height: '100%', display: 'flex',
+        alignItems: 'center', justifyContent: 'center',
+        fontSize: '28px', backgroundColor: '#2a2a2a',
     },
 
-    // ── Grille stats
-    statsGrid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-        gap: '16px',
-    },
-    statCard: {
+    // Lists
+    listsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' },
+    listCard: {
+        textDecoration: 'none', cursor: 'pointer', display: 'flex',
+        flexDirection: 'column', borderRadius: '8px', overflow: 'hidden',
         backgroundColor: '#1e1e1e',
-        borderRadius: '12px',
-        padding: '24px 20px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '6px',
-        cursor: 'default',
-        transition: 'background-color 0.15s',
     },
-    statCardTotal: {
-        border: '1px solid #2a2a2a',
+    listPosterStack: { position: 'relative', height: '180px', borderRadius: '6px', overflow: 'hidden' },
+    listPoster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
+    listPosterFallback: { width: '100%', height: '100%', backgroundColor: '#1e1e1e' },
+    listOverlayInner: { display: 'none' },
+    listInfo: { padding: '10px 12px', backgroundColor: '#1e1e1e' },
+    listName: {
+        fontSize: '13px', fontWeight: '700', color: '#fff',
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '2px',
     },
-    statNumber: {
-        fontSize: '32px',
-        fontWeight: '700',
-        color: '#fff',
-        lineHeight: 1,
-    },
-    statLabel: {
-        fontSize: '12px',
-        color: '#b3b3b3',
-        textAlign: 'center',
-    },
+    listCount: { fontSize: '12px', color: '#ccc' },
 
-    // ── Actions rapides
-    actionsRow: {
-        display: 'flex',
-        gap: '16px',
-        flexWrap: 'wrap',
+    // Modal
+    overlay: {
+        position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
     },
-    actionCard: {
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '28px 32px',
-        backgroundColor: '#1e1e1e',
-        borderRadius: '12px',
-        textDecoration: 'none',
-        cursor: 'pointer',
-        transition: 'background-color 0.15s',
-        minWidth: '140px',
+    modalBox: {
+        backgroundColor: '#1e1e1e', borderRadius: '16px', padding: '28px',
+        width: '360px', maxHeight: '70vh', overflowY: 'auto',
     },
-    actionIcon: {
-        fontSize: '28px',
+    modalHeader: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px',
     },
-    actionLabel: {
-        fontSize: '13px',
-        fontWeight: '700',
-        color: '#fff',
-        textAlign: 'center',
+    modalTitle: { margin: 0, fontSize: '18px', fontWeight: '700', color: '#fff' },
+    modalClose: { background: 'none', border: 'none', color: '#b3b3b3', fontSize: '18px', cursor: 'pointer', padding: 0 },
+    modalEmpty: { color: '#b3b3b3', fontSize: '14px', textAlign: 'center', margin: '20px 0' },
+    userList: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' },
+    userLink: { display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' },
+    miniAvatar: { width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' },
+    miniAvatarFallback: {
+        width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#333',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '16px', fontWeight: '700', color: '#fff', flexShrink: 0,
     },
+    userUsername: { fontSize: '14px', fontWeight: '600', color: '#fff' },
 };
