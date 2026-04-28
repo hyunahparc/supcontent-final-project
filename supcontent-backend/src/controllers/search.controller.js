@@ -76,20 +76,7 @@ exports.search = async (req, res) => {
 
     const { rows } = await pool.query(query, params);
 
-    // 2. If local cache has results, return them
-    if (rows.length > 0) {
-      return res.json({
-        query:   q.trim(),
-        type,
-        source:  'cache',
-        total:   rows.length,
-        limit:   lim,
-        offset:  off,
-        results: rows,
-      });
-    }
-
-    // 3. Nothing in cache — fall back to TMDB
+    // Always query TMDB in parallel for full results
     let tmdbResults = [];
     if (type === 'all') {
       const [movies, series] = await Promise.all([
@@ -98,22 +85,28 @@ exports.search = async (req, res) => {
       ]);
       const maxLen = Math.max(movies.length, series.length);
       for (let i = 0; i < maxLen; i++) {
-        if (movies[i])  tmdbResults.push(movies[i]);
-        if (series[i])  tmdbResults.push(series[i]);
+        if (movies[i]) tmdbResults.push(movies[i]);
+        if (series[i]) tmdbResults.push(series[i]);
       }
-      tmdbResults = tmdbResults.slice(0, lim);
     } else {
       tmdbResults = await searchTMDB(q, type);
     }
 
+    // Merge: cache results take priority, fill rest with TMDB (no duplicates)
+    const cachedIds = new Set(rows.map(r => String(r.external_id)));
+    const merged = [
+      ...rows,
+      ...tmdbResults.filter(r => !cachedIds.has(String(r.external_id))),
+    ].slice(0, lim);
+
     return res.json({
       query:   q.trim(),
       type,
-      source:  'tmdb',
-      total:   tmdbResults.length,
+      source:  'merged',
+      total:   merged.length,
       limit:   lim,
       offset:  off,
-      results: tmdbResults,
+      results: merged,
     });
 
   } catch (err) {
