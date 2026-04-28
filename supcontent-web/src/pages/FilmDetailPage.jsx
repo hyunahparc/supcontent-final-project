@@ -3,22 +3,27 @@ import { useParams } from 'react-router-dom';
 import { getFilmById } from '../api/films';
 import { useAuth } from '../context/AuthContext';
 import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
+import { getMyLists, addFilmToList, createList } from '../api/lists';
 import ReviewsSection from '../components/ReviewsSection';
 
-const POSTER_BASE   = 'https://image.tmdb.org/t/p/w500';
+const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
-const PROFILE_BASE  = 'https://image.tmdb.org/t/p/w185';
+const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 
 const STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
 
 export default function FilmDetailPage() {
     const { id } = useParams();
     const { user } = useAuth();
-    const [film, setFilm]                   = useState(null);
-    const [loading, setLoading]             = useState(true);
-    const [error, setError]                 = useState(null);
+    const [film, setFilm] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [collectionStatus, setCollectionStatus] = useState(null);
-    const [showStatusMenu, setShowStatusMenu]     = useState(false);
+    const [showStatusMenu, setShowStatusMenu] = useState(false);
+    const [myLists, setMyLists] = useState([]);
+    const [showListMenu, setShowListMenu] = useState(false);
+    const [listFeedback, setListFeedback] = useState(null);
+    const [newListName, setNewListName] = useState('');
 
     // Fetch film data
     useEffect(() => {
@@ -30,14 +35,35 @@ export default function FilmDetailPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    // Fetch current collection status if logged in
+    // Fetch current collection status and user's lists if logged in
     useEffect(() => {
         if (user) {
             getCollectionStatus(id).then(setCollectionStatus);
+            getMyLists().then(setMyLists).catch(() => {});
         } else {
             setCollectionStatus(null);
+            setMyLists([]);
         }
     }, [id, user]);
+
+    async function handleAddToList(listId) {
+        try {
+            await addFilmToList(listId, id);
+            setListFeedback('Added!');
+        } catch {
+            setListFeedback('Already in list.');
+        }
+        setShowListMenu(false);
+        setTimeout(() => setListFeedback(null), 2000);
+    }
+
+    async function handleCreateList(e) {
+        e.preventDefault();
+        if (!newListName.trim()) return;
+        const created = await createList(newListName.trim(), false);
+        setMyLists(prev => [created, ...prev]);
+        setNewListName('');
+    }
 
     async function handleStatusSelect(status) {
         // Clicking the active status removes the film from the collection
@@ -129,6 +155,41 @@ export default function FilmDetailPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Add to list button — logged-in users only */}
+                        {user && (
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => setShowListMenu(m => !m)}
+                                    style={styles.collectionBtn}
+                                >
+                                    {listFeedback ?? '+ List'}
+                                </button>
+                                {showListMenu && (
+                                    <div style={styles.statusMenu}>
+                                        {myLists.map(list => (
+                                            <button
+                                                key={list.list_id}
+                                                onClick={() => handleAddToList(list.list_id)}
+                                                style={styles.statusOption}
+                                            >
+                                                {list.name}
+                                            </button>
+                                        ))}
+                                        {/* Inline create new list */}
+                                        <form onSubmit={handleCreateList} style={styles.inlineForm}>
+                                            <input
+                                                style={styles.inlineInput}
+                                                placeholder="New list…"
+                                                value={newListName}
+                                                onChange={e => setNewListName(e.target.value)}
+                                            />
+                                            <button type="submit" style={styles.inlineBtn}>+</button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     {film.director && (
@@ -331,9 +392,39 @@ const styles = {
         padding: '12px 16px',
         textAlign: 'left',
         border: 'none',
+        backgroundColor: 'transparent',
         color: '#fff',
         fontSize: '14px',
         fontWeight: '400',
+        cursor: 'pointer',
+        fontFamily: font,
+    },
+    inlineForm: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        padding: '8px 12px',
+        borderTop: '1px solid #2a2a2a',
+    },
+    inlineInput: {
+        flex: 1,
+        padding: '6px 10px',
+        backgroundColor: '#222',
+        border: '1px solid #444',
+        borderRadius: '6px',
+        color: '#fff',
+        fontSize: '13px',
+        fontFamily: font,
+        outline: 'none',
+    },
+    inlineBtn: {
+        padding: '6px 12px',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        border: 'none',
+        borderRadius: '6px',
+        fontSize: '14px',
+        fontWeight: '700',
         cursor: 'pointer',
         fontFamily: font,
     },

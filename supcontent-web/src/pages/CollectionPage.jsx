@@ -12,6 +12,7 @@ export default function CollectionPage() {
     const [activeStatus, setActiveStatus] = useState(null);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [hoveredId, setHoveredId] = useState(null);
 
     const isOwner = user?.user_id === parseInt(id);
 
@@ -57,7 +58,14 @@ export default function CollectionPage() {
                         <Link
                             key={item.collection_id}
                             to={`/films/${item.external_id}`}
-                            style={styles.card}
+                            style={{
+                                ...styles.card,
+                                opacity: hoveredId === item.collection_id ? 0.8 : 1,
+                                transform: hoveredId === item.collection_id ? 'scale(1.03)' : 'scale(1)',
+                                transition: 'opacity 0.15s, transform 0.15s',
+                            }}
+                            onMouseEnter={() => setHoveredId(item.collection_id)}
+                            onMouseLeave={() => setHoveredId(null)}
                         >
                             {item.full_data?.poster_path ? (
                                 <img

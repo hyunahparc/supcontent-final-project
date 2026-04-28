@@ -2,18 +2,17 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useNavigate, Link } from 'react-router-dom';
 
-// Pages existantes (inchangées)
-import FilmDetailPage    from './pages/FilmDetailPage';
-import LoginPage         from './pages/LoginPage';
-import RegisterPage      from './pages/RegisterPage';
+import FilmDetailPage from './pages/FilmDetailPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
-import CollectionPage    from './pages/CollectionPage';
-
-// Nouvelles pages
-import DashboardPage       from './pages/DashboardPage';
+import CollectionPage from './pages/CollectionPage';
+import DashboardPage from './pages/DashboardPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
+import ListsPage from './pages/ListsPage';
+import ListDetailPage from './pages/ListDetailPage';
 
-import SearchBar   from './components/SearchBar';
+import SearchBar from './components/SearchBar';
 import { useAuth } from './context/AuthContext';
 
 export default function App() {
@@ -36,6 +35,9 @@ export default function App() {
                             <>
                                 <Link to={`/users/${user.user_id}/collection`} style={styles.navLink}>
                                     Ma collection
+                                </Link>
+                                <Link to="/lists" style={styles.navLink}>
+                                    Mes listes
                                 </Link>
                                 <Link to="/dashboard" style={styles.navLink}>
                                     Tableau de bord
@@ -62,16 +64,17 @@ export default function App() {
                     element={user ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />}
                 />
 
-                {/* ── Routes existantes (inchangées) ── */}
-                <Route path="/films/:id"             element={<FilmDetailPage />} />
-                <Route path="/users/:id/collection"  element={<CollectionPage />} />
-                <Route path="/login"                 element={<LoginPage />} />
-                <Route path="/register"              element={<RegisterPage />} />
-                <Route path="/oauth/callback"        element={<OAuthCallbackPage />} />
+                <Route path="/films/:id" element={<FilmDetailPage />} />
+                <Route path="/users/:id/collection" element={<CollectionPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
                 {/* ── Nouvelles routes profil ── */}
-                <Route path="/dashboard"             element={<DashboardPage />} />
-                <Route path="/settings/profile"      element={<ProfileSettingsPage />} />
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route path="/settings/profile" element={<ProfileSettingsPage />} />
+                <Route path="/lists" element={<ListsPage />} />
+                <Route path="/lists/:id" element={<ListDetailPage />} />
             </Routes>
         </>
     );
@@ -83,8 +86,6 @@ const styles = {
     header: {
         width: '100%',
         padding: '14px 24px',
-        borderBottom: '1px solid #1f1f1f',
-        backgroundColor: '#121212',
         borderBottom: '1px solid #1f1f1f',
         backgroundColor: '#121212',
         boxSizing: 'border-box',
