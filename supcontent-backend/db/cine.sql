@@ -57,7 +57,25 @@ CREATE TABLE review_comments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. COLLECTIONS
+-- 5. CUSTOM_LISTS
+CREATE TABLE custom_lists (
+    list_id    SERIAL PRIMARY KEY,
+    user_id    INT  NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    name       VARCHAR(100) NOT NULL,
+    is_public  BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 5a. CUSTOM_LIST_ITEMS
+CREATE TABLE custom_list_items (
+    list_id     INT    NOT NULL REFERENCES custom_lists(list_id) ON DELETE CASCADE,
+    external_id BIGINT NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    added_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (list_id, external_id)
+);
+
+-- 6. COLLECTIONS
 CREATE TABLE collections (
     collection_id SERIAL PRIMARY KEY,
     user_id       INT         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,

@@ -23,12 +23,14 @@ const searchRouter = require('./src/routes/search.route');
 const collectionsRouter = require('./src/routes/collections.route');
 const usersRouter = require('./src/routes/users.route');
 const reviewsRouter = require('./src/routes/reviews.route');
+const listsRouter = require('./src/routes/lists.route');
 app.use('/api/search', searchRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/films', filmsRouter);
 app.use('/api/collections', collectionsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/reviews', reviewsRouter);
+app.use('/api/lists', listsRouter);
 
 // Swagger
 const swaggerDocument = yaml.load(fs.readFileSync('./swagger.yaml', 'utf8'));

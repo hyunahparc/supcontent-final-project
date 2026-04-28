@@ -14,6 +14,8 @@ const {
     deleteAccount,
 } = require('../controllers/users.controller');
 
+const { getLists } = require('../controllers/lists.controller');
+
 const router = express.Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ router.delete('/me',       auth, deleteAccount);       // Supprimer le compte
 router.get('/:id/profile',    getProfile);             // Profil public
 router.get('/:id/stats',      getProfileStats);        // Stats de collection
 router.get('/:id/collection', getLibrary);             // Collection (existant)
+router.get('/:id/lists',     getLists);                // Public lists
 
 module.exports = router;
 
