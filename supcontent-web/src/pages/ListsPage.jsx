@@ -178,11 +178,13 @@ export default function ListsPage() {
 
 const styles = {
     page: {
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '40px 40px 60px',
+        fontFamily: font,
         backgroundColor: '#121212',
         minHeight: '100vh',
         color: '#fff',
-        fontFamily: font,
-        paddingBottom: '60px',
     },
     state: {
         backgroundColor: '#121212',
@@ -195,14 +197,13 @@ const styles = {
         fontFamily: font,
     },
     inner: {
-        maxWidth: '1100px',
+        maxWidth: '1200px',
         margin: '0 auto',
-        padding: '48px 40px',
     },
     heading: {
-        fontSize: '32px',
+        fontSize: '24px',
         fontWeight: '700',
-        margin: '0 0 32px',
+        margin: '0 0 24px',
     },
     createForm: {
         display: 'flex',
@@ -282,7 +283,7 @@ const styles = {
         marginBottom: '4px',
     },
     listName: {
-        fontSize: '16px',
+        fontSize: '13px',
         fontWeight: '700',
         color: '#fff',
         whiteSpace: 'nowrap',
