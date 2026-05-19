@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import ListsPage from './pages/ListsPage';
 import ListDetailPage from './pages/ListDetailPage';
+import HomePage from './pages/HomePage';
 
 import SearchBar from './components/SearchBar';
 import { useAuth } from './context/AuthContext';
@@ -57,11 +58,7 @@ export default function App() {
             </header>
 
             <Routes>
-                {/* ── Root: redirect based on auth state ── */}
-                <Route
-                    path="/"
-                    element={user ? <Navigate to={`/users/${user.user_id}/profile`} replace /> : <Navigate to="/login" replace />}
-                />
+                <Route path="/" element={<HomePage />} />
 
                 <Route path="/films/:id" element={<FilmDetailPage />} />
                 <Route path="/users/:id/collection" element={<CollectionPage />} />
