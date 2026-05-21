@@ -1,6 +1,8 @@
 // App.jsx — main routing and navigation bar
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getUnreadCount } from './api/notifications';
 
 import FilmDetailPage from './pages/FilmDetailPage';
 import LoginPage from './pages/LoginPage';
@@ -12,6 +14,8 @@ import ProfileSettingsPage from './pages/ProfileSettingsPage';
 import ListsPage from './pages/ListsPage';
 import ListDetailPage from './pages/ListDetailPage';
 import HomePage from './pages/HomePage';
+import FeedPage from './pages/FeedPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 import SearchBar from './components/SearchBar';
 import { useAuth } from './context/AuthContext';
@@ -19,6 +23,15 @@ import { useAuth } from './context/AuthContext';
 export default function App() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        if (!user) { setUnreadCount(0); return; }
+        const fetch = () => getUnreadCount().then(d => setUnreadCount(d.count)).catch(() => {});
+        fetch();
+        const interval = setInterval(fetch, 30000);
+        return () => clearInterval(interval);
+    }, [user]);
 
     function handleLogout() {
         logout();
@@ -34,6 +47,12 @@ export default function App() {
                     <div style={styles.headerRight}>
                         {user ? (
                             <>
+                                <Link to="/feed" style={styles.navLink}>
+                                    Feed
+                                </Link>
+                                <Link to="/notifications" style={styles.navLink}>
+                                    🔔{unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
+                                </Link>
                                 <Link to={`/users/${user.user_id}/collection`} style={styles.navLink}>
                                     My Collection
                                 </Link>
@@ -69,6 +88,8 @@ export default function App() {
                 {/* ── Profile routes ── */}
                 <Route path="/users/:id/profile" element={<DashboardPage />} />
                 <Route path="/settings/profile" element={<ProfileSettingsPage />} />
+                <Route path="/feed" element={<FeedPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />
             </Routes>
@@ -135,6 +156,21 @@ const styles = {
         color: '#b3b3b3',
         textDecoration: 'none',
         letterSpacing: '0.3px',
+    },
+    badge: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        fontSize: '10px',
+        fontWeight: '700',
+        borderRadius: '9999px',
+        minWidth: '16px',
+        height: '16px',
+        padding: '0 4px',
+        marginLeft: '3px',
+        verticalAlign: 'middle',
     },
     loginLink: {
         padding: '8px 20px',
