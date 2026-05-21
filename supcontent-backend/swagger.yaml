@@ -199,7 +199,7 @@ paths:
                                     example: 550
                                 status:
                                     type: string
-                                    enum: ['À voir', 'En cours', 'Terminé', 'Abandonné']
+                                    enum: [To Watch, Watching, Completed, Dropped]
             responses:
                 '200':
                     description: Collection entry upserted
@@ -267,7 +267,7 @@ paths:
                   name: status
                   schema:
                       type: string
-                      enum: ['À voir', 'En cours', 'Terminé', 'Abandonné']
+                      enum: [To Watch, Watching, Completed, Dropped]
             responses:
                 '200':
                     description: List of collection items
@@ -693,3 +693,187 @@ paths:
                     description: Film not found
                 '500':
                     description: Server error
+
+    /feed:
+        get:
+            tags:
+                - Feed
+            summary: Get activity feed from followed users
+            description: Returns recent review and collection activities from users followed by the authenticated user.
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 20
+                      maximum: 50
+                  description: Maximum number of activities to return
+                - in: query
+                  name: offset
+                  schema:
+                      type: integer
+                      default: 0
+                  description: Number of activities to skip
+            responses:
+                '200':
+                    description: Feed activities
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    limit:
+                                        type: integer
+                                    offset:
+                                        type: integer
+                                    total:
+                                        type: integer
+                                    results:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                activity_id:
+                                                    type: integer
+                                                activity_type:
+                                                    type: string
+                                                    enum: [review, collection]
+                                                metadata:
+                                                    type: object
+                                                    example:
+                                                        rating: 4.5
+                                                        comment: Great movie!
+                                                        status: Completed
+                                                created_at:
+                                                    type: string
+                                                    format: date-time
+                                                actor_id:
+                                                    type: integer
+                                                actor_username:
+                                                    type: string
+                                                actor_avatar:
+                                                    type: string
+                                                    nullable: true
+                                                external_id:
+                                                    type: integer
+                                                    nullable: true
+                                                media_type:
+                                                    type: string
+                                                    nullable: true
+                                                full_data:
+                                                    type: object
+                                                    nullable: true
+                                                review_id:
+                                                    type: integer
+                                                    nullable: true
+                                                rating:
+                                                    type: number
+                                                    nullable: true
+                                                comment:
+                                                    type: string
+                                                    nullable: true
+                '401':
+                    description: Unauthorized
+
+    /notifications:
+        get:
+            tags:
+                - Notifications
+            summary: Get current user's notifications
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: List of notifications
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        notification_id:
+                                            type: integer
+                                        type:
+                                            type: string
+                                            enum: [like, comment, follow]
+                                        is_read:
+                                            type: boolean
+                                        created_at:
+                                            type: string
+                                            format: date-time
+                                        media_id:
+                                            type: integer
+                                            nullable: true
+                                        review_id:
+                                            type: integer
+                                            nullable: true
+                                        source_user_id:
+                                            type: integer
+                                            nullable: true
+                                        source_username:
+                                            type: string
+                                            nullable: true
+                                        source_avatar:
+                                            type: string
+                                            nullable: true
+                                        media_title:
+                                            type: string
+                                            nullable: true
+                '401':
+                    description: Unauthorized
+
+    /notifications/unread-count:
+        get:
+            tags:
+                - Notifications
+            summary: Get unread notification count
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Unread notification count
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    count:
+                                        type: integer
+                '401':
+                    description: Unauthorized
+
+    /notifications/read-all:
+        patch:
+            tags:
+                - Notifications
+            summary: Mark all notifications as read
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: All notifications marked as read
+                '401':
+                    description: Unauthorized
+
+    /notifications/{id}/read:
+        patch:
+            tags:
+                - Notifications
+            summary: Mark one notification as read
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                  description: Notification ID
+            responses:
+                '200':
+                    description: Notification marked as read
+                '401':
+                    description: Unauthorized
