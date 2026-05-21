@@ -1,5 +1,6 @@
 // Follow controller — manage subscriptions between users
 const db = require('../config/db');
+const { NOTIFICATION_TYPES, createNotification } = require('../services/notification.service');
 
 // POST /api/users/:id/follow  (authenticated)
 const followUser = async (req, res) => {
@@ -10,12 +11,21 @@ const followUser = async (req, res) => {
     if (followerId === followeeId) return res.status(400).json({ message: 'You cannot follow yourself.' });
 
     try {
-        await db.query(
+        const { rowCount } = await db.query(
             `INSERT INTO follows (follower_id, followee_id)
              VALUES ($1, $2)
              ON CONFLICT DO NOTHING`,
             [followerId, followeeId]
         );
+
+        if (rowCount > 0) {
+            await createNotification({
+                userId: followeeId,
+                type: NOTIFICATION_TYPES.FOLLOW,
+                sourceUserId: followerId,
+            });
+        }
+
         return res.status(201).json({ message: 'Followed successfully.' });
     } catch (err) {
         console.error('[followUser]', err.message);

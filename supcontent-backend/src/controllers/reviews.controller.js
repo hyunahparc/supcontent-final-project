@@ -1,4 +1,6 @@
 const db = require('../config/db');
+const { ACTIVITY_TYPES, createActivity } = require('../services/activity.service');
+const { NOTIFICATION_TYPES, createNotification } = require('../services/notification.service');
 
 // GET /api/reviews/:external_id
 // Returns all reviews for a film with like count, comment count, and whether the current user liked it
@@ -54,8 +56,8 @@ const upsertReview = async (req, res) => {
     if (!external_id) {
         return res.status(400).json({ message: 'external_id is required.' });
     }
-    if (rating !== undefined && (rating < 1 || rating > 5)) {
-        return res.status(400).json({ message: 'Rating must be between 1 and 5.' });
+    if (rating !== undefined && (rating < 0.5 || rating > 5)) {
+        return res.status(400).json({ message: 'Rating must be between 0.5 and 5.' });
     }
 
     try {
@@ -67,6 +69,18 @@ const upsertReview = async (req, res) => {
              RETURNING *`,
             [user_id, external_id, rating ?? null, comment ?? null]
         );
+
+        await createActivity({
+            userId: user_id,
+            activityType: ACTIVITY_TYPES.REVIEW,
+            mediaId: external_id,
+            reviewId: rows[0].review_id,
+            metadata: {
+                rating: rows[0].rating,
+                comment: rows[0].comment,
+            },
+        });
+
         return res.json(rows[0]);
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
@@ -105,18 +119,29 @@ const toggleLike = async (req, res) => {
         );
 
         if (rows.length > 0) {
-            // Already liked → unlike
             await db.query(
                 'DELETE FROM review_likes WHERE review_id = $1 AND user_id = $2',
                 [review_id, user_id]
             );
             return res.json({ liked: false });
         } else {
-            // Not liked → like
             await db.query(
                 'INSERT INTO review_likes (review_id, user_id) VALUES ($1, $2)',
                 [review_id, user_id]
             );
+            const { rows: reviewRows } = await db.query(
+                'SELECT user_id, external_id FROM reviews WHERE review_id = $1',
+                [review_id]
+            );
+            if (reviewRows.length > 0) {
+                await createNotification({
+                    userId: reviewRows[0].user_id,
+                    type: NOTIFICATION_TYPES.LIKE,
+                    sourceUserId: user_id,
+                    mediaId: reviewRows[0].external_id,
+                    reviewId: Number(review_id),
+                });
+            }
             return res.json({ liked: true });
         }
     } catch (err) {
@@ -165,6 +190,19 @@ const addComment = async (req, res) => {
              JOIN users u ON u.user_id = i.user_id`,
             [review_id, user_id, content.trim()]
         );
+        const { rows: reviewRows } = await db.query(
+            'SELECT user_id, external_id FROM reviews WHERE review_id = $1',
+            [review_id]
+        );
+        if (reviewRows.length > 0) {
+            await createNotification({
+                userId: reviewRows[0].user_id,
+                type: NOTIFICATION_TYPES.COMMENT,
+                sourceUserId: user_id,
+                mediaId: reviewRows[0].external_id,
+                reviewId: Number(review_id),
+            });
+        }
         return res.json(rows[0]);
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
