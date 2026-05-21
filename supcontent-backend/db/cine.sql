@@ -85,7 +85,7 @@ CREATE TABLE collections (
     CONSTRAINT collections_user_media_unique UNIQUE (user_id, external_id)
 );
 
--- 6. NOTIFICATIONS
+-- 7. NOTIFICATIONS
 CREATE TABLE notifications (
     notification_id SERIAL PRIMARY KEY,
     user_id         INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -97,7 +97,7 @@ CREATE TABLE notifications (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 7. MESSAGES
+-- 8. MESSAGES
 CREATE TABLE messages (
     message_id  SERIAL PRIMARY KEY,
     sender_id   INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -106,7 +106,7 @@ CREATE TABLE messages (
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 8. ACTIVITY_LOG
+-- 9. ACTIVITY_LOG
 CREATE TABLE activity_log (
     activity_id    SERIAL PRIMARY KEY,
     user_id        INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
@@ -114,10 +114,11 @@ CREATE TABLE activity_log (
     target_user_id INT    REFERENCES users(user_id) ON DELETE SET NULL,
     media_id       BIGINT REFERENCES media_cache(external_id) ON DELETE CASCADE,
     review_id      INT    REFERENCES reviews(review_id) ON DELETE CASCADE,
+    metadata       JSONB NOT NULL DEFAULT '{}'::jsonb,
     created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 9. MODERATION
+-- 10. MODERATION
 CREATE TABLE moderation_reports (
     report_id   SERIAL PRIMARY KEY,
     review_id   INT NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,

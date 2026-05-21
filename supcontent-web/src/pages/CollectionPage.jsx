@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getLibrary } from '../api/collections';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
-const STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
+const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
 
 export default function CollectionPage() {
     const { id } = useParams();
