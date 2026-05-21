@@ -1,0 +1,253 @@
+import { useEffect, useState } from 'react';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { getNotifications, markAllRead, markOneRead } from '../api/notifications';
+
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
+function timeAgo(dateStr) {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1)  return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24)  return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    if (days < 7)  return `${days}d ago`;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function notificationText(n) {
+    if (n.type === 'like')    return `${n.source_username} liked your review`;
+    if (n.type === 'comment') return `${n.source_username} commented on your review`;
+    if (n.type === 'follow')  return `${n.source_username} started following you`;
+    return 'New notification';
+}
+
+function notificationLink(n) {
+    if (n.type === 'follow') return `/users/${n.source_user_id}/profile`;
+    if (n.media_id)          return `/films/${n.media_id}`;
+    return null;
+}
+
+export default function NotificationsPage() {
+    const { user } = useAuth();
+    const navigate = useNavigate();
+    const [notifications, setNotifications] = useState([]);
+    const [loading, setLoading]             = useState(true);
+    const [error, setError]                 = useState(null);
+
+    useEffect(() => {
+        if (!user) return;
+        getNotifications()
+            .then(setNotifications)
+            .catch(() => setError('Unable to load notifications.'))
+            .finally(() => setLoading(false));
+    }, [user]);
+
+    async function handleMarkAllRead() {
+        await markAllRead();
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    }
+
+    async function handleClick(n) {
+        if (!n.is_read) {
+            await markOneRead(n.notification_id);
+            setNotifications(prev =>
+                prev.map(x => x.notification_id === n.notification_id ? { ...x, is_read: true } : x)
+            );
+        }
+        const link = notificationLink(n);
+        if (link) navigate(link);
+    }
+
+    if (!user)   return <Navigate to="/login" replace />;
+    if (loading) return <div style={s.state}>Loading...</div>;
+    if (error)   return <div style={s.state}>{error}</div>;
+
+    const hasUnread = notifications.some(n => !n.is_read);
+
+    return (
+        <div style={s.page}>
+            <div style={s.header}>
+                <h1 style={s.heading}>Notifications</h1>
+                {hasUnread && (
+                    <button style={s.markAllBtn} onClick={handleMarkAllRead}>
+                        Mark all as read
+                    </button>
+                )}
+            </div>
+
+            {notifications.length === 0 ? (
+                <div style={s.emptyBox}>
+                    <p style={s.emptyTitle}>No notifications yet</p>
+                    <p style={s.emptyHint}>You'll be notified when someone likes or comments on your review, or follows you.</p>
+                </div>
+            ) : (
+                <div style={s.list}>
+                    {notifications.map(n => (
+                        <div
+                            key={n.notification_id}
+                            style={{ ...s.card, ...(n.is_read ? {} : s.cardUnread) }}
+                            onClick={() => handleClick(n)}
+                        >
+                            <Link
+                                to={`/users/${n.source_user_id}/profile`}
+                                style={s.avatarLink}
+                                onClick={e => e.stopPropagation()}
+                            >
+                                {n.source_avatar ? (
+                                    <img src={n.source_avatar} alt={n.source_username} style={s.avatar} />
+                                ) : (
+                                    <div style={s.avatarFallback}>
+                                        {n.source_username?.charAt(0).toUpperCase() ?? '?'}
+                                    </div>
+                                )}
+                            </Link>
+
+                            <div style={s.content}>
+                                <p style={s.text}>{notificationText(n)}</p>
+                                {n.media_title && (
+                                    <p style={s.mediaTitle}>{n.media_title}</p>
+                                )}
+                                <p style={s.time}>{timeAgo(n.created_at)}</p>
+                            </div>
+
+                            {!n.is_read && <div style={s.dot} />}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+const s = {
+    page: {
+        maxWidth: '900px',
+        margin: '0 auto',
+        padding: '40px 40px 60px',
+        fontFamily: font,
+        color: '#fff',
+        minHeight: '100vh',
+    },
+    state: {
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#b3b3b3',
+        fontSize: '14px',
+        fontFamily: font,
+    },
+    header: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '28px',
+    },
+    heading: {
+        margin: 0,
+        fontSize: '24px',
+        fontWeight: '700',
+    },
+    markAllBtn: {
+        padding: '8px 18px',
+        border: '1px solid #4d4d4d',
+        borderRadius: '9999px',
+        backgroundColor: 'transparent',
+        color: '#b3b3b3',
+        fontSize: '13px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        fontFamily: font,
+    },
+    emptyBox: {
+        padding: '60px 40px',
+        backgroundColor: '#1e1e1e',
+        borderRadius: '16px',
+        textAlign: 'center',
+    },
+    emptyTitle: {
+        margin: '0 0 8px',
+        fontSize: '18px',
+        fontWeight: '700',
+        color: '#fff',
+    },
+    emptyHint: {
+        margin: 0,
+        fontSize: '14px',
+        color: '#4d4d4d',
+    },
+    list: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+    },
+    card: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        padding: '16px 20px',
+        backgroundColor: '#1e1e1e',
+        borderRadius: '16px',
+        cursor: 'pointer',
+    },
+    cardUnread: {
+        backgroundColor: '#1a2a1a',
+    },
+    avatarLink: {
+        flexShrink: 0,
+        textDecoration: 'none',
+    },
+    avatar: {
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        objectFit: 'cover',
+        display: 'block',
+        border: '2px solid #2a2a2a',
+    },
+    avatarFallback: {
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        backgroundColor: '#333',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '17px',
+        fontWeight: '700',
+        color: '#fff',
+        border: '2px solid #2a2a2a',
+        flexShrink: 0,
+    },
+    content: {
+        flex: 1,
+        minWidth: 0,
+    },
+    text: {
+        margin: '0 0 2px',
+        fontSize: '14px',
+        fontWeight: '600',
+        color: '#fff',
+        lineHeight: 1.4,
+    },
+    mediaTitle: {
+        margin: '0 0 4px',
+        fontSize: '13px',
+        color: '#b3b3b3',
+    },
+    time: {
+        margin: 0,
+        fontSize: '12px',
+        color: '#4d4d4d',
+    },
+    dot: {
+        width: '8px',
+        height: '8px',
+        borderRadius: '50%',
+        backgroundColor: '#1ed760',
+        flexShrink: 0,
+    },
+};
