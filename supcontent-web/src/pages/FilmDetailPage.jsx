@@ -10,7 +10,7 @@ const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 
-const STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
+const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
 
 export default function FilmDetailPage() {
     const { id } = useParams();

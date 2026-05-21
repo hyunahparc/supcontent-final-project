@@ -1,6 +1,7 @@
 const db = require('../config/db');
+const { ACTIVITY_TYPES, createActivity } = require('../services/activity.service');
 
-const VALID_STATUSES = ['À voir', 'En cours', 'Terminé', 'Abandonné'];
+const VALID_STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
 
 // GET /api/users/:id/library?status=xxx
 const getLibrary = async (req, res) => {
@@ -55,6 +56,14 @@ const upsertCollection = async (req, res) => {
              RETURNING *`,
             [user_id, external_id, status]
         );
+
+        await createActivity({
+            userId: user_id,
+            activityType: ACTIVITY_TYPES.COLLECTION,
+            mediaId: external_id,
+            metadata: { status },
+        });
+
         return res.json(rows[0]);
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
