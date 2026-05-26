@@ -23,3 +23,29 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* ── Header ── */
+.header-nav-link {
+  transition: color 0.15s;
+}
+.header-nav-link:hover {
+  color: #fff !important;
+}
+.header-nav-link.active {
+  color: #fff !important;
+}
+
+.header-avatar-link {
+  transition: opacity 0.15s;
+}
+.header-avatar-link:hover {
+  opacity: 0.75;
+}
+
+.header-dropdown-link {
+  transition: background-color 0.15s, color 0.15s;
+}
+.header-dropdown-link:hover {
+  background-color: #2a2a2a !important;
+  color: #fff !important;
+}
