@@ -39,7 +39,7 @@ const login = (req, res, next) => {
 
         const token = generateToken(user);
 
-        return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username } });
+        return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username, avatar: user.avatar ?? null } });
     })(req, res, next);
 };
 
@@ -48,7 +48,7 @@ const googleCallback = (req, res) => {
     const user = req.user;
 
     const token = generateToken(user);
-    const userData = encodeURIComponent(JSON.stringify({ user_id: user.user_id, email: user.email, username: user.username }));
+    const userData = encodeURIComponent(JSON.stringify({ user_id: user.user_id, email: user.email, username: user.username, avatar: user.avatar ?? null }));
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     return res.redirect(`${clientUrl}/oauth/callback?token=${token}&user=${userData}`);
