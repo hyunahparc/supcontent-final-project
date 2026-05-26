@@ -10,7 +10,6 @@ export default function SearchBar() {
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
     const [open,    setOpen]    = useState(false);
-    const [type,    setType]    = useState('all');
 
     const debounceRef = useRef(null);
     const wrapperRef  = useRef(null);
@@ -26,7 +25,7 @@ export default function SearchBar() {
         debounceRef.current = setTimeout(async () => {
             setLoading(true);
             try {
-                const data = await searchMedia(query, type, 10);
+                const data = await searchMedia(query, 'all', 10);
                 setResults(data);
                 setOpen(true);
             } catch {
@@ -36,7 +35,7 @@ export default function SearchBar() {
             }
         }, 300);
         return () => clearTimeout(debounceRef.current);
-    }, [query, type]);
+    }, [query]);
 
     useEffect(() => {
         function handleClickOutside(e) {
@@ -60,36 +59,24 @@ export default function SearchBar() {
 
     return (
         <div ref={wrapperRef} style={styles.wrapper}>
-            <div style={styles.inputRow}>
-                <div style={styles.inputWrap}>
-                    <svg style={styles.searchIcon} viewBox="0 0 20 20" fill="none">
-                        <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
-                        <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                    <input
-                        type="text"
-                        placeholder="Search for a film or series…"
-                        value={query}
-                        onChange={e => setQuery(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        onFocus={() => results.length > 0 && setOpen(true)}
-                        style={styles.input}
-                        aria-label="Recherche"
-                        aria-autocomplete="list"
-                        aria-expanded={open}
-                    />
-                    {loading && <span style={styles.spinner}>⟳</span>}
-                </div>
-                <select
-                    value={type}
-                    onChange={e => setType(e.target.value)}
-                    style={styles.select}
-                    aria-label="Filtrer par type"
-                >
-                    <option value="all">All</option>
-                    <option value="Movie">Movies</option>
-                    <option value="Series">Series</option>
-                </select>
+            <div style={styles.inputWrap}>
+                <svg style={styles.searchIcon} viewBox="0 0 20 20" fill="none">
+                    <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
+                    <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <input
+                    type="text"
+                    placeholder="Search for a film or series…"
+                    value={query}
+                    onChange={e => setQuery(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onFocus={() => results.length > 0 && setOpen(true)}
+                    style={styles.input}
+                    aria-label="Search"
+                    aria-autocomplete="list"
+                    aria-expanded={open}
+                />
+                {loading && <span style={styles.spinner}>⟳</span>}
             </div>
 
             {open && (
@@ -129,12 +116,8 @@ export default function SearchBar() {
 const styles = {
     wrapper: {
         position: 'relative',
-        width: '480px',
+        width: '100%',
         fontFamily: font,
-    },
-    inputRow: {
-        display: 'flex',
-        gap: '8px',
     },
     inputWrap: {
         flex: 1,
@@ -166,18 +149,6 @@ const styles = {
         right: '14px',
         fontSize: '14px',
         color: '#b3b3b3',
-    },
-    select: {
-        padding: '10px 14px',
-        fontSize: '13px',
-        borderRadius: '500px',
-        border: 'none',
-        backgroundColor: '#1f1f1f',
-        color: '#fff',
-        cursor: 'pointer',
-        outline: 'none',
-        fontFamily: font,
-        fontWeight: '700',
     },
     dropdown: {
         position: 'absolute',
