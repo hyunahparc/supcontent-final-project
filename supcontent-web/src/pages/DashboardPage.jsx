@@ -13,7 +13,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 
 export default function DashboardPage() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
 
     const resolvedId = Number(id);
@@ -249,6 +249,15 @@ export default function DashboardPage() {
                 </section>
 
 
+            {/* ── Logout ── */}
+            {isOwnProfile && (
+                <div style={s.logoutWrap}>
+                    <button onClick={() => { logout(); navigate('/login'); }} style={s.logoutBtn}>
+                        Sign Out
+                    </button>
+                </div>
+            )}
+
             {/* ── Followers / Following modal ── */}
             {modal && (
                 <div style={s.overlay} onClick={closeModal}>
@@ -434,6 +443,27 @@ const s = {
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '2px',
     },
     listCount: { fontSize: '12px', color: '#ccc' },
+
+    // Logout
+    logoutWrap: {
+        display: 'flex',
+        justifyContent: 'center',
+        paddingTop: '24px',
+        borderTop: '1px solid #2a2a2a',
+        marginTop: '8px',
+    },
+    logoutBtn: {
+        padding: '10px 32px',
+        fontSize: '13px',
+        fontWeight: '700',
+        color: '#b3b3b3',
+        backgroundColor: 'transparent',
+        border: '1px solid #3a3a3a',
+        borderRadius: '9999px',
+        cursor: 'pointer',
+        fontFamily: font,
+        letterSpacing: '0.5px',
+    },
 
     // Modal
     overlay: {
