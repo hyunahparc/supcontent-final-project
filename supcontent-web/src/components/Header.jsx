@@ -376,7 +376,7 @@ const styles = {
     right: {
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: '18px',
         flex: 1,
         justifyContent: 'flex-end',
     },

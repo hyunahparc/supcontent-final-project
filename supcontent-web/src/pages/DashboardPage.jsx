@@ -19,12 +19,12 @@ export default function DashboardPage() {
     const resolvedId = Number(id);
     const isOwnProfile = resolvedId === user?.user_id;
 
-    const [profile, setProfile]                   = useState(null);
-    const [lists, setLists]                       = useState([]);
-    const [collection, setCollection]             = useState([]);
-    const [loading, setLoading]                   = useState(true);
-    const [error, setError]                       = useState(null);
-    const [followLoading, setFollowLoading]       = useState(false);
+    const [profile, setProfile] = useState(null);
+    const [lists, setLists] = useState([]);
+    const [collection, setCollection] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [followLoading, setFollowLoading] = useState(false);
     const [showUnfollowMenu, setShowUnfollowMenu] = useState(false);
 
     // Modal: null | 'followers' | 'following'
@@ -138,7 +138,7 @@ export default function DashboardPage() {
 
                 {/* Own profile: edit button — Other profile: follow/unfollow */}
                 {isOwnProfile ? (
-                    <Link to="/settings/profile" style={s.editBtn}>✏ Edit profile</Link>
+                    <Link to="/settings/profile" style={s.editBtn}>Edit profile</Link>
                 ) : user && (
                     <div style={s.followWrap}>
                         {profile.is_following ? (
