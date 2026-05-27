@@ -1,39 +1,33 @@
-// Page de paramètres du profil — modification du nom, bio et photo
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../api/users';
 
-const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
-const MAX_BIO = 500; // caractères maximum pour la biographie
+const font    = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+const MAX_BIO = 500;
 
 export default function ProfileSettingsPage() {
     const { user, updateUser, logout } = useAuth();
     const navigate = useNavigate();
 
-    // ── État du formulaire ──────────────────────────────────────────────────
-    const [username,   setUsername]   = useState('');
-    const [bio,        setBio]        = useState('');
-    const [avatarUrl,  setAvatarUrl]  = useState('');    // URL courante affichée
-    const [avatarFile, setAvatarFile] = useState(null);  // fichier à uploader
-    const [preview,    setPreview]    = useState(null);  // aperçu local (blob URL)
-
-    // ── État de l'UI ───────────────────────────────────────────────────────
-    const [saving,         setSaving]         = useState(false);
+    const [username, setUsername] = useState('');
+    const [bio, setBio] = useState('');
+    const [avatarUrl, setAvatarUrl] = useState('');
+    const [avatarFile, setAvatarFile] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const [saving, setSaving] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
-    const [successMsg,     setSuccessMsg]     = useState('');
-    const [errorMsg,       setErrorMsg]       = useState('');
+    const [successMsg, setSuccessMsg] = useState('');
+    const [errorMsg, setErrorMsg] = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [focusedField,   setFocusedField]   = useState('');
+    const [focusedField, setFocusedField] = useState('');
 
     const fileInputRef = useRef(null);
 
-    // Redirection si non connecté
     useEffect(() => {
         if (!user) navigate('/login', { replace: true });
     }, [user, navigate]);
 
-    // Pré-remplissage du formulaire avec les données actuelles
     useEffect(() => {
         if (!user) return;
         getUserProfile(user.user_id)
@@ -43,136 +37,116 @@ export default function ProfileSettingsPage() {
                 setAvatarUrl(profile.avatar ?? '');
             })
             .catch(() => {
-                // En cas d'erreur, on utilise les données du contexte
                 setUsername(user.username ?? '');
                 setAvatarUrl(user.avatar ?? '');
             });
     }, [user]);
 
-    // Nettoyage de l'URL blob à la destruction du composant
     useEffect(() => {
         return () => {
             if (preview) URL.revokeObjectURL(preview);
         };
     }, [preview]);
 
-    // ── Sélection d'un fichier image ────────────────────────────────────────
     function handleFileChange(e) {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Vérification côté client du type
         const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!ALLOWED.includes(file.type)) {
-            setErrorMsg('Format non supporté. Utilisez JPEG, PNG, WebP ou GIF.');
+            setErrorMsg('Unsupported format. Please use JPEG, PNG, WebP or GIF.');
             return;
         }
-        // Vérification de la taille (5 Mo max)
         if (file.size > 5 * 1024 * 1024) {
-            setErrorMsg("L'image ne doit pas dépasser 5 Mo.");
+            setErrorMsg('Image must not exceed 5 MB.');
             return;
         }
 
         setErrorMsg('');
         setAvatarFile(file);
-        // Génération d'un aperçu local immédiat
         if (preview) URL.revokeObjectURL(preview);
         setPreview(URL.createObjectURL(file));
     }
 
-    // ── Upload de la photo ──────────────────────────────────────────────────
     async function handleAvatarUpload() {
         if (!avatarFile) return;
         setUploadingAvatar(true);
         setErrorMsg('');
         try {
             const updated = await uploadAvatar(avatarFile);
-            // Mise à jour du contexte global et des états locaux
             updateUser({ avatar: updated.avatar });
             setAvatarUrl(updated.avatar);
             setAvatarFile(null);
             if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
-            setSuccessMsg('Photo de profil mise à jour !');
+            setSuccessMsg('Profile picture updated!');
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch {
-            setErrorMsg("Erreur lors de l'upload. Veuillez réessayer.");
+            setErrorMsg('Upload failed. Please try again.');
         } finally {
             setUploadingAvatar(false);
         }
     }
 
-    // ── Sauvegarde du profil texte ──────────────────────────────────────────
     async function handleSaveProfile(e) {
         e.preventDefault();
         setErrorMsg('');
         setSuccessMsg('');
 
-        // Validation minimale côté client
         if (username.trim().length < 3) {
-            setErrorMsg("Le nom d'utilisateur doit contenir au moins 3 caractères.");
+            setErrorMsg('Username must be at least 3 characters.');
             return;
         }
         if (bio.length > MAX_BIO) {
-            setErrorMsg(`La biographie ne peut pas dépasser ${MAX_BIO} caractères.`);
+            setErrorMsg(`Bio cannot exceed ${MAX_BIO} characters.`);
             return;
         }
 
         setSaving(true);
         try {
             const updated = await updateMyProfile({ username: username.trim(), bio });
-            // Synchronisation du contexte d'auth
             updateUser({ username: updated.username, bio: updated.bio });
-            setSuccessMsg('Profil sauvegardé !');
+            setSuccessMsg('Profile saved!');
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch (err) {
-            setErrorMsg(
-                err.response?.data?.message || 'Erreur lors de la sauvegarde.'
-            );
+            setErrorMsg(err.response?.data?.message || 'Failed to save profile.');
         } finally {
             setSaving(false);
         }
     }
 
-    // ── Suppression du compte ───────────────────────────────────────────────
     async function handleDeleteAccount() {
         try {
             await deleteMyAccount();
             logout();
             navigate('/', { replace: true });
         } catch {
-            setErrorMsg('Erreur lors de la suppression du compte.');
+            setErrorMsg('Failed to delete account.');
             setShowDeleteModal(false);
         }
     }
 
     if (!user) return null;
 
-    // Image affichée : aperçu local > URL distante > initiale
     const displayedAvatar = preview || avatarUrl;
 
     return (
         <div style={s.page}>
-
-            {/* ── En-tête ── */}
             <div style={s.header}>
-                <Link to="/dashboard" style={s.backLink}>← Retour au tableau de bord</Link>
-                <h1 style={s.pageTitle}>Paramètres du profil</h1>
+                <Link to={`/users/${user.user_id}/profile`} style={s.backLink}>← Back to dashboard</Link>
+                <h1 style={s.pageTitle}>Profile Settings</h1>
             </div>
 
-            {/* ── Messages de feedback ── */}
             {successMsg && <div style={s.successBanner}>{successMsg}</div>}
             {errorMsg   && <div style={s.errorBanner}>{errorMsg}</div>}
 
-            {/* ── Section photo de profil ── */}
             <section style={s.card}>
-                <h2 style={s.cardTitle}>Photo de profil</h2>
+                <h2 style={s.cardTitle}>Profile picture</h2>
 
                 <div style={s.avatarSection}>
-                    {/* Aperçu de l'avatar */}
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         style={s.avatarBtn}
-                        title="Changer la photo"
+                        title="Change photo"
                         type="button"
                     >
                         {displayedAvatar ? (
@@ -182,7 +156,6 @@ export default function ProfileSettingsPage() {
                                 {user.username?.charAt(0).toUpperCase() ?? '?'}
                             </div>
                         )}
-                        {/* Overlay au survol */}
                         <div style={s.avatarOverlay}>📷</div>
                     </button>
 
@@ -199,9 +172,8 @@ export default function ProfileSettingsPage() {
                             onClick={() => fileInputRef.current?.click()}
                             style={s.secondaryBtn}
                         >
-                            Choisir une image
+                            Choose an image
                         </button>
-                        {/* Bouton de confirmation visible uniquement si un fichier est sélectionné */}
                         {avatarFile && (
                             <button
                                 type="button"
@@ -209,22 +181,20 @@ export default function ProfileSettingsPage() {
                                 disabled={uploadingAvatar}
                                 style={s.primaryBtn}
                             >
-                                {uploadingAvatar ? 'Upload en cours…' : '✓ Confirmer l\'upload'}
+                                {uploadingAvatar ? 'Uploading…' : '✓ Confirm upload'}
                             </button>
                         )}
-                        <p style={s.avatarHint}>JPEG, PNG, WebP ou GIF · max 5 Mo</p>
+                        <p style={s.avatarHint}>JPEG, PNG, WebP or GIF · max 5 MB</p>
                     </div>
                 </div>
             </section>
 
-            {/* ── Section informations ── */}
             <section style={s.card}>
-                <h2 style={s.cardTitle}>Informations</h2>
+                <h2 style={s.cardTitle}>Information</h2>
 
                 <form onSubmit={handleSaveProfile} style={s.form}>
-                    {/* Nom d'utilisateur */}
                     <div style={s.field}>
-                        <label style={s.label}>Nom d'utilisateur</label>
+                        <label style={s.label}>Username</label>
                         <input
                             type="text"
                             value={username}
@@ -234,14 +204,13 @@ export default function ProfileSettingsPage() {
                             maxLength={50}
                             required
                             style={inputStyle(focusedField === 'username')}
-                            placeholder="Votre nom d'utilisateur"
+                            placeholder="Your username"
                         />
                         <span style={s.charCount}>{username.length} / 50</span>
                     </div>
 
-                    {/* Biographie */}
                     <div style={s.field}>
-                        <label style={s.label}>Biographie</label>
+                        <label style={s.label}>Bio</label>
                         <textarea
                             value={bio}
                             onChange={e => setBio(e.target.value)}
@@ -249,7 +218,7 @@ export default function ProfileSettingsPage() {
                             onBlur={() => setFocusedField('')}
                             rows={4}
                             maxLength={MAX_BIO}
-                            placeholder="Parlez de vous en quelques mots…"
+                            placeholder="Tell us a little about yourself…"
                             style={{
                                 ...inputStyle(focusedField === 'bio'),
                                 resize: 'vertical',
@@ -269,34 +238,32 @@ export default function ProfileSettingsPage() {
                         disabled={saving}
                         style={{ ...s.primaryBtn, alignSelf: 'flex-start' }}
                     >
-                        {saving ? 'Sauvegarde…' : 'Sauvegarder les modifications'}
+                        {saving ? 'Saving…' : 'Save changes'}
                     </button>
                 </form>
             </section>
 
-            {/* ── Zone danger ── */}
             <section style={{ ...s.card, borderColor: '#3a1a1a' }}>
-                <h2 style={{ ...s.cardTitle, color: '#f3727f' }}>Zone de danger</h2>
+                <h2 style={{ ...s.cardTitle, color: '#f3727f' }}>Danger zone</h2>
                 <p style={s.dangerText}>
-                    La suppression de votre compte est définitive. Toutes vos données (collection, avis, commentaires) seront effacées.
+                    Deleting your account is permanent. All your data (collection, reviews, comments) will be erased.
                 </p>
                 <button
                     type="button"
                     onClick={() => setShowDeleteModal(true)}
                     style={s.dangerBtn}
                 >
-                    Supprimer mon compte
+                    Delete my account
                 </button>
             </section>
 
-            {/* ── Modal de confirmation de suppression ── */}
             {showDeleteModal && (
                 <div style={s.modalBackdrop}>
                     <div style={s.modal}>
-                        <h3 style={s.modalTitle}>Confirmer la suppression</h3>
+                        <h3 style={s.modalTitle}>Confirm deletion</h3>
                         <p style={s.modalText}>
-                            Êtes-vous sûr(e) de vouloir supprimer votre compte ?
-                            Cette action est <strong>irréversible</strong>.
+                            Are you sure you want to delete your account?
+                            This action is <strong>irreversible</strong>.
                         </p>
                         <div style={s.modalActions}>
                             <button
@@ -304,14 +271,14 @@ export default function ProfileSettingsPage() {
                                 onClick={() => setShowDeleteModal(false)}
                                 style={s.secondaryBtn}
                             >
-                                Annuler
+                                Cancel
                             </button>
                             <button
                                 type="button"
                                 onClick={handleDeleteAccount}
                                 style={s.dangerBtn}
                             >
-                                Oui, supprimer
+                                Yes, delete
                             </button>
                         </div>
                     </div>
@@ -321,7 +288,6 @@ export default function ProfileSettingsPage() {
     );
 }
 
-// ── Style dynamique pour les champs de formulaire ──────────────────────────
 function inputStyle(focused) {
     return {
         width: '100%',
@@ -338,7 +304,6 @@ function inputStyle(focused) {
     };
 }
 
-// ── Styles statiques ──────────────────────────────────────────────────────
 const s = {
     page: {
         maxWidth: '680px',
@@ -365,8 +330,6 @@ const s = {
         fontWeight: '700',
         letterSpacing: '-0.3px',
     },
-
-    // ── Bannières feedback
     successBanner: {
         padding: '12px 16px',
         backgroundColor: '#0d2b1a',
@@ -385,8 +348,6 @@ const s = {
         fontSize: '14px',
         marginBottom: '20px',
     },
-
-    // ── Cartes de section
     card: {
         backgroundColor: '#1e1e1e',
         borderRadius: '12px',
@@ -400,8 +361,6 @@ const s = {
         fontWeight: '700',
         color: '#fff',
     },
-
-    // ── Section avatar
     avatarSection: {
         display: 'flex',
         alignItems: 'center',
@@ -417,8 +376,6 @@ const s = {
         borderRadius: '50%',
         overflow: 'hidden',
         flexShrink: 0,
-        // Groupe CSS pour l'overlay au survol
-        ':hover div': { opacity: 1 },
     },
     avatar: {
         width: '96px',
@@ -452,9 +409,6 @@ const s = {
         borderRadius: '50%',
         opacity: 0,
         transition: 'opacity 0.2s',
-        // Pas de moyen pur d'activer au survol en style-objet —
-        // on utilise onMouseEnter/Leave sur le bouton parent dans le JSX
-        // (géré ci-dessous via CSS global si souhaité)
     },
     avatarActions: {
         display: 'flex',
@@ -467,8 +421,6 @@ const s = {
         fontSize: '12px',
         color: '#4d4d4d',
     },
-
-    // ── Formulaire
     form: {
         display: 'flex',
         flexDirection: 'column',
@@ -491,8 +443,6 @@ const s = {
         color: '#b3b3b3',
         textAlign: 'right',
     },
-
-    // ── Boutons
     primaryBtn: {
         padding: '11px 24px',
         backgroundColor: '#1ed760',
@@ -516,8 +466,6 @@ const s = {
         cursor: 'pointer',
         fontFamily: font,
     },
-
-    // ── Zone danger
     dangerText: {
         margin: '0 0 20px',
         fontSize: '14px',
@@ -535,8 +483,6 @@ const s = {
         cursor: 'pointer',
         fontFamily: font,
     },
-
-    // ── Modal
     modalBackdrop: {
         position: 'fixed',
         inset: 0,
