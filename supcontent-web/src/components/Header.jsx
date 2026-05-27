@@ -28,57 +28,176 @@ function notifLink(n) {
     return null;
 }
 
-const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+const font       = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const BREAKPOINT = 768;
 
+function HamburgerIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="2" strokeLinecap="round">
+            <line x1="3" y1="6"  x2="21" y2="6"  />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+    );
+}
+
+function BellIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+
+function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll }) {
+    return (
+        <div style={styles.notifDropdown}>
+            <div style={styles.notifHeader}>
+                <span style={styles.notifTitle}>Notifications</span>
+                {notifications.some(n => !n.is_read) && (
+                    <button style={styles.markAllBtn} onClick={onMarkAll}>
+                        Mark all as read
+                    </button>
+                )}
+            </div>
+
+            {loading ? (
+                <p style={styles.notifEmpty}>Loading…</p>
+            ) : notifications.length === 0 ? (
+                <p style={styles.notifEmpty}>No notifications yet</p>
+            ) : (
+                <ul style={styles.notifList}>
+                    {notifications.slice(0, 6).map(n => (
+                        <li
+                            key={n.notification_id}
+                            style={{ ...styles.notifItem, ...(n.is_read ? {} : styles.notifItemUnread) }}
+                            onClick={() => onNotifClick(n)}
+                        >
+                            {n.source_avatar ? (
+                                <img src={n.source_avatar} alt={n.source_username} style={styles.notifAvatar} />
+                            ) : (
+                                <div style={styles.notifAvatarFallback}>
+                                    {n.source_username?.[0]?.toUpperCase()}
+                                </div>
+                            )}
+                            <div style={styles.notifContent}>
+                                <p style={styles.notifText}>{notifText(n)}</p>
+                                {n.media_title && <p style={styles.notifMedia}>{n.media_title}</p>}
+                                <p style={styles.notifTime}>{timeAgo(n.created_at)}</p>
+                            </div>
+                            {!n.is_read && <div style={styles.notifDot} />}
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <Link to="/notifications" style={styles.notifSeeAll}>
+                See all notifications
+            </Link>
+        </div>
+    );
+}
+
+function UserAvatar({ user }) {
+    return (
+        <Link to={`/users/${user.user_id}/profile`} className="header-avatar-link" style={styles.avatarLink}>
+            {user.avatar ? (
+                <img src={user.avatar} alt={user.username} style={styles.avatar} />
+            ) : (
+                <div style={styles.avatarFallback}>
+                    {user.username?.[0]?.toUpperCase()}
+                </div>
+            )}
+        </Link>
+    );
+}
+
+function MobileMenu({ user, location }) {
+    return (
+        <div style={styles.mobileDropdown}>
+            <div style={styles.mobileSearch}><SearchBar /></div>
+            {user ? (
+                <>
+                    <div style={styles.mobileDivider} />
+                    <Link
+                        to="/feed"
+                        className={'header-dropdown-link' + (location.pathname === '/feed' ? ' active' : '')}
+                        style={styles.mobileLink}
+                    >
+                        Feed
+                    </Link>
+                    <Link
+                        to={`/users/${user.user_id}/collection`}
+                        className="header-dropdown-link"
+                        style={styles.mobileLink}
+                    >
+                        My Collection
+                    </Link>
+                    <Link
+                        to="/lists"
+                        className={'header-dropdown-link' + (location.pathname === '/lists' ? ' active' : '')}
+                        style={styles.mobileLink}
+                    >
+                        My Lists
+                    </Link>
+                </>
+            ) : (
+                <>
+                    <div style={styles.mobileDivider} />
+                    <Link to="/login"    style={styles.mobileLink}>Sign in</Link>
+                    <Link to="/register" style={styles.mobileLink}>Sign up</Link>
+                </>
+            )}
+        </div>
+    );
+}
+
 export default function Header() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const [unreadCount, setUnreadCount]   = useState(0);
-    const [isMobile, setIsMobile]         = useState(window.innerWidth < BREAKPOINT);
-    const [menuOpen, setMenuOpen]         = useState(false);
-    const [notifOpen, setNotifOpen]       = useState(false);
+    const { user }  = useAuth();
+    const navigate  = useNavigate();
+    const location  = useLocation();
+
+    const [unreadCount,   setUnreadCount]   = useState(0);
+    const [isMobile,      setIsMobile]      = useState(window.innerWidth < BREAKPOINT);
+    const [menuOpen,      setMenuOpen]      = useState(false);
+    const [notifOpen,     setNotifOpen]     = useState(false);
     const [notifications, setNotifications] = useState([]);
-    const [notifLoading, setNotifLoading] = useState(false);
+    const [notifLoading,  setNotifLoading]  = useState(false);
+
     const menuRef  = useRef(null);
     const notifRef = useRef(null);
 
-    // Notification polling
     useEffect(() => {
         if (!user) { setUnreadCount(0); return; }
         const fetchCount = () => getUnreadCount().then(d => setUnreadCount(d.count)).catch(() => {});
         fetchCount();
-        const interval = setInterval(fetchCount, 30000);
-        return () => clearInterval(interval);
+        const id = setInterval(fetchCount, 30000);
+        return () => clearInterval(id);
     }, [user]);
 
-    // Responsive breakpoint detection
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth < BREAKPOINT);
         window.addEventListener('resize', onResize);
         return () => window.removeEventListener('resize', onResize);
     }, []);
 
-    // Close menu on route change
     useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
-    // Close hamburger menu on outside click
     useEffect(() => {
         if (!menuOpen) return;
-        function handleClick(e) {
+        const handleClick = (e) => {
             if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
-        }
+        };
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [menuOpen]);
 
-    // Close notif dropdown on outside click
     useEffect(() => {
         if (!notifOpen) return;
-        function handleClick(e) {
+        const handleClick = (e) => {
             if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false);
-        }
+        };
         document.addEventListener('mousedown', handleClick);
         return () => document.removeEventListener('mousedown', handleClick);
     }, [notifOpen]);
@@ -99,159 +218,98 @@ export default function Header() {
     async function handleNotifClick(n) {
         if (!n.is_read) {
             await markOneRead(n.notification_id);
-            setNotifications(prev => prev.map(x => x.notification_id === n.notification_id ? { ...x, is_read: true } : x));
+            setNotifications(prev =>
+                prev.map(x => x.notification_id === n.notification_id ? { ...x, is_read: true } : x)
+            );
         }
         const link = notifLink(n);
         if (link) { setNotifOpen(false); navigate(link); }
     }
 
-    async function handleMarkAllRead() {
+    async function handleMarkAll() {
         await markAllRead();
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         setUnreadCount(0);
     }
 
-    const navClass = (path) =>
+    const navLinkClass = (path) =>
         'header-nav-link' + (location.pathname === path ? ' active' : '');
 
-    const HamburgerIcon = () => (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6"  x2="21" y2="6"  />
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-    );
-
     return (
-        <header style={{ ...styles.header, padding: isMobile ? '10px 16px' : '10px 64px' }}>
+        <header style={{ ...styles.header, padding: isMobile ? '0 16px' : '0 32px' }}>
             <div style={styles.headerInner}>
-                {/* Left: logo + (desktop) search + nav */}
-                <div style={styles.headerLeft}>
+                <div style={styles.left}>
                     <Link to="/" style={styles.logo}>SUPCONTENT</Link>
 
+                    {!isMobile && user && (
+                        <nav style={styles.mainNav}>
+                            <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
+                                Feed
+                            </Link>
+                            <Link
+                                to={`/users/${user.user_id}/collection`}
+                                className={navLinkClass(`/users/${user.user_id}/collection`)}
+                                style={styles.navLink}
+                            >
+                                My Collection
+                            </Link>
+                            <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
+                                My Lists
+                            </Link>
+                        </nav>
+                    )}
+                </div>
+
+                <div style={styles.right}>
                     {!isMobile && (
                         <div style={styles.searchWrap}>
                             <SearchBar />
                         </div>
                     )}
-                </div>
 
-                {/* Right: notifications + hamburger (mobile) + avatar */}
-                <div style={styles.headerRight}>
                     {user ? (
                         <>
-                            {!isMobile && (
-                                <nav style={styles.mainNav}>
-                                    <Link to="/feed" className={navClass('/feed')} style={styles.navLink}>Feed</Link>
-                                    <Link to={`/users/${user.user_id}/collection`} className={navClass(`/users/${user.user_id}/collection`)} style={styles.navLink}>My Collection</Link>
-                                    <Link to="/lists" className={navClass('/lists')} style={styles.navLink}>My Lists</Link>
-                                </nav>
-                            )}
                             <div style={styles.notifWrap} ref={notifRef}>
-                                <button style={styles.notifBtn} onClick={toggleNotif} aria-label="Notifications">
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                                        <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                                    </svg>
+                                <button style={styles.iconBtn} onClick={toggleNotif} aria-label="Notifications">
+                                    <BellIcon />
                                     {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
                                 </button>
 
                                 {notifOpen && (
-                                    <div style={styles.notifDropdown}>
-                                        <div style={styles.notifHeader}>
-                                            <span style={styles.notifTitle}>Notifications</span>
-                                            {notifications.some(n => !n.is_read) && (
-                                                <button style={styles.markAllBtn} onClick={handleMarkAllRead}>
-                                                    Mark all as read
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        {notifLoading ? (
-                                            <p style={styles.notifEmpty}>Loading…</p>
-                                        ) : notifications.length === 0 ? (
-                                            <p style={styles.notifEmpty}>No notifications yet</p>
-                                        ) : (
-                                            <ul style={styles.notifList}>
-                                                {notifications.slice(0, 6).map(n => (
-                                                    <li
-                                                        key={n.notification_id}
-                                                        style={{ ...styles.notifItem, ...(n.is_read ? {} : styles.notifItemUnread) }}
-                                                        onClick={() => handleNotifClick(n)}
-                                                    >
-                                                        {n.source_avatar ? (
-                                                            <img src={n.source_avatar} alt={n.source_username} style={styles.notifAvatar} />
-                                                        ) : (
-                                                            <div style={styles.notifAvatarFallback}>
-                                                                {n.source_username?.[0]?.toUpperCase()}
-                                                            </div>
-                                                        )}
-                                                        <div style={styles.notifContent}>
-                                                            <p style={styles.notifText}>{notifText(n)}</p>
-                                                            {n.media_title && <p style={styles.notifMedia}>{n.media_title}</p>}
-                                                            <p style={styles.notifTime}>{timeAgo(n.created_at)}</p>
-                                                        </div>
-                                                        {!n.is_read && <div style={styles.notifDot} />}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-
-                                        <Link
-                                            to="/notifications"
-                                            style={styles.notifSeeAll}
-                                            onClick={() => setNotifOpen(false)}
-                                        >
-                                            See all notifications
-                                        </Link>
-                                    </div>
+                                    <NotifDropdown
+                                        notifications={notifications}
+                                        loading={notifLoading}
+                                        onNotifClick={handleNotifClick}
+                                        onMarkAll={handleMarkAll}
+                                    />
                                 )}
                             </div>
 
-                            {/* Hamburger — mobile only */}
                             {isMobile && (
-                                <div style={styles.kebabWrap} ref={menuRef}>
-                                    <button style={styles.kebabBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
+                                <div ref={menuRef} style={styles.menuWrap}>
+                                    <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
                                         <HamburgerIcon />
                                     </button>
-                                    {menuOpen && (
-                                        <div style={styles.dropdown}>
-                                            <div style={styles.dropdownSearch}><SearchBar /></div>
-                                            <div style={styles.divider} />
-                                            <Link to="/feed" className={'header-dropdown-link' + (location.pathname === '/feed' ? ' active' : '')} style={styles.dropdownLink}>Feed</Link>
-                                            <Link to={`/users/${user.user_id}/collection`} className="header-dropdown-link" style={styles.dropdownLink}>My Collection</Link>
-                                            <Link to="/lists" className={'header-dropdown-link' + (location.pathname === '/lists' ? ' active' : '')} style={styles.dropdownLink}>My Lists</Link>
-                                        </div>
-                                    )}
+                                    {menuOpen && <MobileMenu user={user} location={location} />}
                                 </div>
                             )}
 
-                            <Link to={`/users/${user.user_id}/profile`} className="header-avatar-link" style={styles.avatarLink}>
-                                {user.avatar ? (
-                                    <img src={user.avatar} alt={user.username} style={styles.avatar} />
-                                ) : (
-                                    <div style={styles.avatarFallback}>
-                                        {user.username?.[0]?.toUpperCase()}
-                                    </div>
-                                )}
-                            </Link>
+                            <UserAvatar user={user} />
                         </>
                     ) : (
                         <>
-                            <Link to="/login" style={styles.loginLink}>Sign In</Link>
-
-                            {/* Hamburger for guest — search only */}
-                            {isMobile && (
-                                <div style={styles.kebabWrap} ref={menuRef}>
-                                    <button style={styles.kebabBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
+                            {isMobile ? (
+                                <div ref={menuRef} style={styles.menuWrap}>
+                                    <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
                                         <HamburgerIcon />
                                     </button>
-                                    {menuOpen && (
-                                        <div style={styles.dropdown}>
-                                            <div style={styles.dropdownSearch}><SearchBar /></div>
-                                        </div>
-                                    )}
+                                    {menuOpen && <MobileMenu user={null} location={location} />}
                                 </div>
+                            ) : (
+                                <>
+                                    <Link to="/login"    style={styles.signIn}>Sign in</Link>
+                                    <Link to="/register" style={styles.signUp}>Sign up</Link>
+                                </>
                             )}
                         </>
                     )}
@@ -264,9 +322,9 @@ export default function Header() {
 const styles = {
     header: {
         width: '100%',
-        padding: '10px 64px',
+        height: '56px',
         borderBottom: '1px solid #2a2a2a',
-        backgroundColor: 'rgba(18, 18, 18, 0.85)',
+        backgroundColor: 'rgba(18, 18, 18, 0.92)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         boxSizing: 'border-box',
@@ -276,20 +334,19 @@ const styles = {
         fontFamily: font,
     },
     headerInner: {
+        height: '100%',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: '16px',
+        gap: '12px',
     },
-    headerLeft: {
+    left: {
         display: 'flex',
         alignItems: 'center',
-        gap: '20px',
-        flex: 1,
-        minWidth: 0,
+        gap: '24px',
+        flexShrink: 0,
     },
     logo: {
-        fontSize: '15px',
+        fontSize: '14px',
         fontWeight: '900',
         color: '#1ed760',
         textDecoration: 'none',
@@ -297,42 +354,60 @@ const styles = {
         textTransform: 'uppercase',
         flexShrink: 0,
     },
-    searchWrap: {
-        maxWidth: '420px',
-        width: '100%',
-        flexShrink: 1,
-        minWidth: 0,
-    },
     mainNav: {
         display: 'flex',
         alignItems: 'center',
-        gap: '20px',
-        flexShrink: 0,
-    },
-    headerRight: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px',
-        flexShrink: 0,
+        gap: '4px',
     },
     navLink: {
         fontSize: '13px',
         fontWeight: '700',
         color: '#b3b3b3',
         textDecoration: 'none',
-        letterSpacing: '0.3px',
+        letterSpacing: '0.2px',
+        padding: '6px 10px',
+        borderRadius: '6px',
+    },
+    searchWrap: {
+        flex: 1,
+        minWidth: 0,
+        maxWidth: '500px',
+    },
+    right: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flex: 1,
+        justifyContent: 'flex-end',
+    },
+    iconBtn: {
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '6px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        position: 'relative',
+        borderRadius: '6px',
     },
     notifWrap: {
         position: 'relative',
     },
-    notifBtn: {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '4px',
+    badge: {
         display: 'inline-flex',
         alignItems: 'center',
-        position: 'relative',
+        justifyContent: 'center',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        fontSize: '10px',
+        fontWeight: '700',
+        borderRadius: '9999px',
+        minWidth: '16px',
+        height: '16px',
+        padding: '0 4px',
+        position: 'absolute',
+        top: '1px',
+        right: '1px',
     },
     notifDropdown: {
         position: 'absolute',
@@ -379,7 +454,7 @@ const styles = {
         listStyle: 'none',
         margin: 0,
         padding: 0,
-        maxHeight: '400px',
+        maxHeight: '360px',
         overflowY: 'auto',
     },
     notifItem: {
@@ -454,90 +529,71 @@ const styles = {
         backgroundColor: '#1ed760',
         flexShrink: 0,
     },
-    badge: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1ed760',
-        color: '#000',
-        fontSize: '10px',
-        fontWeight: '700',
-        borderRadius: '9999px',
-        minWidth: '16px',
-        height: '16px',
-        padding: '0 4px',
-        marginLeft: '3px',
-        verticalAlign: 'middle',
-    },
     avatarLink: {
         display: 'flex',
         textDecoration: 'none',
         flexShrink: 0,
     },
     avatar: {
-        width: '36px',
-        height: '36px',
+        width: '34px',
+        height: '34px',
         objectFit: 'cover',
         borderRadius: '50%',
     },
     avatarFallback: {
-        width: '36px',
-        height: '36px',
+        width: '34px',
+        height: '34px',
         borderRadius: '50%',
         backgroundColor: '#1ed760',
         color: '#000',
-        fontSize: '15px',
+        fontSize: '14px',
         fontWeight: '900',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontFamily: font,
     },
-    loginLink: {
-        padding: '8px 20px',
+    signIn: {
+        fontSize: '13px',
+        fontWeight: '600',
+        color: '#b3b3b3',
+        textDecoration: 'none',
+        padding: '6px 12px',
+        borderRadius: '6px',
+    },
+    signUp: {
         fontSize: '13px',
         fontWeight: '700',
-        color: '#000',
-        backgroundColor: '#1ed760',
-        borderRadius: '9999px',
+        color: '#fff',
         textDecoration: 'none',
-        letterSpacing: '1.4px',
-        textTransform: 'uppercase',
-        flexShrink: 0,
+        padding: '6px 16px',
+        border: '1px solid #7c7c7c',
+        borderRadius: '9999px',
+        letterSpacing: '0.2px',
     },
-
-    // Kebab menu
-    kebabWrap: {},
-    kebabBtn: {
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+    menuWrap: {
+        position: 'relative',
     },
-    dropdown: {
-        position: 'absolute',
-        top: '100%',
+    mobileDropdown: {
+        position: 'fixed',
+        top: '56px',
         left: 0,
         right: 0,
         backgroundColor: '#1a1a1a',
-        borderTop: '1px solid #2a2a2a',
         borderBottom: '1px solid #2a2a2a',
         boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-        padding: '16px 24px',
+        padding: '16px 20px',
         zIndex: 200,
     },
-    dropdownSearch: {
+    mobileSearch: {
         marginBottom: '4px',
     },
-    divider: {
+    mobileDivider: {
         height: '1px',
         backgroundColor: '#2a2a2a',
-        margin: '10px 0',
+        margin: '12px 0',
     },
-    dropdownLink: {
+    mobileLink: {
         display: 'block',
         padding: '10px 12px',
         fontSize: '14px',
