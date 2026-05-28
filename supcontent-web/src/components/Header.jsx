@@ -137,6 +137,13 @@ function MobileMenu({
                 <>
                     <div style={styles.mobileDivider} />
                     <Link
+                        to="/search"
+                        className={'header-dropdown-link' + (location.pathname === '/search' ? ' active' : '')}
+                        style={styles.mobileLink}
+                    >
+                        Explore
+                    </Link>
+                    <Link
                         to="/feed"
                         className={'header-dropdown-link' + (location.pathname === '/feed' ? ' active' : '')}
                         style={styles.mobileLink}
@@ -148,14 +155,14 @@ function MobileMenu({
                         className="header-dropdown-link"
                         style={styles.mobileLink}
                     >
-                        My Collection
+                        Collection
                     </Link>
                     <Link
                         to="/lists"
                         className={'header-dropdown-link' + (location.pathname === '/lists' ? ' active' : '')}
                         style={styles.mobileLink}
                     >
-                        My Lists
+                        Lists
                     </Link>
                     <Link
                         to="/messages"
@@ -288,6 +295,9 @@ export default function Header() {
 
                     {!isMobile && user && (
                         <nav style={styles.mainNav}>
+                            <Link to="/search" className={navLinkClass('/search')} style={styles.navLink}>
+                                Explore
+                            </Link>
                             <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
                                 Feed
                             </Link>
@@ -296,10 +306,10 @@ export default function Header() {
                                 className={navLinkClass(`/users/${user.user_id}/collection`)}
                                 style={styles.navLink}
                             >
-                                My Collection
+                                Collection
                             </Link>
                             <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
-                                My Lists
+                                Lists
                             </Link>
                         </nav>
                     )}
