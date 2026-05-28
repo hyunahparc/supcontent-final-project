@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { getFilmById } from '../api/films';
 import { useAuth } from '../context/AuthContext';
@@ -11,6 +11,12 @@ const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 
 const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
+const NARROW_LAYOUT_WIDTH = 768;
+const HERO_OVERLAP = 'clamp(120px, 14vw, 180px)';
+
+function getIsNarrowLayout() {
+    return window.innerWidth < NARROW_LAYOUT_WIDTH;
+}
 
 export default function FilmDetailPage() {
     const { id } = useParams();
@@ -24,6 +30,8 @@ export default function FilmDetailPage() {
     const [showListMenu, setShowListMenu] = useState(false);
     const [listFeedback, setListFeedback] = useState(null);
     const [newListName, setNewListName] = useState('');
+    const [isNarrow, setIsNarrow] = useState(getIsNarrowLayout);
+    const similarGridRef = useRef(null);
 
     // Fetch film data
     useEffect(() => {
@@ -45,6 +53,13 @@ export default function FilmDetailPage() {
             setMyLists([]);
         }
     }, [id, user]);
+
+    useEffect(() => {
+        const handleResize = () => setIsNarrow(getIsNarrowLayout());
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     async function handleAddToList(listId) {
         try {
@@ -77,131 +92,142 @@ export default function FilmDetailPage() {
         setShowStatusMenu(false);
     }
 
+    function handleSimilarScroll(direction) {
+        similarGridRef.current?.scrollBy({
+            left: direction * 344,
+            behavior: 'smooth',
+        });
+    }
+
     if (loading) return <div style={styles.state}>Loading...</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
     if (!film)   return null;
 
     return (
         <div style={styles.page}>
-            <div style={{
-                ...styles.backdrop,
-                backgroundImage: film.backdrop_path
-                    ? `url(${BACKDROP_BASE}${film.backdrop_path})`
-                    : 'none',
-                backgroundColor: film.backdrop_path ? undefined : '#1a1a1a',
-            }}>
-                <div style={styles.backdropOverlay} />
-            </div>
+            <div style={styles.heroStage}>
+                <div style={{
+                    ...styles.backdrop,
+                    backgroundImage: film.backdrop_path
+                        ? `url(${BACKDROP_BASE}${film.backdrop_path})`
+                        : 'none',
+                    backgroundColor: film.backdrop_path ? undefined : '#1a1a1a',
+                }}>
+                    <div style={styles.backdropOverlay} />
+                </div>
 
-            <div style={styles.hero}>
-                {film.poster_path && (
-                    <img
-                        src={`${POSTER_BASE}${film.poster_path}`}
-                        alt={film.title}
-                        style={styles.poster}
-                    />
-                )}
-                <div style={styles.info}>
-                    <h1 style={styles.title}>{film.title}</h1>
-
-                    <div style={styles.meta}>
-                        {film.release_date?.slice(0, 4)}
-                        {film.runtime && <><span style={styles.dot}>·</span>{film.runtime} min</>}
-                        {film.vote_average && (
-                            <><span style={styles.dot}>·</span>
-                            <span style={styles.rating}>⭐ {film.vote_average.toFixed(1)}</span></>
-                        )}
-                    </div>
-
-                    {film.genres?.length > 0 && (
-                        <div style={styles.genres}>
-                            {film.genres.map(g => (
-                                <span key={g.id} style={styles.genre}>{g.name}</span>
-                            ))}
-                        </div>
+                <div style={{ ...styles.hero, ...(isNarrow ? styles.heroNarrow : {}) }}>
+                    {film.poster_path && (
+                        <img
+                            src={`${POSTER_BASE}${film.poster_path}`}
+                            alt={film.title}
+                            style={{ ...styles.poster, ...(isNarrow ? styles.posterNarrow : {}) }}
+                        />
                     )}
+                    <div style={{ ...styles.info, ...(isNarrow ? styles.infoNarrow : {}) }}>
+                        <h1 style={{ ...styles.title, ...(isNarrow ? styles.titleNarrow : {}) }}>{film.title}</h1>
 
-                    <div style={styles.actions}>
-                        <button style={styles.watchBtn}>▶ Watch</button>
+                        <div style={styles.meta}>
+                            {film.release_date?.slice(0, 4)}
+                            {film.runtime && <><span style={styles.dot}>·</span>{film.runtime} min</>}
+                            {film.vote_average && (
+                                <><span style={styles.dot}>·</span>
+                                <span style={styles.rating}>⭐ {film.vote_average.toFixed(1)}</span></>
+                            )}
+                        </div>
 
-                        {/* Collection status button — disabled for guests */}
-                        <div style={{ position: 'relative' }}>
-                            <button
-                                onClick={() => user && setShowStatusMenu(m => !m)}
-                                style={{
-                                    ...styles.collectionBtn,
-                                    backgroundColor: collectionStatus ? '#fff' : 'transparent',
-                                    color: collectionStatus ? '#111' : '#fff',
-                                    opacity: user ? 1 : 0.4,
-                                    cursor: user ? 'pointer' : 'default',
-                                }}
-                            >
-                                {collectionStatus ?? '+ Collection'}
-                            </button>
-                            {showStatusMenu && (
-                                <div style={styles.statusMenu}>
-                                    {STATUSES.map(s => (
-                                        <button
-                                            key={s}
-                                            onClick={() => handleStatusSelect(s)}
-                                            style={{
-                                                ...styles.statusOption,
-                                                backgroundColor: s === collectionStatus ? '#333' : 'transparent',
-                                            }}
-                                        >
-                                            {s}
-                                        </button>
-                                    ))}
+                        {film.genres?.length > 0 && (
+                            <div style={styles.genres}>
+                                {film.genres.map(g => (
+                                    <span key={g.id} style={styles.genre}>{g.name}</span>
+                                ))}
+                            </div>
+                        )}
+
+                        <div style={styles.actions}>
+                            <button style={styles.watchBtn}>▶ Watch</button>
+
+                            {/* Collection status button — disabled for guests */}
+                            <div style={{ position: 'relative' }}>
+                                <button
+                                    onClick={() => user && setShowStatusMenu(m => !m)}
+                                    style={{
+                                        ...styles.collectionBtn,
+                                        backgroundColor: collectionStatus ? '#fff' : 'transparent',
+                                        color: collectionStatus ? '#111' : '#fff',
+                                        opacity: user ? 1 : 0.4,
+                                        cursor: user ? 'pointer' : 'default',
+                                    }}
+                                >
+                                    {collectionStatus ?? '+ Collection'}
+                                </button>
+                                {showStatusMenu && (
+                                    <div style={styles.statusMenu}>
+                                        {STATUSES.map(s => (
+                                            <button
+                                                key={s}
+                                                onClick={() => handleStatusSelect(s)}
+                                                style={{
+                                                    ...styles.statusOption,
+                                                    backgroundColor: s === collectionStatus ? '#333' : 'transparent',
+                                                }}
+                                            >
+                                                {s}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Add to list button — logged-in users only */}
+                            {user && (
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => setShowListMenu(m => !m)}
+                                        style={styles.collectionBtn}
+                                    >
+                                        {listFeedback ?? '+ List'}
+                                    </button>
+                                    {showListMenu && (
+                                        <div style={styles.statusMenu}>
+                                            {myLists.length === 0 && (
+                                                <div style={styles.emptyMenuText}>No lists yet.</div>
+                                            )}
+                                            {myLists.map(list => (
+                                                <button
+                                                    key={list.id}
+                                                    onClick={() => handleAddToList(list.id)}
+                                                    style={styles.statusOption}
+                                                >
+                                                    {list.name}
+                                                </button>
+                                            ))}
+                                            <form onSubmit={handleCreateList} style={styles.inlineForm}>
+                                                <input
+                                                    value={newListName}
+                                                    onChange={(e) => setNewListName(e.target.value)}
+                                                    placeholder="New list"
+                                                    style={styles.inlineInput}
+                                                />
+                                                <button type="submit" style={styles.inlineBtn}>+</button>
+                                            </form>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
-                        {/* Add to list button — logged-in users only */}
-                        {user && (
-                            <div style={{ position: 'relative' }}>
-                                <button
-                                    onClick={() => setShowListMenu(m => !m)}
-                                    style={styles.collectionBtn}
-                                >
-                                    {listFeedback ?? '+ List'}
-                                </button>
-                                {showListMenu && (
-                                    <div style={styles.statusMenu}>
-                                        {myLists.map(list => (
-                                            <button
-                                                key={list.list_id}
-                                                onClick={() => handleAddToList(list.list_id)}
-                                                style={styles.statusOption}
-                                            >
-                                                {list.name}
-                                            </button>
-                                        ))}
-                                        {/* Inline create new list */}
-                                        <form onSubmit={handleCreateList} style={styles.inlineForm}>
-                                            <input
-                                                style={styles.inlineInput}
-                                                placeholder="New list…"
-                                                value={newListName}
-                                                onChange={e => setNewListName(e.target.value)}
-                                            />
-                                            <button type="submit" style={styles.inlineBtn}>+</button>
-                                        </form>
-                                    </div>
-                                )}
+                        {film.director && (
+                            <div style={styles.director}>
+                                <span style={styles.directorLabel}>Director</span>
+                                {film.director}
                             </div>
                         )}
+
+                        {film.overview && (
+                            <p style={styles.overview}>{film.overview}</p>
+                        )}
                     </div>
-
-                    {film.director && (
-                        <p style={styles.director}>
-                            <span style={styles.directorLabel}>Director </span>
-                            {film.director}
-                        </p>
-                    )}
-
-                    {film.overview && (
-                        <p style={styles.overview}>{film.overview}</p>
-                    )}
                 </div>
             </div>
 
@@ -233,24 +259,42 @@ export default function FilmDetailPage() {
             {film.similar?.length > 0 && (
                 <section style={styles.castSection}>
                     <h2 style={styles.sectionTitle}>Similar Films</h2>
-                    <div style={styles.similarGrid}>
-                        {film.similar.map(m => (
-                            <a key={m.id} href={`/films/${m.id}`} style={styles.similarCard}>
-                                {m.poster_path ? (
-                                    <img
-                                        src={`${POSTER_BASE}${m.poster_path}`}
-                                        alt={m.title}
-                                        style={styles.similarPoster}
-                                    />
-                                ) : (
-                                    <div style={styles.similarPosterFallback} />
-                                )}
-                                <div style={styles.similarTitle}>{m.title}</div>
-                                {m.vote_average && (
-                                    <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
-                                )}
-                            </a>
-                        ))}
+                    <div style={styles.similarSlider}>
+                        <button
+                            type="button"
+                            onClick={() => handleSimilarScroll(-1)}
+                            style={{ ...styles.sliderButton, ...styles.sliderButtonLeft }}
+                            aria-label="Scroll similar films left"
+                        >
+                            &lt;
+                        </button>
+                        <div ref={similarGridRef} style={styles.similarGrid}>
+                            {film.similar.map(m => (
+                                <a key={m.id} href={`/films/${m.id}`} style={styles.similarCard}>
+                                    {m.poster_path ? (
+                                        <img
+                                            src={`${POSTER_BASE}${m.poster_path}`}
+                                            alt={m.title}
+                                            style={styles.similarPoster}
+                                        />
+                                    ) : (
+                                        <div style={styles.similarPosterFallback} />
+                                    )}
+                                    <div style={styles.similarTitle}>{m.title}</div>
+                                    {m.vote_average && (
+                                        <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
+                                    )}
+                                </a>
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => handleSimilarScroll(1)}
+                            style={{ ...styles.sliderButton, ...styles.sliderButtonRight }}
+                            aria-label="Scroll similar films right"
+                        >
+                            &gt;
+                        </button>
                     </div>
                 </section>
             )}
@@ -280,10 +324,15 @@ const styles = {
         fontSize: '14px',
         fontFamily: font,
     },
-    backdrop: {
+    heroStage: {
         position: 'relative',
+    },
+    backdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
         width: '100%',
-        height: '520px',
+        height: '400px',
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
     },
@@ -294,22 +343,41 @@ const styles = {
     },
     hero: {
         maxWidth: '1200px',
-        margin: '-180px auto 0',
-        padding: '0 40px',
+        margin: '0 auto',
+        padding: `calc(400px - ${HERO_OVERLAP}) 40px 0`,
         position: 'relative',
         display: 'flex',
         gap: '40px',
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
+    },
+    heroNarrow: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '24px',
+        padding: `calc(400px - ${HERO_OVERLAP}) 20px 0`,
     },
     poster: {
         width: '350px',
+        maxWidth: '100%',
         flexShrink: 0,
         borderRadius: '8px',
         boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
     },
+    posterNarrow: {
+        width: 'min(280px, 72vw)',
+        order: 1,
+    },
     info: {
         flex: 1,
+        width: '100%',
+        minWidth: 0,
         paddingBottom: '8px',
+    },
+    infoNarrow: {
+        flex: 'initial',
+        paddingTop: '0',
+        paddingBottom: 0,
+        order: 2,
     },
     title: {
         margin: '0 0 10px',
@@ -319,9 +387,16 @@ const styles = {
         lineHeight: 1.1,
         textShadow: '0 2px 8px rgba(0,0,0,0.5)',
     },
+    titleNarrow: {
+        fontSize: '32px',
+        lineHeight: 1.15,
+        textAlign: 'left',
+    },
     meta: {
         display: 'flex',
         alignItems: 'center',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-start',
         gap: '4px',
         fontSize: '14px',
         color: '#b3b3b3',
@@ -349,6 +424,7 @@ const styles = {
     },
     actions: {
         display: 'flex',
+        flexWrap: 'wrap',
         gap: '12px',
         marginBottom: '20px',
         alignItems: 'center',
@@ -432,6 +508,7 @@ const styles = {
         fontSize: '14px',
         color: '#b3b3b3',
         marginBottom: '14px',
+        overflowWrap: 'anywhere',
     },
     directorLabel: {
         color: '#b3b3b3',
@@ -442,11 +519,12 @@ const styles = {
         marginRight: '8px',
     },
     overview: {
-        fontSize: '14px',
+        fontSize: '17px',
         color: '#b3b3b3',
         lineHeight: 1.6,
         margin: 0,
         maxWidth: '600px',
+        overflowWrap: 'anywhere',
     },
     castSection: {
         maxWidth: '1200px',
@@ -461,7 +539,7 @@ const styles = {
     },
     castGrid: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(8, 1fr)',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
         gap: '10px',
     },
     castCard: {
@@ -510,6 +588,32 @@ const styles = {
         gap: '12px',
         overflowX: 'auto',
         scrollbarWidth: 'none',
+    },
+    similarSlider: {
+        position: 'relative',
+    },
+    sliderButton: {
+        position: 'absolute',
+        top: '120px',
+        zIndex: 2,
+        width: '42px',
+        height: '42px',
+        borderRadius: '50%',
+        border: '1px solid rgba(255,255,255,0.2)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        color: '#fff',
+        fontSize: '22px',
+        fontWeight: '700',
+        cursor: 'pointer',
+        lineHeight: 1,
+        transform: 'translateY(-50%)',
+        boxShadow: 'rgba(0,0,0,0.35) 0px 4px 12px',
+    },
+    sliderButtonLeft: {
+        left: '8px',
+    },
+    sliderButtonRight: {
+        right: '8px',
     },
     similarCard: {
         display: 'flex',
