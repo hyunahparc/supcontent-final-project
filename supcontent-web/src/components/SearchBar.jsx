@@ -1,5 +1,5 @@
 // src/components/SearchBar.jsx
-// Quick search bar with autocomplete and advanced search link
+// Quick search bar with autocomplete, infinite scroll, and advanced search link
 
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -7,31 +7,43 @@ import { searchMedia } from '../api/search';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w92';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+const PAGE_SIZE = 10;
 
 export default function SearchBar() {
-    const [query,   setQuery]   = useState('');
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [open,    setOpen]    = useState(false);
+    const [query,       setQuery]       = useState('');
+    const [results,     setResults]     = useState([]);
+    const [loading,     setLoading]     = useState(false);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [open,        setOpen]        = useState(false);
+    const [offset,      setOffset]      = useState(0);
+    const [hasMore,     setHasMore]     = useState(false);
 
-    const debounceRef = useRef(null);
-    const wrapperRef  = useRef(null);
-    const navigate    = useNavigate();
+    const debounceRef  = useRef(null);
+    const wrapperRef   = useRef(null);
+    const dropdownRef  = useRef(null);
+    const currentQuery = useRef('');
+    const navigate     = useNavigate();
 
-    // Trigger search with 300 ms debounce
+    // Trigger search with 300 ms debounce — resets pagination
     useEffect(() => {
         if (query.trim().length < 2) {
             setResults([]);
             setOpen(false);
+            setOffset(0);
+            setHasMore(false);
             return;
         }
 
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(async () => {
+            currentQuery.current = query;
             setLoading(true);
+            setOffset(0);
             try {
-                const data = await searchMedia(query, 'all', 10);
+                const data = await searchMedia(query, 'all', PAGE_SIZE, 0);
                 setResults(data);
+                setHasMore(data.length === PAGE_SIZE);
+                setOffset(PAGE_SIZE);
                 setOpen(true);
             } catch {
                 setResults([]);
@@ -43,6 +55,30 @@ export default function SearchBar() {
         return () => clearTimeout(debounceRef.current);
     }, [query]);
 
+    // Fetch next batch and append to the results list
+    async function loadMore() {
+        if (loadingMore || !hasMore || query !== currentQuery.current) return;
+        setLoadingMore(true);
+        try {
+            const data = await searchMedia(query, 'all', PAGE_SIZE, offset);
+            setResults(prev => [...prev, ...data]);
+            setHasMore(data.length === PAGE_SIZE);
+            setOffset(prev => prev + PAGE_SIZE);
+        } catch {
+            // silently ignore
+        } finally {
+            setLoadingMore(false);
+        }
+    }
+
+    // Trigger loadMore when the user scrolls near the bottom of the dropdown
+    function handleDropdownScroll(e) {
+        const el = e.currentTarget;
+        if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+            loadMore();
+        }
+    }
+
     // Close dropdown when clicking outside
     useEffect(() => {
         function handleClickOutside(e) {
@@ -50,12 +86,10 @@ export default function SearchBar() {
                 setOpen(false);
             }
         }
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Navigate to selected item detail page
     function handleSelect(item) {
         setOpen(false);
         setQuery('');
@@ -64,8 +98,6 @@ export default function SearchBar() {
 
     function handleKeyDown(e) {
         if (e.key === 'Escape') setOpen(false);
-
-        // Enter on the field: open advanced search with the typed query
         if (e.key === 'Enter' && query.trim().length >= 2) {
             setOpen(false);
             navigate(`/search?q=${encodeURIComponent(query.trim())}`);
@@ -86,7 +118,7 @@ export default function SearchBar() {
                 </svg>
                 <input
                     type="text"
-                    placeholder="Search for a movie or TV show…"
+                    placeholder="Search for a movie or TV show..."
                     value={query}
                     onChange={e => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
@@ -96,18 +128,23 @@ export default function SearchBar() {
                     aria-autocomplete="list"
                     aria-expanded={open}
                 />
-                {loading && <span style={styles.spinner}>⟳</span>}
+                {loading && <span style={styles.spinner}>...</span>}
             </div>
 
             {open && (
-                <ul style={styles.dropdown} role="listbox">
+                <ul
+                    ref={dropdownRef}
+                    style={styles.dropdown}
+                    role="listbox"
+                    onScroll={handleDropdownScroll}
+                >
                     {!loading && results.length === 0 && (
-                        <li style={styles.message}>No results for “{query}”</li>
+                        <li style={styles.message}>No results for &quot;{query}&quot;</li>
                     )}
 
-                    {!loading && results.map(item => (
+                    {results.map(item => (
                         <li
-                            key={item.external_id}
+                            key={`${item.external_id}-${item.media_type}`}
                             onClick={() => handleSelect(item)}
                             style={styles.item}
                             role="option"
@@ -126,12 +163,16 @@ export default function SearchBar() {
                             <div style={styles.info}>
                                 <span style={styles.itemTitle}>{item.title}</span>
                                 <span style={styles.itemMeta}>
-                                    {item.media_type} · {item.release_date?.slice(0, 4) ?? '—'}
-                                    {item.vote_average ? ` · ⭐ ${Number(item.vote_average).toFixed(1)}` : ''}
+                                    {item.media_type} · {item.release_date?.slice(0, 4) ?? '-'}
+                                    {item.vote_average ? ` · ${Number(item.vote_average).toFixed(1)}` : ''}
                                 </span>
                             </div>
                         </li>
                     ))}
+
+                    {loadingMore && (
+                        <li style={styles.message}>Loading more...</li>
+                    )}
 
                     <li style={styles.advancedLinkItem}>
                         <Link
@@ -139,8 +180,8 @@ export default function SearchBar() {
                             style={styles.advancedLink}
                             onClick={() => { setOpen(false); setQuery(''); }}
                         >
-                            <span>🔍 Advanced Search</span>
-                            <span style={styles.advancedLinkArrow}>→</span>
+                            <span>Search - See all results</span>
+                            <span style={styles.advancedLinkArrow}>-&gt;</span>
                         </Link>
                     </li>
                 </ul>
@@ -197,7 +238,7 @@ const styles = {
         listStyle:       'none',
         backgroundColor: '#181818',
         borderRadius:    '8px',
-        boxShadow:       'rgba(0,0,0,0.5) 0px 8px 24px',
+        boxShadow:       '0 8px 24px rgba(0,0,0,0.5)',
         maxHeight:       '400px',
         overflowY:       'auto',
     },
@@ -245,8 +286,8 @@ const styles = {
         fontFamily: font,
     },
     advancedLinkItem: {
-        borderTop: '1px solid #2a2a2a',
-        marginTop: '4px',
+        borderTop:  '1px solid #2a2a2a',
+        marginTop:  '4px',
         paddingTop: '4px',
     },
     advancedLink: {
