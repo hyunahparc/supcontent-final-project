@@ -186,6 +186,13 @@ function MobileMenu({
             ) : (
                 <>
                     <div style={styles.mobileDivider} />
+                    <Link
+                        to="/search"
+                        className={'header-dropdown-link' + (location.pathname === '/search' ? ' active' : '')}
+                        style={styles.mobileLink}
+                    >
+                        Explore
+                    </Link>
                     <Link to="/login"    style={styles.mobileLink}>Sign in</Link>
                     <Link to="/register" style={styles.mobileLink}>Sign up</Link>
                 </>
@@ -293,24 +300,28 @@ export default function Header() {
                 <div style={styles.left}>
                     <Link to="/" style={styles.logo}>SUPCONTENT</Link>
 
-                    {!isMobile && user && (
+                    {!isMobile && (
                         <nav style={styles.mainNav}>
                             <Link to="/search" className={navLinkClass('/search')} style={styles.navLink}>
                                 Explore
                             </Link>
-                            <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
-                                Feed
-                            </Link>
-                            <Link
-                                to={`/users/${user.user_id}/collection`}
-                                className={navLinkClass(`/users/${user.user_id}/collection`)}
-                                style={styles.navLink}
-                            >
-                                Collection
-                            </Link>
-                            <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
-                                Lists
-                            </Link>
+                            {user && (
+                                <>
+                                    <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
+                                        Feed
+                                    </Link>
+                                    <Link
+                                        to={`/users/${user.user_id}/collection`}
+                                        className={navLinkClass(`/users/${user.user_id}/collection`)}
+                                        style={styles.navLink}
+                                    >
+                                        Collection
+                                    </Link>
+                                    <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
+                                        Lists
+                                    </Link>
+                                </>
+                            )}
                         </nav>
                     )}
                 </div>
