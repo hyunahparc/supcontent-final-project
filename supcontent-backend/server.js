@@ -27,6 +27,7 @@ const listsRouter = require('./src/routes/lists.route');
 const followsRouter = require('./src/routes/follows.route');
 const feedRouter = require('./src/routes/feed.route');
 const notificationsRouter = require('./src/routes/notifications.route');
+const messagesRouter = require('./src/routes/messages.route');
 app.use('/api/search', searchRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/films', filmsRouter);
@@ -37,6 +38,7 @@ app.use('/api/lists', listsRouter);
 app.use('/api/follows', followsRouter);
 app.use('/api/feed', feedRouter);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/messages', messagesRouter);
 
 // Swagger
 const swaggerDocument = yaml.load(fs.readFileSync('./swagger.yaml', 'utf8'));
