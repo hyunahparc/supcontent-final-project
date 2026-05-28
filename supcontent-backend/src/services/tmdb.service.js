@@ -63,4 +63,29 @@ const getFilmById = async (id) => {
     return cached;
 };
 
-module.exports = { getFilmById };
+const getTrending = async (type = 'all', limit = 12) => {
+    const mediaType = type === 'Movie' ? 'movie' : type === 'Series' ? 'tv' : 'all';
+    const lim = Math.min(Math.max(1, parseInt(limit) || 12), 50);
+
+    const url = `${TMDB_BASE}/trending/${mediaType}/week?api_key=${process.env.TMDB_API_KEY}&language=en-US`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        const err = new Error('TMDB trending error.');
+        err.status = response.status;
+        throw err;
+    }
+
+    const data = await response.json();
+
+    return (data.results ?? []).slice(0, lim).map(r => ({
+        external_id:  r.id,
+        title:        r.title ?? r.name ?? null,
+        poster_path:  r.poster_path ?? null,
+        media_type:   r.media_type === 'tv' || type === 'Series' ? 'Series' : 'Movie',
+        release_date: r.release_date ?? r.first_air_date ?? null,
+        vote_average: r.vote_average ?? null,
+    }));
+};
+
+module.exports = { getFilmById, getTrending };
