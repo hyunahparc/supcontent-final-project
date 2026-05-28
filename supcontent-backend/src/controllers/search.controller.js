@@ -125,6 +125,63 @@ exports.search = async (req, res) => {
     }
 };
 
+// ── GET /api/search/users?q=&limit= ──────────────────────────────────────────
+exports.searchUsers = async (req, res) => {
+    const { q, limit = 10 } = req.query;
+
+    if (!q || q.trim().length < 2) {
+        return res.status(400).json({ error: 'The "q" parameter must contain at least 2 characters.' });
+    }
+
+    const lim = Math.min(Math.max(1, parseInt(limit) || 10), 50);
+
+    try {
+        const { rows } = await pool.query(
+            `SELECT user_id, username, avatar, bio
+             FROM users
+             WHERE username ILIKE $1
+             ORDER BY username
+             LIMIT $2`,
+            [`%${q.trim()}%`, lim]
+        );
+        return res.json({ results: rows, total: rows.length });
+    } catch (err) {
+        console.error('[searchUsers]', err.message);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
+// ── GET /api/search/lists?q=&limit= ──────────────────────────────────────────
+exports.searchLists = async (req, res) => {
+    const { q, limit = 10 } = req.query;
+
+    if (!q || q.trim().length < 2) {
+        return res.status(400).json({ error: 'The "q" parameter must contain at least 2 characters.' });
+    }
+
+    const lim = Math.min(Math.max(1, parseInt(limit) || 10), 50);
+
+    try {
+        const { rows } = await pool.query(
+            `SELECT cl.list_id, cl.name, cl.created_at,
+                    u.user_id AS owner_id, u.username AS owner_username,
+                    COUNT(cli.external_id)::int AS films_count
+             FROM custom_lists cl
+             JOIN users u ON u.user_id = cl.user_id
+             LEFT JOIN custom_list_items cli ON cli.list_id = cl.list_id
+             WHERE cl.is_public = TRUE AND cl.name ILIKE $1
+             GROUP BY cl.list_id, u.user_id
+             ORDER BY cl.name
+             LIMIT $2`,
+            [`%${q.trim()}%`, lim]
+        );
+        return res.json({ results: rows, total: rows.length });
+    } catch (err) {
+        console.error('[searchLists]', err.message);
+        return res.status(500).json({ error: 'Server error.' });
+    }
+};
+
 // ── GET /api/search/genres?type=movie|tv ─────────────────────────────────────
 // Returns the TMDB genre list for a media type
 exports.getGenres = async (req, res) => {

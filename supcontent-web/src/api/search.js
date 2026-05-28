@@ -5,12 +5,34 @@
  * Quick search (used by the header SearchBar)
  * Merges local cache and TMDB results.
  */
-export async function searchMedia(query, type = 'all', limit = 10) {
+export async function searchMedia(query, type = 'all', limit = 10, offset = 0) {
     if (!query || query.trim().length < 2) return [];
-    const params = new URLSearchParams({ q: query.trim(), type, limit });
+    const params = new URLSearchParams({ q: query.trim(), type, limit, offset });
     const res = await fetch(`/api/search?${params}`);
     const data = await res.json();
     return data.results ?? [];
+}
+
+/**
+ * Search platform users by username.
+ */
+export async function searchUsers(q, limit = 20) {
+    if (!q || q.trim().length < 2) return { results: [], total: 0 };
+    const params = new URLSearchParams({ q: q.trim(), limit });
+    const res = await fetch(`/api/search/users?${params}`);
+    if (!res.ok) return { results: [], total: 0 };
+    return res.json();
+}
+
+/**
+ * Search public custom lists by name.
+ */
+export async function searchLists(q, limit = 20) {
+    if (!q || q.trim().length < 2) return { results: [], total: 0 };
+    const params = new URLSearchParams({ q: q.trim(), limit });
+    const res = await fetch(`/api/search/lists?${params}`);
+    if (!res.ok) return { results: [], total: 0 };
+    return res.json();
 }
 
 /**
