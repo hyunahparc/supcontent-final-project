@@ -1,20 +1,13 @@
-/**
- * HomePage.jsx
- *
- * Page d'accueil complète : Hero → Tendances → Features → CTA
- *
- * Design : dark cinema, rouge Netflix-inspired, typographie display bold.
- * Architecture modulaire : chaque section est un composant autonome.
- */
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getTrending } from '../api/films';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section Hero
+// Hero Section
 // ═══════════════════════════════════════════════════════════════════════════
 function HeroSection() {
   const { user }   = useAuth();
@@ -28,25 +21,23 @@ function HeroSection() {
 
   return (
     <section style={s.hero}>
-      {/* Grain overlay */}
       <div style={s.heroGrain} aria-hidden="true" />
-      {/* Radial glow */}
       <div style={s.heroGlow}  aria-hidden="true" />
 
       <div style={s.heroContent}>
         <div style={s.heroBadge}>
           <span style={s.heroBadgeDot} />
-          Base de données cinéma & séries
+          Cinema &amp; Series Database
         </div>
 
         <h1 style={s.heroTitle}>
-          Explorez{' '}
-          <span style={s.heroTitleAccent}>des milliers</span>
-          {' '}de films<br />et séries en un instant.
+          Discover{' '}
+          <span style={s.heroTitleAccent}>thousands</span>
+          {' '}of films<br />and series in an instant.
         </h1>
 
         <p style={s.heroSubtitle}>
-          Recherchez, découvrez et suivez vos contenus préférés grâce à nos données enrichies.
+          Search, discover and track your favorite content powered by rich metadata.
         </p>
 
         <form onSubmit={handleSearch} style={s.searchForm}>
@@ -59,21 +50,21 @@ function HeroSection() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Rechercher un film ou une série..."
+              placeholder="Search for a film or series..."
               style={s.searchInput}
-              aria-label="Recherche"
+              aria-label="Search"
             />
             <button type="submit" style={s.searchBtn} disabled={query.trim().length < 2}>
-              Rechercher
+              Search
             </button>
           </div>
         </form>
 
         <div style={s.heroStats}>
           {[
-            { value: '1M+',  label: 'Titres indexés'   },
-            { value: '150+', label: 'Pays représentés'  },
-            { value: '50K+', label: 'Avis communauté'   },
+            { value: '1M+',  label: 'Indexed titles'     },
+            { value: '150+', label: 'Countries'           },
+            { value: '50K+', label: 'Community reviews'   },
           ].map(({ value, label }) => (
             <div key={label} style={s.stat}>
               <span style={s.statValue}>{value}</span>
@@ -83,7 +74,6 @@ function HeroSection() {
         </div>
       </div>
 
-      {/* Scroll indicator */}
       <div style={s.scrollHint} aria-hidden="true">
         <div style={s.scrollLine} />
       </div>
@@ -92,7 +82,7 @@ function HeroSection() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section Tendances
+// Trending Section
 // ═══════════════════════════════════════════════════════════════════════════
 function TrendingSection() {
   const [activeTab, setActiveTab] = useState('all');
@@ -113,7 +103,7 @@ function TrendingSection() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message ?? 'Erreur');
+          setError(err.message ?? 'Error');
           setLoading(false);
         }
       });
@@ -121,9 +111,9 @@ function TrendingSection() {
   }, [activeTab]);
 
   const tabs = [
-    { id: 'all',    label: 'Tout'    },
-    { id: 'Movie',  label: 'Films'   },
-    { id: 'Series', label: 'Séries'  },
+    { id: 'all',    label: 'All'     },
+    { id: 'Movie',  label: 'Movies'  },
+    { id: 'Series', label: 'Series'  },
   ];
 
   return (
@@ -131,8 +121,8 @@ function TrendingSection() {
       <div style={s.sectionInner}>
         <div style={s.sectionHeader}>
           <div>
-            <p style={s.sectionEyebrow}>À la une</p>
-            <h2 style={s.sectionTitle}>Tendances du moment</h2>
+            <p style={s.sectionEyebrow}>Featured</p>
+            <h2 style={s.sectionTitle}>Trending Now</h2>
           </div>
           <div style={s.tabs} role="tablist">
             {tabs.map(({ id, label }) => (
@@ -151,17 +141,17 @@ function TrendingSection() {
 
         {error && (
           <div style={s.errorBox} role="alert">
-            Impossible de charger les tendances. <button onClick={() => setActiveTab(activeTab)} style={s.retryBtn}>Réessayer</button>
+            Failed to load trending content.{' '}
+            <button onClick={() => setActiveTab(activeTab)} style={s.retryBtn}>Retry</button>
           </div>
         )}
-
-        <div style={{ marginBottom: '16px', color: '#aaa', fontSize: '13px' }}>
-        </div>
 
         <div style={s.grid}>
           {loading
             ? Array.from({ length: 12 }, (_, i) => <SkeletonCard key={i} />)
-            : (data?.map((item) => <MediaCard key={item.external_id} item={item} />) ?? <p style={{ color: '#fff' }}>Aucun contenu disponible.</p>)
+            : (data?.map((item) => <MediaCard key={item.external_id} item={item} />) ?? (
+                <p style={{ color: '#b3b3b3', fontFamily: font }}>No content available.</p>
+              ))
           }
         </div>
       </div>
@@ -185,7 +175,6 @@ function MediaCard({ item }) {
       onMouseLeave={() => setHovered(false)}
       aria-label={`${item.title} (${year})`}
     >
-      {/* Poster */}
       <div style={s.cardImgWrap}>
         {item.poster_path ? (
           <img
@@ -199,18 +188,15 @@ function MediaCard({ item }) {
             <span style={{ fontSize: '32px' }}>🎬</span>
           </div>
         )}
-        {/* Badge type */}
         <span style={{ ...s.typeBadge, ...(item.media_type === 'Series' ? s.typeBadgeSeries : {}) }}>
-          {item.media_type === 'Series' ? 'Série' : 'Film'}
+          {item.media_type === 'Series' ? 'Series' : 'Film'}
         </span>
-        {/* Score */}
         <div style={s.scoreBadge}>
           ⭐ {score}
         </div>
-        {/* Hover overlay */}
         <div style={{ ...s.cardOverlay, ...(hovered ? s.cardOverlayVisible : {}) }}>
           <span style={{ ...s.viewBtn, ...(hovered ? { opacity: 1, transform: 'translateY(0)' } : {}) }}>
-            Voir les détails →
+            View details →
           </span>
         </div>
       </div>
@@ -237,29 +223,29 @@ function SkeletonCard() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section Features
+// Features Section
 // ═══════════════════════════════════════════════════════════════════════════
 function FeaturesSection() {
   const features = [
     {
       icon: '🔍',
-      title: 'Recherche intelligente',
-      desc:  'Trouvez n\'importe quel film ou série en quelques secondes grâce à notre moteur de recherche combinant cache local et TMDB.',
+      title: 'Smart Search',
+      desc:  'Find any film or series in seconds with our search engine combining local cache and TMDB.',
     },
     {
       icon: '⭐',
-      title: 'Notes & avis',
-      desc:  'Consultez les scores et les avis de la communauté pour ne jamais manquer un chef-d\'œuvre.',
+      title: 'Ratings & Reviews',
+      desc:  'Browse community scores and reviews to never miss a masterpiece.',
     },
     {
       icon: '🎬',
-      title: 'Fiches détaillées',
-      desc:  'Accédez aux synopsis, distributions, réalisateurs et bien plus pour chaque contenu.',
+      title: 'Detailed Pages',
+      desc:  'Access synopses, casts, directors, and more for every title.',
     },
     {
       icon: '📱',
-      title: 'Expérience responsive',
-      desc:  'Une interface fluide sur desktop, tablette et mobile pour profiter de vos recherches partout.',
+      title: 'Responsive Experience',
+      desc:  'A fluid interface on desktop, tablet, and mobile so you can search anywhere.',
     },
   ];
 
@@ -267,8 +253,8 @@ function FeaturesSection() {
     <section style={{ ...s.section, ...s.sectionAlt }}>
       <div style={s.sectionInner}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={s.sectionEyebrow}>Pourquoi SupContent ?</p>
-          <h2 style={s.sectionTitle}>Tout ce dont vous avez besoin</h2>
+          <p style={s.sectionEyebrow}>Why SupContent?</p>
+          <h2 style={s.sectionTitle}>Everything you need</h2>
         </div>
         <div style={s.featuresGrid}>
           {features.map(({ icon, title, desc }) => (
@@ -296,7 +282,7 @@ function FeatureCard({ icon, title, desc }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Section CTA
+// CTA Section
 // ═══════════════════════════════════════════════════════════════════════════
 function CtaSection() {
   const { user } = useAuth();
@@ -306,16 +292,16 @@ function CtaSection() {
     <section style={s.ctaSection}>
       <div style={s.ctaInner}>
         <div style={s.ctaGlow} aria-hidden="true" />
-        <h2 style={s.ctaTitle}>Prêt à explorer ?</h2>
+        <h2 style={s.ctaTitle}>Ready to explore?</h2>
         <p style={s.ctaSubtitle}>
-          Créez votre compte gratuitement et accédez à toute la base de données.
+          Create your free account and get access to the full database.
         </p>
         <div style={s.ctaActions}>
           <Link to="/register" style={s.ctaBtnPrimary}>
-            Créer un compte gratuitement
+            Create a free account
           </Link>
           <Link to="/login" style={s.ctaBtnGhost}>
-            J'ai déjà un compte
+            I already have an account
           </Link>
         </div>
       </div>
@@ -324,12 +310,11 @@ function CtaSection() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Export principal
+// Main export
 // ═══════════════════════════════════════════════════════════════════════════
 export default function HomePage() {
-
   return (
-    <main>
+    <main style={{ fontFamily: font }}>
       <HeroSection    />
       <TrendingSection />
       <FeaturesSection />
@@ -339,7 +324,7 @@ export default function HomePage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Styles
+// Styles — aligned with project design system (green #1ed760, dark #121212)
 // ═══════════════════════════════════════════════════════════════════════════
 const s = {
   // ── Hero ────────────────────────────────────────────────────────────────
@@ -351,7 +336,7 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '80px 24px 60px',
-    background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(229,9,20,0.15) 0%, transparent 60%), #080808',
+    background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(30,215,96,0.08) 0%, transparent 60%), #121212',
     overflow: 'hidden',
   },
   heroGrain: {
@@ -368,7 +353,7 @@ const s = {
     transform: 'translateX(-50%)',
     width: '600px',
     height: '300px',
-    background: 'radial-gradient(ellipse, rgba(229,9,20,0.12) 0%, transparent 70%)',
+    background: 'radial-gradient(ellipse, rgba(30,215,96,0.08) 0%, transparent 70%)',
     pointerEvents: 'none',
   },
   heroContent: {
@@ -382,21 +367,22 @@ const s = {
     alignItems: 'center',
     gap: '8px',
     padding: '6px 14px',
-    background: 'rgba(229,9,20,0.12)',
-    border: '1px solid rgba(229,9,20,0.25)',
+    background: 'rgba(30,215,96,0.08)',
+    border: '1px solid rgba(30,215,96,0.2)',
     borderRadius: '20px',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#ff6b6b',
+    color: '#1ed760',
     letterSpacing: '0.5px',
     marginBottom: '24px',
     textTransform: 'uppercase',
+    fontFamily: font,
   },
   heroBadgeDot: {
     width: '6px',
     height: '6px',
     borderRadius: '50%',
-    backgroundColor: '#e50914',
+    backgroundColor: '#1ed760',
     animation: 'pulse 2s ease-in-out infinite',
   },
   heroTitle: {
@@ -406,9 +392,10 @@ const s = {
     lineHeight: 1.1,
     letterSpacing: '-1.5px',
     margin: '0 0 20px',
+    fontFamily: font,
   },
   heroTitleAccent: {
-    color: '#e50914',
+    color: '#1ed760',
     position: 'relative',
   },
   heroSubtitle: {
@@ -417,6 +404,7 @@ const s = {
     lineHeight: 1.7,
     maxWidth: '520px',
     margin: '0 auto 36px',
+    fontFamily: font,
   },
 
   // Search
@@ -441,18 +429,21 @@ const s = {
     color: '#fff',
     padding: '8px 0',
     minWidth: 0,
+    fontFamily: font,
   },
   searchBtn: {
     padding: '10px 20px',
-    background: '#e50914',
-    color: '#fff',
+    background: '#1ed760',
+    color: '#000',
     border: 'none',
     borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '600',
+    fontWeight: '700',
     cursor: 'pointer',
     flexShrink: 0,
     transition: 'background 0.2s',
+    fontFamily: font,
+    letterSpacing: '0.3px',
   },
 
   // Stats
@@ -463,8 +454,8 @@ const s = {
     flexWrap: 'wrap',
   },
   stat: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
-  statValue: { fontSize: '24px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px' },
-  statLabel: { fontSize: '12px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px' },
+  statValue: { fontSize: '24px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px', fontFamily: font },
+  statLabel: { fontSize: '12px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: font },
 
   // Scroll hint
   scrollHint: {
@@ -485,11 +476,11 @@ const s = {
 
   // ── Sections layout ────────────────────────────────────────────────────
   section: {
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#121212',
     padding: '80px 0',
   },
   sectionAlt: {
-    backgroundColor: '#080808',
+    backgroundColor: '#0e0e0e',
     borderTop: '1px solid rgba(255,255,255,0.04)',
     borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
@@ -509,10 +500,11 @@ const s = {
   sectionEyebrow: {
     fontSize: '11px',
     fontWeight: '700',
-    color: '#e50914',
+    color: '#1ed760',
     textTransform: 'uppercase',
     letterSpacing: '1.5px',
     margin: '0 0 8px',
+    fontFamily: font,
   },
   sectionTitle: {
     fontSize: '28px',
@@ -520,6 +512,7 @@ const s = {
     color: '#fff',
     letterSpacing: '-0.5px',
     margin: 0,
+    fontFamily: font,
   },
 
   // Tabs
@@ -534,41 +527,44 @@ const s = {
   tab: {
     padding: '6px 16px',
     fontSize: '13px',
-    fontWeight: '500',
+    fontWeight: '600',
     color: 'rgba(255,255,255,0.5)',
     background: 'none',
     border: 'none',
     borderRadius: '7px',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    fontFamily: font,
   },
   tabActive: {
-    background: '#e50914',
-    color: '#fff',
+    background: '#1ed760',
+    color: '#000',
   },
 
   // Error
   errorBox: {
     padding: '14px 18px',
-    background: 'rgba(229,9,20,0.1)',
-    border: '1px solid rgba(229,9,20,0.2)',
+    background: 'rgba(243,114,127,0.1)',
+    border: '1px solid rgba(243,114,127,0.2)',
     borderRadius: '10px',
-    color: '#ff6b6b',
+    color: '#f3727f',
     fontSize: '14px',
     marginBottom: '24px',
+    fontFamily: font,
   },
   retryBtn: {
     background: 'none',
     border: 'none',
-    color: '#ff9999',
+    color: '#f3727f',
     textDecoration: 'underline',
     cursor: 'pointer',
     fontSize: '14px',
     padding: 0,
     marginLeft: '8px',
+    fontFamily: font,
   },
 
-  // ── Grid de cartes ────────────────────────────────────────────────────
+  // ── Card grid ─────────────────────────────────────────────────────────
   grid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
@@ -581,20 +577,20 @@ const s = {
     textDecoration: 'none',
     borderRadius: '12px',
     overflow: 'hidden',
-    background: '#111',
+    background: '#1e1e1e',
     border: '1px solid rgba(255,255,255,0.06)',
     transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
   },
   cardHovered: {
     transform: 'translateY(-6px)',
     boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
-    borderColor: 'rgba(229,9,20,0.3)',
+    borderColor: 'rgba(30,215,96,0.25)',
   },
   cardImgWrap: {
     position: 'relative',
     paddingTop: '150%',
     overflow: 'hidden',
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#2a2a2a',
   },
   cardImg: {
     position: 'absolute',
@@ -611,7 +607,7 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#1a1a1a',
+    background: '#2a2a2a',
   },
   typeBadge: {
     position: 'absolute',
@@ -627,6 +623,7 @@ const s = {
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
     border: '1px solid rgba(255,255,255,0.1)',
+    fontFamily: font,
   },
   typeBadgeSeries: { color: '#60b3ff' },
   scoreBadge: {
@@ -640,6 +637,7 @@ const s = {
     fontSize: '11px',
     fontWeight: '700',
     color: '#ffd700',
+    fontFamily: font,
   },
   cardOverlay: {
     position: 'absolute',
@@ -650,15 +648,17 @@ const s = {
     justifyContent: 'center',
     transition: 'background 0.3s ease',
   },
-  cardOverlayVisible: { background: 'rgba(229,9,20,0.5)' },
+  cardOverlayVisible: { background: 'rgba(0,0,0,0.55)' },
   viewBtn: {
     fontSize: '12px',
     fontWeight: '700',
-    color: '#fff',
+    color: '#1ed760',
     opacity: 0,
     transform: 'translateY(8px)',
     transition: 'all 0.3s ease',
     textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+    fontFamily: font,
+    letterSpacing: '0.5px',
   },
   cardBody: {
     padding: '12px',
@@ -668,43 +668,45 @@ const s = {
   },
   cardTitle: {
     fontSize: '13px',
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#fff',
     margin: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    fontFamily: font,
   },
   cardYear: {
     fontSize: '11px',
     color: 'rgba(255,255,255,0.4)',
+    fontFamily: font,
   },
 
   // ── Skeleton ──────────────────────────────────────────────────────────
   skeleton: {
     borderRadius: '12px',
     overflow: 'hidden',
-    background: '#111',
+    background: '#1e1e1e',
     border: '1px solid rgba(255,255,255,0.04)',
     padding: '0 0 12px',
   },
   skeletonImg: {
     paddingTop: '150%',
-    background: 'linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%)',
+    background: 'linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%)',
     backgroundSize: '200% 100%',
     animation: 'shimmer 1.5s infinite',
   },
   skeletonTitle: {
     height: '12px',
     borderRadius: '6px',
-    background: '#1e1e1e',
+    background: '#2a2a2a',
     margin: '12px 12px 6px',
   },
   skeletonYear: {
     height: '10px',
     width: '40%',
     borderRadius: '6px',
-    background: '#1a1a1a',
+    background: '#242424',
     margin: '0 12px',
   },
 
@@ -722,9 +724,10 @@ const s = {
     transition: 'all 0.25s ease',
   },
   featureCardHovered: {
-    background: 'rgba(229,9,20,0.05)',
-    borderColor: 'rgba(229,9,20,0.2)',
+    background: 'rgba(30,215,96,0.04)',
+    borderColor: 'rgba(30,215,96,0.15)',
     transform: 'translateY(-4px)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
   },
   featureIcon: {
     fontSize: '28px',
@@ -736,18 +739,20 @@ const s = {
     fontWeight: '700',
     color: '#fff',
     margin: '0 0 8px',
+    fontFamily: font,
   },
   featureDesc: {
     fontSize: '13px',
     color: 'rgba(255,255,255,0.5)',
     lineHeight: 1.7,
     margin: 0,
+    fontFamily: font,
   },
 
   // ── CTA ───────────────────────────────────────────────────────────────
   ctaSection: {
     padding: '100px 24px',
-    background: '#080808',
+    background: '#0e0e0e',
     textAlign: 'center',
   },
   ctaInner: {
@@ -762,7 +767,7 @@ const s = {
     transform: 'translateX(-50%)',
     width: '400px',
     height: '200px',
-    background: 'radial-gradient(ellipse, rgba(229,9,20,0.15) 0%, transparent 70%)',
+    background: 'radial-gradient(ellipse, rgba(30,215,96,0.1) 0%, transparent 70%)',
     pointerEvents: 'none',
   },
   ctaTitle: {
@@ -772,6 +777,7 @@ const s = {
     color: '#fff',
     letterSpacing: '-1px',
     margin: '0 0 16px',
+    fontFamily: font,
   },
   ctaSubtitle: {
     position: 'relative',
@@ -779,6 +785,7 @@ const s = {
     color: 'rgba(255,255,255,0.5)',
     margin: '0 0 40px',
     lineHeight: 1.7,
+    fontFamily: font,
   },
   ctaActions: {
     position: 'relative',
@@ -789,23 +796,26 @@ const s = {
   },
   ctaBtnPrimary: {
     padding: '14px 28px',
-    background: '#e50914',
-    color: '#fff',
+    background: '#1ed760',
+    color: '#000',
     textDecoration: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
+    borderRadius: '9999px',
+    fontSize: '14px',
     fontWeight: '700',
     transition: 'background 0.2s, transform 0.2s',
+    fontFamily: font,
+    letterSpacing: '0.3px',
   },
   ctaBtnGhost: {
     padding: '14px 28px',
-    background: 'rgba(255,255,255,0.05)',
+    background: 'transparent',
     color: 'rgba(255,255,255,0.7)',
     textDecoration: 'none',
-    borderRadius: '12px',
-    fontSize: '15px',
+    borderRadius: '9999px',
+    fontSize: '14px',
     fontWeight: '600',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: '1px solid rgba(255,255,255,0.15)',
     transition: 'all 0.2s',
+    fontFamily: font,
   },
 };
