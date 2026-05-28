@@ -877,3 +877,153 @@ paths:
                     description: Notification marked as read
                 '401':
                     description: Unauthorized
+
+    /messages/conversations:
+        get:
+            tags:
+                - Messages
+            summary: Get mutual followers with their latest private message
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Conversation list
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        user_id:
+                                            type: integer
+                                        username:
+                                            type: string
+                                        avatar:
+                                            type: string
+                                            nullable: true
+                                        can_chat:
+                                            type: boolean
+                                        last_message_id:
+                                            type: integer
+                                            nullable: true
+                                        last_message:
+                                            type: string
+                                            nullable: true
+                                        last_sender_id:
+                                            type: integer
+                                            nullable: true
+                                        last_message_at:
+                                            type: string
+                                            format: date-time
+                                            nullable: true
+                                        unread_count:
+                                            type: integer
+                '401':
+                    description: Unauthorized
+
+    /messages/unread-count:
+        get:
+            tags:
+                - Messages
+            summary: Get unread private message count
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Unread private message count
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    count:
+                                        type: integer
+                '401':
+                    description: Unauthorized
+
+    /messages/{userId}:
+        get:
+            tags:
+                - Messages
+            summary: Get private messages with a mutual follower
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: userId
+                  required: true
+                  schema:
+                      type: integer
+                  description: Other user ID
+            responses:
+                '200':
+                    description: Message history
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    can_chat:
+                                        type: boolean
+                                    messages:
+                                        type: array
+                                        items:
+                                            type: object
+                                            properties:
+                                                message_id:
+                                                    type: integer
+                                                sender_id:
+                                                    type: integer
+                                                receiver_id:
+                                                    type: integer
+                                                content:
+                                                    type: string
+                                                created_at:
+                                                    type: string
+                                                    format: date-time
+                                                read_at:
+                                                    type: string
+                                                    format: date-time
+                                                    nullable: true
+                                                sender_username:
+                                                    type: string
+                                                sender_avatar:
+                                                    type: string
+                                                    nullable: true
+                '401':
+                    description: Unauthorized
+        post:
+            tags:
+                - Messages
+            summary: Send a private message to a mutual follower
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: userId
+                  required: true
+                  schema:
+                      type: integer
+                  description: Receiver user ID
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - content
+                            properties:
+                                content:
+                                    type: string
+                                    maxLength: 1000
+            responses:
+                '201':
+                    description: Message created
+                '400':
+                    description: Invalid or empty message
+                '401':
+                    description: Unauthorized
+                '403':
+                    description: Users are not mutual followers

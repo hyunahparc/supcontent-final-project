@@ -103,8 +103,19 @@ CREATE TABLE messages (
     sender_id   INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     receiver_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     content     TEXT,
+    read_at     TIMESTAMPTZ,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE INDEX idx_messages_sender_receiver_created
+ON messages(sender_id, receiver_id, created_at DESC);
+
+CREATE INDEX idx_messages_receiver_sender_created
+ON messages(receiver_id, sender_id, created_at DESC);
+
+CREATE INDEX idx_messages_receiver_unread
+ON messages(receiver_id, read_at)
+WHERE read_at IS NULL;
 
 -- 9. ACTIVITY_LOG
 CREATE TABLE activity_log (

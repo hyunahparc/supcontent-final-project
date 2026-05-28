@@ -12,6 +12,7 @@ import ListDetailPage from './pages/ListDetailPage';
 import HomePage from './pages/HomePage';
 import FeedPage from './pages/FeedPage';
 import NotificationsPage from './pages/NotificationsPage';
+import MessagesPage from './pages/MessagesPage';
 
 import Header from './components/Header';
 
@@ -34,10 +35,10 @@ export default function App() {
                 <Route path="/settings/profile" element={<ProfileSettingsPage />} />
                 <Route path="/feed" element={<FeedPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />
             </Routes>
         </>
     );
 }
-

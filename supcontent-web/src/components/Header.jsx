@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '../api/notifications';
+import { getUnreadMessageCount } from '../api/messages';
 import SearchBar from './SearchBar';
 
 function timeAgo(dateStr) {
@@ -46,6 +47,14 @@ function BellIcon() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+
+function MessageIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
         </svg>
     );
 }
@@ -113,7 +122,14 @@ function UserAvatar({ user }) {
     );
 }
 
-function MobileMenu({ user, location }) {
+function MobileMenu({
+    user,
+    location,
+    unreadCount = 0,
+    unreadMessageCount = 0,
+    onMessagesOpen,
+    onNotificationsOpen,
+}) {
     return (
         <div style={styles.mobileDropdown}>
             <div style={styles.mobileSearch}><SearchBar /></div>
@@ -141,6 +157,24 @@ function MobileMenu({ user, location }) {
                     >
                         My Lists
                     </Link>
+                    <Link
+                        to="/messages"
+                        className={'header-dropdown-link' + (location.pathname === '/messages' ? ' active' : '')}
+                        style={styles.mobileLink}
+                        onClick={onMessagesOpen}
+                    >
+                        <span>Messages</span>
+                        {unreadMessageCount > 0 && <span style={styles.menuBadge}>{unreadMessageCount}</span>}
+                    </Link>
+                    <Link
+                        to="/notifications"
+                        className={'header-dropdown-link' + (location.pathname === '/notifications' ? ' active' : '')}
+                        style={styles.mobileLink}
+                        onClick={onNotificationsOpen}
+                    >
+                        <span>Notifications</span>
+                        {unreadCount > 0 && <span style={styles.menuBadge}>{unreadCount}</span>}
+                    </Link>
                 </>
             ) : (
                 <>
@@ -158,19 +192,29 @@ export default function Header() {
     const navigate  = useNavigate();
     const location  = useLocation();
 
-    const [unreadCount,   setUnreadCount]   = useState(0);
-    const [isMobile,      setIsMobile]      = useState(window.innerWidth < BREAKPOINT);
-    const [menuOpen,      setMenuOpen]      = useState(false);
-    const [notifOpen,     setNotifOpen]     = useState(false);
-    const [notifications, setNotifications] = useState([]);
-    const [notifLoading,  setNotifLoading]  = useState(false);
+    const [unreadCount,        setUnreadCount]        = useState(0);
+    const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+    const [isMobile,           setIsMobile]           = useState(window.innerWidth < BREAKPOINT);
+    const [menuOpen,           setMenuOpen]           = useState(false);
+    const [notifOpen,          setNotifOpen]          = useState(false);
+    const [notifications,      setNotifications]      = useState([]);
+    const [notifLoading,       setNotifLoading]       = useState(false);
 
     const menuRef  = useRef(null);
     const notifRef = useRef(null);
 
     useEffect(() => {
-        if (!user) { setUnreadCount(0); return; }
-        const fetchCount = () => getUnreadCount().then(d => setUnreadCount(d.count)).catch(() => {});
+        if (!user) {
+            setUnreadCount(0);
+            setUnreadMessageCount(0);
+            return;
+        }
+
+        const fetchCount = () => {
+            getUnreadCount().then(d => setUnreadCount(d.count)).catch(() => {});
+            getUnreadMessageCount().then(d => setUnreadMessageCount(d.count)).catch(() => {});
+        };
+
         fetchCount();
         const id = setInterval(fetchCount, 30000);
         return () => clearInterval(id);
@@ -234,6 +278,7 @@ export default function Header() {
 
     const navLinkClass = (path) =>
         'header-nav-link' + (location.pathname === path ? ' active' : '');
+    const mobileUnreadCount = unreadCount + unreadMessageCount;
 
     return (
         <header style={{ ...styles.header, padding: isMobile ? '0 16px' : '0 32px' }}>
@@ -269,32 +314,56 @@ export default function Header() {
 
                     {user ? (
                         <>
-                            <div style={styles.notifWrap} ref={notifRef}>
-                                <button style={styles.iconBtn} onClick={toggleNotif} aria-label="Notifications">
-                                    <BellIcon />
-                                    {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
-                                </button>
+                            <div style={styles.userActions}>
+                                {!isMobile && (
+                                    <div style={styles.notifWrap} ref={notifRef}>
+                                        <Link
+                                            style={styles.iconBtn}
+                                            to="/messages"
+                                            aria-label="Messages"
+                                            onClick={() => setUnreadMessageCount(0)}
+                                        >
+                                            <MessageIcon />
+                                            {unreadMessageCount > 0 && <span style={styles.badge}>{unreadMessageCount}</span>}
+                                        </Link>
 
-                                {notifOpen && (
-                                    <NotifDropdown
-                                        notifications={notifications}
-                                        loading={notifLoading}
-                                        onNotifClick={handleNotifClick}
-                                        onMarkAll={handleMarkAll}
-                                    />
+                                        <button style={styles.iconBtn} onClick={toggleNotif} aria-label="Notifications">
+                                            <BellIcon />
+                                            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
+                                        </button>
+
+                                        {notifOpen && (
+                                            <NotifDropdown
+                                                notifications={notifications}
+                                                loading={notifLoading}
+                                                onNotifClick={handleNotifClick}
+                                                onMarkAll={handleMarkAll}
+                                            />
+                                        )}
+                                    </div>
                                 )}
+
+                                {isMobile && (
+                                    <div ref={menuRef} style={styles.menuWrap}>
+                                        <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
+                                            <HamburgerIcon />
+                                            {!menuOpen && mobileUnreadCount > 0 && <span style={styles.badge}>{mobileUnreadCount}</span>}
+                                        </button>
+                                        {menuOpen && (
+                                            <MobileMenu
+                                                user={user}
+                                                location={location}
+                                                unreadCount={unreadCount}
+                                                unreadMessageCount={unreadMessageCount}
+                                                onMessagesOpen={() => setUnreadMessageCount(0)}
+                                                onNotificationsOpen={() => setUnreadCount(0)}
+                                            />
+                                        )}
+                                    </div>
+                                )}
+
+                                <UserAvatar user={user} />
                             </div>
-
-                            {isMobile && (
-                                <div ref={menuRef} style={styles.menuWrap}>
-                                    <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
-                                        <HamburgerIcon />
-                                    </button>
-                                    {menuOpen && <MobileMenu user={user} location={location} />}
-                                </div>
-                            )}
-
-                            <UserAvatar user={user} />
                         </>
                     ) : (
                         <>
@@ -337,12 +406,13 @@ const styles = {
         height: '100%',
         display: 'flex',
         alignItems: 'center',
-        gap: '12px',
+        gap: 'clamp(8px, 1.4vw, 16px)',
+        minWidth: 0,
     },
     left: {
         display: 'flex',
         alignItems: 'center',
-        gap: '24px',
+        gap: 'clamp(12px, 2vw, 24px)',
         flexShrink: 0,
     },
     logo: {
@@ -369,16 +439,17 @@ const styles = {
         borderRadius: '6px',
     },
     searchWrap: {
-        flex: 1,
-        minWidth: 0,
+        flex: '1 1 clamp(180px, 34vw, 500px)',
+        minWidth: '180px',
         maxWidth: '500px',
     },
     right: {
         display: 'flex',
         alignItems: 'center',
-        gap: '18px',
+        gap: 'clamp(8px, 1.6vw, 18px)',
         flex: 1,
         justifyContent: 'flex-end',
+        minWidth: 0,
     },
     iconBtn: {
         background: 'none',
@@ -387,11 +458,25 @@ const styles = {
         padding: '6px',
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
         borderRadius: '6px',
+        width: '32px',
+        height: '32px',
+        flexShrink: 0,
+    },
+    userActions: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'clamp(6px, 1.1vw, 12px)',
+        flexShrink: 0,
     },
     notifWrap: {
         position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 'clamp(6px, 1.1vw, 12px)',
+        flexShrink: 0,
     },
     badge: {
         display: 'inline-flex',
@@ -533,6 +618,7 @@ const styles = {
         display: 'flex',
         textDecoration: 'none',
         flexShrink: 0,
+        marginLeft: '4px',
     },
     avatar: {
         width: '34px',
@@ -594,12 +680,29 @@ const styles = {
         margin: '12px 0',
     },
     mobileLink: {
-        display: 'block',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '12px',
         padding: '10px 12px',
         fontSize: '14px',
         fontWeight: '700',
         color: '#b3b3b3',
         textDecoration: 'none',
         borderRadius: '8px',
+    },
+    menuBadge: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: '18px',
+        height: '18px',
+        padding: '0 6px',
+        borderRadius: '9999px',
+        backgroundColor: '#1ed760',
+        color: '#000',
+        fontSize: '10px',
+        fontWeight: '800',
+        flexShrink: 0,
     },
 };
