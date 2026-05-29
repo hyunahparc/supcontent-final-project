@@ -6,10 +6,10 @@ import { getUserProfile } from '../api/users';
 import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getLibrary } from '../api/collections';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../api/follows';
+import { mediaHref } from '../utils/media';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
-
 
 export default function DashboardPage() {
     const { id } = useParams();
@@ -169,17 +169,17 @@ export default function DashboardPage() {
                         {isOwnProfile ? 'My collection' : `${profile.username}'s collection`}
                     </h2>
                     <Link to={`/users/${resolvedId}/collection`} style={s.seeAllLink}>
-                        See all ({profile.films_count ?? 0})
+                        See all ({profile.media_count ?? 0})
                     </Link>
                 </div>
                 {collection.length === 0 ? (
-                    <p style={s.emptyText}>No films yet.</p>
+                    <p style={s.emptyText}>No media items yet.</p>
                 ) : (
                     <div style={s.posterGrid}>
                         {collection.map(item => {
                             const poster = item.full_data?.poster_path;
                             return (
-                                <Link key={item.collection_id} to={`/films/${item.external_id}`} style={s.posterWrap}>
+                                <Link key={item.collection_id} to={mediaHref(item)} style={s.posterWrap}>
                                     {poster ? (
                                         <img src={`${TMDB_IMG}${poster}`} alt={item.full_data?.title ?? ''} style={s.poster} />
                                     ) : (
@@ -235,12 +235,12 @@ export default function DashboardPage() {
                                     })}
                                     <div style={s.listOverlayInner}>
                                         <div style={s.listName}>{list.name}</div>
-                                        <div style={s.listCount}>{list.films_count ?? 0} films</div>
+                                        <div style={s.listCount}>{list.media_count ?? 0} items</div>
                                     </div>
                                 </div>
                                 <div style={s.listInfo}>
                                     <div style={s.listName}>{list.name}</div>
-                                    <div style={s.listCount}>{list.films_count ?? 0} films</div>
+                                    <div style={s.listCount}>{list.media_count ?? 0} items</div>
                                 </div>
                             </Link>
                         ))}

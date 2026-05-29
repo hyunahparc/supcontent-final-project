@@ -8,19 +8,19 @@ function authHeader() {
 }
 
 // Get all reviews for a film (public, liked_by_me resolved if logged in)
-export const getReviews = (externalId) =>
-    api.get(`/reviews/${externalId}`, { headers: authHeader() })
+export const getReviews = (externalId, mediaType = 'Movie') =>
+    api.get(`/reviews/${externalId}`, { params: { media_type: mediaType }, headers: authHeader() })
         .then(res => res.data);
 
 // Get the current user's own review for a film
-export const getMyReview = (externalId) =>
-    api.get(`/reviews/${externalId}/my`, { headers: authHeader() })
+export const getMyReview = (externalId, mediaType = 'Movie') =>
+    api.get(`/reviews/${externalId}/my`, { params: { media_type: mediaType }, headers: authHeader() })
         .then(res => res.data)
         .catch(() => null);
 
 // Create or update own review
-export const upsertReview = (externalId, rating, comment) =>
-    api.post('/reviews', { external_id: externalId, rating, comment }, { headers: authHeader() })
+export const upsertReview = (externalId, mediaType = 'Movie', rating, comment) =>
+    api.post('/reviews', { external_id: externalId, media_type: mediaType, rating, comment }, { headers: authHeader() })
         .then(res => res.data);
 
 // Delete own review

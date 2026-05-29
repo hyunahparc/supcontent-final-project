@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { searchMedia } from '../api/search';
+import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w92';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -93,7 +94,7 @@ export default function SearchBar() {
     function handleSelect(item) {
         setOpen(false);
         setQuery('');
-        navigate(`/films/${item.external_id}`);
+        navigate(mediaHref(item));
     }
 
     function handleKeyDown(e) {

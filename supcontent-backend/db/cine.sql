@@ -23,22 +23,28 @@ CREATE TABLE follows (
 
 -- 3. MEDIA_CACHE
 CREATE TABLE media_cache (
-    external_id BIGINT      PRIMARY KEY,
+    external_id BIGINT      NOT NULL,
     media_type  VARCHAR(10) NOT NULL DEFAULT 'Movie',
     full_data   JSONB,
-    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (external_id, media_type),
+    CHECK (media_type IN ('Movie', 'Series'))
 );
 
 -- 4. REVIEWS
 CREATE TABLE reviews (
     review_id   SERIAL PRIMARY KEY,
     user_id     INT    REFERENCES users(user_id) ON DELETE SET NULL,
-    external_id BIGINT NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    external_id BIGINT NOT NULL,
+    media_type  VARCHAR(10) NOT NULL DEFAULT 'Movie',
     rating      NUMERIC(2,1),
     comment     TEXT,
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT reviews_user_media_unique UNIQUE (user_id, external_id)
+    CONSTRAINT reviews_media_fkey FOREIGN KEY (external_id, media_type)
+        REFERENCES media_cache(external_id, media_type) ON DELETE CASCADE,
+    CONSTRAINT reviews_user_media_unique UNIQUE (user_id, external_id, media_type),
+    CHECK (media_type IN ('Movie', 'Series'))
 );
 
 -- 4a. REVIEW_LIKES
@@ -70,19 +76,27 @@ CREATE TABLE custom_lists (
 -- 5a. CUSTOM_LIST_ITEMS
 CREATE TABLE custom_list_items (
     list_id     INT    NOT NULL REFERENCES custom_lists(list_id) ON DELETE CASCADE,
-    external_id BIGINT NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    external_id BIGINT NOT NULL,
+    media_type  VARCHAR(10) NOT NULL DEFAULT 'Movie',
     added_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    PRIMARY KEY (list_id, external_id)
+    PRIMARY KEY (list_id, external_id, media_type),
+    CONSTRAINT custom_list_items_media_fkey FOREIGN KEY (external_id, media_type)
+        REFERENCES media_cache(external_id, media_type) ON DELETE CASCADE,
+    CHECK (media_type IN ('Movie', 'Series'))
 );
 
 -- 6. COLLECTIONS
 CREATE TABLE collections (
     collection_id SERIAL PRIMARY KEY,
     user_id       INT         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    external_id   BIGINT      NOT NULL REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    external_id   BIGINT      NOT NULL,
+    media_type    VARCHAR(10) NOT NULL DEFAULT 'Movie',
     status        VARCHAR(20) NOT NULL,
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CONSTRAINT collections_user_media_unique UNIQUE (user_id, external_id)
+    CONSTRAINT collections_media_fkey FOREIGN KEY (external_id, media_type)
+        REFERENCES media_cache(external_id, media_type) ON DELETE CASCADE,
+    CONSTRAINT collections_user_media_unique UNIQUE (user_id, external_id, media_type),
+    CHECK (media_type IN ('Movie', 'Series'))
 );
 
 -- 7. NOTIFICATIONS
@@ -91,10 +105,14 @@ CREATE TABLE notifications (
     user_id         INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     type            VARCHAR(20) NOT NULL,
     source_user_id  INT    REFERENCES users(user_id) ON DELETE SET NULL,
-    media_id        BIGINT REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    media_id        BIGINT,
+    media_type      VARCHAR(10),
     review_id       INT    REFERENCES reviews(review_id) ON DELETE CASCADE,
     is_read         BOOLEAN     NOT NULL DEFAULT FALSE,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT notifications_media_fkey FOREIGN KEY (media_id, media_type)
+        REFERENCES media_cache(external_id, media_type) ON DELETE CASCADE,
+    CHECK (media_type IS NULL OR media_type IN ('Movie', 'Series'))
 );
 
 -- 8. MESSAGES
@@ -123,10 +141,14 @@ CREATE TABLE activity_log (
     user_id        INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
     activity_type  VARCHAR(20) NOT NULL,
     target_user_id INT    REFERENCES users(user_id) ON DELETE SET NULL,
-    media_id       BIGINT REFERENCES media_cache(external_id) ON DELETE CASCADE,
+    media_id       BIGINT,
+    media_type     VARCHAR(10),
     review_id      INT    REFERENCES reviews(review_id) ON DELETE CASCADE,
     metadata       JSONB NOT NULL DEFAULT '{}'::jsonb,
-    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT activity_log_media_fkey FOREIGN KEY (media_id, media_type)
+        REFERENCES media_cache(external_id, media_type) ON DELETE CASCADE,
+    CHECK (media_type IS NULL OR media_type IN ('Movie', 'Series'))
 );
 
 -- 10. MODERATION

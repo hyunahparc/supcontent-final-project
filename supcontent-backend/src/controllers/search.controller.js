@@ -165,7 +165,7 @@ exports.searchLists = async (req, res) => {
         const { rows } = await pool.query(
             `SELECT cl.list_id, cl.name, cl.created_at,
                     u.user_id AS owner_id, u.username AS owner_username,
-                    COUNT(cli.external_id)::int AS films_count
+                    COUNT(cli.external_id)::int AS media_count
              FROM custom_lists cl
              JOIN users u ON u.user_id = cl.user_id
              LEFT JOIN custom_list_items cli ON cli.list_id = cl.list_id

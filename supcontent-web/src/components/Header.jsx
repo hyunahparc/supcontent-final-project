@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '../api/notifications';
 import { getUnreadMessageCount } from '../api/messages';
 import SearchBar from './SearchBar';
+import { mediaIdHref } from '../utils/media';
 
 function timeAgo(dateStr) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -25,7 +26,7 @@ function notifText(n) {
 
 function notifLink(n) {
     if (n.type === 'follow') return `/users/${n.source_user_id}/profile`;
-    if (n.media_id)          return `/films/${n.media_id}`;
+    if (n.media_id)          return mediaIdHref(n.media_id, n.media_type ?? 'Movie');
     return null;
 }
 

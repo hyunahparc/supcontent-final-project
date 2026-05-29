@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getNotifications, markAllRead, markOneRead } from '../api/notifications';
+import { mediaIdHref } from '../utils/media';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
@@ -26,7 +27,7 @@ function notificationText(n) {
 
 function notificationLink(n) {
     if (n.type === 'follow') return `/users/${n.source_user_id}/profile`;
-    if (n.media_id)          return `/films/${n.media_id}`;
+    if (n.media_id)          return mediaIdHref(n.media_id, n.media_type ?? 'Movie');
     return null;
 }
 

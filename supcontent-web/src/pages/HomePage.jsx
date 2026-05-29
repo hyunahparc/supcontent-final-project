@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getTrending } from '../api/films';
+import { getTrending } from '../api/media';
+import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -25,15 +26,10 @@ function HeroSection() {
       <div style={s.heroGlow}  aria-hidden="true" />
 
       <div style={s.heroContent}>
-        <div style={s.heroBadge}>
-          <span style={s.heroBadgeDot} />
-          Cinema &amp; Series Database
-        </div>
-
         <h1 style={s.heroTitle}>
           Discover{' '}
           <span style={s.heroTitleAccent}>thousands</span>
-          {' '}of films<br />and series in an instant.
+          {' '}of movies<br />and series in an instant.
         </h1>
 
         <p style={s.heroSubtitle}>
@@ -50,7 +46,7 @@ function HeroSection() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for a film or series..."
+              placeholder="Search for a movie or TV show..."
               style={s.searchInput}
               aria-label="Search"
             />
@@ -149,7 +145,7 @@ function TrendingSection() {
         <div style={s.grid}>
           {loading
             ? Array.from({ length: 12 }, (_, i) => <SkeletonCard key={i} />)
-            : (data?.map((item) => <MediaCard key={item.external_id} item={item} />) ?? (
+            : (data?.map((item) => <MediaCard key={`${item.external_id}-${item.media_type}`} item={item} />) ?? (
                 <p style={{ color: '#b3b3b3', fontFamily: font }}>No content available.</p>
               ))
           }
@@ -169,7 +165,7 @@ function MediaCard({ item }) {
 
   return (
     <Link
-      to={`/films/${item.external_id}`}
+      to={mediaHref(item)}
       style={{ ...s.card, ...(hovered ? s.cardHovered : {}) }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -189,7 +185,7 @@ function MediaCard({ item }) {
           </div>
         )}
         <span style={{ ...s.typeBadge, ...(item.media_type === 'Series' ? s.typeBadgeSeries : {}) }}>
-          {item.media_type === 'Series' ? 'Series' : 'Film'}
+          {item.media_type === 'Series' ? 'Series' : 'Movie'}
         </span>
         <div style={s.scoreBadge}>
           ⭐ {score}

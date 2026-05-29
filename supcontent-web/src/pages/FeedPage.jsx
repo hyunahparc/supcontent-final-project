@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { getFeed } from '../api/feed';
 import { useAuth } from '../context/AuthContext';
+import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
-
 
 export default function FeedPage() {
     const { user } = useAuth();
@@ -103,7 +103,7 @@ export default function FeedPage() {
                                     </div>
 
                                     {isMediaActivity && (
-                                        <Link to={`/films/${activity.external_id}`} style={styles.mediaRow}>
+                                        <Link to={mediaHref(activity)} style={styles.mediaRow}>
                                             <div style={styles.posterWrap}>
                                                 {poster ? (
                                                     <img

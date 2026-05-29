@@ -27,7 +27,7 @@ const getProfile = async (req, res) => {
                 u.created_at,
                 COUNT(DISTINCT f_in.follower_id)::int  AS followers_count,
                 COUNT(DISTINCT f_out.followee_id)::int AS following_count,
-                COUNT(DISTINCT c.collection_id)::int   AS films_count,
+                COUNT(DISTINCT c.collection_id)::int   AS media_count,
                 CASE WHEN $2::int IS NOT NULL
                     THEN EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND followee_id = u.user_id)
                     ELSE false

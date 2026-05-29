@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getListById, removeFilmFromList } from '../api/lists';
+import { getListById, removeMediaFromList } from '../api/lists';
+import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w300';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -23,12 +24,12 @@ export default function ListDetailPage() {
             .finally(() => setLoading(false));
     }, [id]);
 
-    async function handleRemove(externalId) {
-        if (!window.confirm('Remove this film from the list?')) return;
-        await removeFilmFromList(id, externalId);
+    async function handleRemove(externalId, mediaType) {
+        if (!window.confirm('Remove this media item from the list?')) return;
+        await removeMediaFromList(id, externalId, mediaType);
         setList(prev => ({
             ...prev,
-            films: prev.films.filter(f => f.external_id !== externalId),
+            media_items: prev.media_items.filter(item => item.external_id !== externalId || item.media_type !== mediaType),
         }));
     }
 
@@ -48,7 +49,7 @@ export default function ListDetailPage() {
                             <span style={styles.badge}>
                                 {list.is_public ? '🌐 Public' : '🔒 Private'}
                             </span>
-                            <span style={styles.count}>{list.films?.length ?? 0} films</span>
+                            <span style={styles.count}>{list.media_items?.length ?? 0} items</span>
                         </div>
                     </div>
                     {isOwner && (
@@ -56,12 +57,12 @@ export default function ListDetailPage() {
                     )}
                 </div>
 
-                {!list.films || list.films.length === 0 ? (
-                    <p style={styles.empty}>No films in this list yet.</p>
+                {!list.media_items || list.media_items.length === 0 ? (
+                    <p style={styles.empty}>No media items in this list yet.</p>
                 ) : (
                     <div style={styles.grid}>
-                        {list.films.map(film => {
-                            const data = film.full_data ?? {};
+                        {list.media_items.map(item => {
+                            const data = item.full_data ?? {};
                             const title = data.title ?? 'Unknown';
                             const posterPath = data.poster_path;
                             const year = data.release_date?.slice(0, 4) ?? '';
@@ -69,17 +70,17 @@ export default function ListDetailPage() {
 
                             return (
                                 <div
-                                    key={film.external_id}
+                                    key={`${item.external_id}-${item.media_type}`}
                                     style={{
                                         ...styles.card,
-                                        opacity: hoveredId === film.external_id ? 0.8 : 1,
-                                        transform: hoveredId === film.external_id ? 'scale(1.03)' : 'scale(1)',
+                                        opacity: hoveredId === `${item.external_id}-${item.media_type}` ? 0.8 : 1,
+                                        transform: hoveredId === `${item.external_id}-${item.media_type}` ? 'scale(1.03)' : 'scale(1)',
                                         transition: 'opacity 0.15s, transform 0.15s',
                                     }}
-                                    onMouseEnter={() => setHoveredId(film.external_id)}
+                                    onMouseEnter={() => setHoveredId(`${item.external_id}-${item.media_type}`)}
                                     onMouseLeave={() => setHoveredId(null)}
                                 >
-                                    <Link to={`/films/${film.external_id}`} style={styles.cardLink}>
+                                    <Link to={mediaHref(item)} style={styles.cardLink}>
                                         {posterPath ? (
                                             <img
                                                 src={`${POSTER_BASE}${posterPath}`}
@@ -90,17 +91,17 @@ export default function ListDetailPage() {
                                             <div style={styles.posterFallback}>🎬</div>
                                         )}
                                         <div style={styles.cardInfo}>
-                                            <div style={styles.filmTitle}>{title}</div>
-                                            {year && <div style={styles.filmYear}>{year}</div>}
+                                            <div style={styles.mediaTitle}>{title}</div>
+                                            {year && <div style={styles.mediaYear}>{year}</div>}
                                             {rating && (
-                                                <div style={styles.filmRating}>⭐ {Number(rating).toFixed(1)}</div>
+                                                <div style={styles.mediaRating}>⭐ {Number(rating).toFixed(1)}</div>
                                             )}
                                         </div>
                                     </Link>
                                     {isOwner && (
                                         <button
                                             style={styles.removeBtn}
-                                            onClick={() => handleRemove(film.external_id)}
+                                            onClick={() => handleRemove(item.external_id, item.media_type)}
                                         >
                                             ✕
                                         </button>
@@ -208,7 +209,7 @@ const styles = {
     cardInfo: {
         padding: '10px 12px',
     },
-    filmTitle: {
+    mediaTitle: {
         fontSize: '13px',
         fontWeight: '700',
         color: '#fff',
@@ -217,12 +218,12 @@ const styles = {
         overflow: 'hidden',
         textOverflow: 'ellipsis',
     },
-    filmYear: {
+    mediaYear: {
         fontSize: '11px',
         color: '#b3b3b3',
         marginBottom: '2px',
     },
-    filmRating: {
+    mediaRating: {
         fontSize: '11px',
         color: '#f5c518',
     },

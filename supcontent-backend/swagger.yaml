@@ -14,6 +14,73 @@ components:
             scheme: bearer
             bearerFormat: JWT
     schemas:
+        MediaType:
+            type: string
+            enum: [Movie, Series]
+            example: Movie
+        MediaSummary:
+            type: object
+            properties:
+                external_id:
+                    type: integer
+                    example: 550
+                title:
+                    type: string
+                    example: Fight Club
+                media_type:
+                    $ref: '#/components/schemas/MediaType'
+                poster_path:
+                    type: string
+                    nullable: true
+                release_date:
+                    type: string
+                    nullable: true
+                vote_average:
+                    type: number
+                    nullable: true
+        MediaDetail:
+            type: object
+            properties:
+                id:
+                    type: integer
+                    example: 550
+                media_type:
+                    $ref: '#/components/schemas/MediaType'
+                title:
+                    type: string
+                    example: Fight Club
+                overview:
+                    type: string
+                poster_path:
+                    type: string
+                    example: /pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg
+                backdrop_path:
+                    type: string
+                    nullable: true
+                release_date:
+                    type: string
+                    example: '1999-10-15'
+                runtime:
+                    type: integer
+                    nullable: true
+                vote_average:
+                    type: number
+                    example: 8.4
+                genres:
+                    type: array
+                    items:
+                        type: object
+                director:
+                    type: string
+                    nullable: true
+                cast:
+                    type: array
+                    items:
+                        type: object
+                similar:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/MediaSummary'
         User:
             type: object
             properties:
@@ -134,7 +201,7 @@ paths:
         get:
             tags:
                 - Search
-            summary: Search films and series
+            summary: Search movies and TV series
             parameters:
                 - in: query
                   name: q
@@ -181,7 +248,7 @@ paths:
         post:
             tags:
                 - Collections
-            summary: Add or update a film in collection
+            summary: Add or update a media item in collection
             security:
                 - BearerAuth: []
             requestBody:
@@ -192,11 +259,14 @@ paths:
                             type: object
                             required:
                                 - external_id
+                                - media_type
                                 - status
                             properties:
                                 external_id:
                                     type: integer
                                     example: 550
+                                media_type:
+                                    $ref: '#/components/schemas/MediaType'
                                 status:
                                     type: string
                                     enum: [To Watch, Watching, Completed, Dropped]
@@ -212,7 +282,7 @@ paths:
         get:
             tags:
                 - Collections
-            summary: Get collection status for a film
+            summary: Get collection status for a media item
             security:
                 - BearerAuth: []
             parameters:
@@ -222,6 +292,11 @@ paths:
                   schema:
                       type: integer
                   example: 550
+                - in: query
+                  name: media_type
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/MediaType'
             responses:
                 '200':
                     description: Collection status
@@ -236,7 +311,7 @@ paths:
         delete:
             tags:
                 - Collections
-            summary: Remove a film from collection
+            summary: Remove a media item from collection
             security:
                 - BearerAuth: []
             parameters:
@@ -246,6 +321,11 @@ paths:
                   schema:
                       type: integer
                   example: 550
+                - in: query
+                  name: media_type
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/MediaType'
             responses:
                 '200':
                     description: Removed from collection
@@ -276,7 +356,7 @@ paths:
         get:
             tags:
                 - Reviews
-            summary: Get all reviews for a film
+            summary: Get all reviews for a media item
             parameters:
                 - in: path
                   name: external_id
@@ -284,6 +364,11 @@ paths:
                   schema:
                       type: integer
                   example: 550
+                - in: query
+                  name: media_type
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/MediaType'
             responses:
                 '200':
                     description: List of reviews with likes and comment counts
@@ -292,7 +377,7 @@ paths:
         get:
             tags:
                 - Reviews
-            summary: Get my review for a film
+            summary: Get my review for a media item
             security:
                 - BearerAuth: []
             parameters:
@@ -301,6 +386,11 @@ paths:
                   required: true
                   schema:
                       type: integer
+                - in: query
+                  name: media_type
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/MediaType'
             responses:
                 '200':
                     description: My review or null
@@ -320,10 +410,13 @@ paths:
                             type: object
                             required:
                                 - external_id
+                                - media_type
                             properties:
                                 external_id:
                                     type: integer
                                     example: 550
+                                media_type:
+                                    $ref: '#/components/schemas/MediaType'
                                 rating:
                                     type: number
                                     example: 4.5
@@ -454,7 +547,7 @@ paths:
                 - BearerAuth: []
             responses:
                 '200':
-                    description: List of custom lists with film count and preview posters
+                    description: List of custom lists with media count and preview posters
                 '401':
                     description: Unauthorized
         post:
@@ -490,7 +583,7 @@ paths:
         get:
             tags:
                 - Lists
-            summary: Get a list with its films
+            summary: Get a list with its media items
             security:
                 - BearerAuth: []
             parameters:
@@ -501,7 +594,7 @@ paths:
                       type: integer
             responses:
                 '200':
-                    description: List detail with films
+                    description: List detail with media items
                 '403':
                     description: This list is private
                 '404':
@@ -553,11 +646,11 @@ paths:
                 '404':
                     description: List not found or not yours
 
-    /lists/{id}/films:
+    /lists/{id}/media:
         post:
             tags:
                 - Lists
-            summary: Add a film to a list
+            summary: Add a media item to a list
             security:
                 - BearerAuth: []
             parameters:
@@ -574,21 +667,24 @@ paths:
                             type: object
                             required:
                                 - external_id
+                                - media_type
                             properties:
                                 external_id:
                                     type: integer
                                     example: 550
+                                media_type:
+                                    $ref: '#/components/schemas/MediaType'
             responses:
                 '201':
-                    description: Film added to list
+                    description: Media item added to list
                 '404':
                     description: List not found or not yours
 
-    /lists/{id}/films/{external_id}:
+    /lists/{id}/media/{external_id}:
         delete:
             tags:
                 - Lists
-            summary: Remove a film from a list
+            summary: Remove a media item from a list
             security:
                 - BearerAuth: []
             parameters:
@@ -603,11 +699,16 @@ paths:
                   schema:
                       type: integer
                   example: 550
+                - in: query
+                  name: media_type
+                  required: true
+                  schema:
+                      $ref: '#/components/schemas/MediaType'
             responses:
                 '200':
-                    description: Film removed from list
+                    description: Media item removed from list
                 '404':
-                    description: Film not found in list
+                    description: Media item not found in list
 
     /users/{id}/lists:
         get:
@@ -624,12 +725,41 @@ paths:
                 '200':
                     description: List of public custom lists
 
-    /films/{id}:
+    /media/trending:
         get:
             tags:
-                - Films
-            summary: Get film detail by TMDB ID
-            description: Returns film metadata from DB cache. Fetches from TMDB and caches if not found or expired (7 days).
+                - Media
+            summary: Get trending movies and series
+            parameters:
+                - in: query
+                  name: type
+                  schema:
+                      type: string
+                      enum: [all, Movie, Series]
+                      default: all
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 12
+                      minimum: 1
+                      maximum: 50
+            responses:
+                '200':
+                    description: Trending media
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: '#/components/schemas/MediaSummary'
+
+    /media/movie/{id}:
+        get:
+            tags:
+                - Media
+            summary: Get movie detail by TMDB ID
+            description: Returns movie metadata from DB cache. Fetches from TMDB and caches if not found or expired.
             parameters:
                 - in: path
                   name: id
@@ -640,57 +770,39 @@ paths:
                   example: 550
             responses:
                 '200':
-                    description: Film detail
+                    description: Movie detail
                     content:
                         application/json:
                             schema:
-                                type: object
-                                properties:
-                                    id:
-                                        type: integer
-                                        example: 550
-                                    title:
-                                        type: string
-                                        example: Fight Club
-                                    overview:
-                                        type: string
-                                    poster_path:
-                                        type: string
-                                        example: /pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg
-                                    release_date:
-                                        type: string
-                                        example: '1999-10-15'
-                                    runtime:
-                                        type: integer
-                                        example: 139
-                                    vote_average:
-                                        type: number
-                                        example: 8.4
-                                    genres:
-                                        type: array
-                                        items:
-                                            type: object
-                                            properties:
-                                                id:
-                                                    type: integer
-                                                name:
-                                                    type: string
-                                    director:
-                                        type: string
-                                        example: David Fincher
-                                    cast:
-                                        type: array
-                                        items:
-                                            type: object
-                                            properties:
-                                                id:
-                                                    type: integer
-                                                name:
-                                                    type: string
-                                                character:
-                                                    type: string
+                                $ref: '#/components/schemas/MediaDetail'
                 '404':
-                    description: Film not found
+                    description: Media not found
+                '500':
+                    description: Server error
+
+    /media/tv/{id}:
+        get:
+            tags:
+                - Media
+            summary: Get TV series detail by TMDB ID
+            description: Returns TV series metadata from DB cache. Fetches from TMDB and caches if not found or expired.
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                  description: TMDB TV series ID
+                  example: 1399
+            responses:
+                '200':
+                    description: TV series detail
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MediaDetail'
+                '404':
+                    description: Media not found
                 '500':
                     description: Server error
 
@@ -806,6 +918,10 @@ paths:
                                             format: date-time
                                         media_id:
                                             type: integer
+                                            nullable: true
+                                        media_type:
+                                            type: string
+                                            enum: [Movie, Series]
                                             nullable: true
                                         review_id:
                                             type: integer
