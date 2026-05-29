@@ -124,7 +124,7 @@ export default function FeedPage() {
                                                             const type = val >= i ? 'full' : val >= i - 0.5 ? 'half' : 'empty';
                                                             return (
                                                                 <div key={i} style={{ position: 'relative', width: 15, height: 15, fontSize: 15, lineHeight: 1, flexShrink: 0 }}>
-                                                                    <span style={{ color: '#3a3a3a', position: 'absolute', left: 0, top: 0 }}>★</span>
+                                                                    <span style={{ color: 'var(--bg-elevated)', position: 'absolute', left: 0, top: 0 }}>★</span>
                                                                     {type !== 'empty' && (
                                                                         <span style={{ color: '#f5c518', position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: type === 'half' ? '50%' : '100%', display: 'block', whiteSpace: 'nowrap' }}>★</span>
                                                                     )}
@@ -156,7 +156,7 @@ const styles = {
         margin: '0 auto',
         padding: '40px 40px 60px',
         fontFamily: font,
-        color: '#fff',
+        color: 'var(--text-primary)',
         minHeight: '100vh',
     },
     state: {
@@ -164,7 +164,7 @@ const styles = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '14px',
         fontFamily: font,
     },
@@ -175,7 +175,7 @@ const styles = {
     },
     emptyBox: {
         padding: '60px 40px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '16px',
         textAlign: 'center',
     },
@@ -183,12 +183,12 @@ const styles = {
         margin: '0 0 8px',
         fontSize: '18px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     emptyHint: {
         margin: 0,
         fontSize: '14px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     list: {
         display: 'flex',
@@ -200,7 +200,7 @@ const styles = {
         alignItems: 'flex-start',
         gap: '16px',
         padding: '20px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '16px',
     },
     avatarLink: {
@@ -213,20 +213,20 @@ const styles = {
         borderRadius: '50%',
         objectFit: 'cover',
         display: 'block',
-        border: '2px solid #2a2a2a',
+        border: '2px solid var(--border)',
     },
     avatarFallback: {
         width: '44px',
         height: '44px',
         borderRadius: '50%',
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '17px',
         fontWeight: '700',
-        color: '#fff',
-        border: '2px solid #2a2a2a',
+        color: 'var(--text-primary)',
+        border: '2px solid var(--border)',
     },
     content: {
         flex: 1,
@@ -243,16 +243,16 @@ const styles = {
         margin: 0,
         fontSize: '14px',
         lineHeight: 1.5,
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     usernameLink: {
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         textDecoration: 'none',
         fontSize: '17px',
     },
     actionLabel: {
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontWeight: '400',
         fontSize: '14px',
     },
@@ -260,8 +260,8 @@ const styles = {
         display: 'inline-block',
         padding: '2px 8px',
         borderRadius: '9999px',
-        backgroundColor: 'rgba(255,255,255,0.1)',
-        color: '#fff',
+        backgroundColor: 'var(--glass-bg)',
+        color: 'var(--text-primary)',
         fontSize: '12px',
         fontWeight: '700',
         verticalAlign: 'middle',
@@ -270,14 +270,14 @@ const styles = {
         flexShrink: 0,
         marginTop: '2px',
         fontSize: '12px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     mediaRow: {
         display: 'flex',
         alignItems: 'flex-start',
         gap: '14px',
         textDecoration: 'none',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius: '10px',
         padding: '12px',
     },
@@ -290,12 +290,12 @@ const styles = {
         objectFit: 'cover',
         borderRadius: '6px',
         display: 'block',
-        boxShadow: 'rgba(0,0,0,0.4) 0px 4px 8px',
+        boxShadow: 'var(--shadow) 0px 4px 8px',
     },
     posterFallback: {
         width: '52px',
         height: '78px',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius: '6px',
     },
     mediaInfo: {
@@ -307,7 +307,7 @@ const styles = {
         margin: '0 0 8px',
         fontSize: '14px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -322,13 +322,13 @@ const styles = {
     ratingNum: {
         marginLeft: '6px',
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontWeight: '600',
     },
     comment: {
         margin: 0,
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         lineHeight: 1.55,
         display: '-webkit-box',
         WebkitLineClamp: 3,

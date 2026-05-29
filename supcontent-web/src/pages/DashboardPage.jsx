@@ -123,6 +123,17 @@ export default function DashboardPage() {
                         <p style={{ ...s.bio, ...s.bioEmpty }}>No bio yet.</p>
                     )}
 
+                    {profile.link && (
+                        <a
+                            href={profile.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={s.profileLink}
+                        >
+                            {profile.link.replace(/^https?:\/\//, '')}
+                        </a>
+                    )}
+
                     <div style={s.socialRow}>
                         <button style={s.socialBtn} onClick={() => openModal('followers')}>
                             <span style={s.socialNumber}>{profile.followers_count ?? 0}</span>
@@ -301,7 +312,7 @@ const s = {
         margin: '0 auto',
         padding: '48px 32px 80px',
         fontFamily: font,
-        color: '#fff',
+        color: 'var(--text-primary)',
         minHeight: '100vh',
     },
     state: {
@@ -309,7 +320,7 @@ const s = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '14px',
         fontFamily: font,
     },
@@ -319,7 +330,7 @@ const s = {
         display: 'flex',
         alignItems: 'flex-start',
         gap: '32px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '16px',
         padding: '36px',
         marginBottom: '40px',
@@ -331,41 +342,53 @@ const s = {
         height: '120px',
         borderRadius: '50%',
         objectFit: 'cover',
-        border: '3px solid #2a2a2a',
+        border: '3px solid var(--border)',
     },
     avatarFallback: {
         width: '120px',
         height: '120px',
         borderRadius: '50%',
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '48px',
         fontWeight: '700',
-        color: '#fff',
-        border: '3px solid #2a2a2a',
+        color: 'var(--text-primary)',
+        border: '3px solid var(--border)',
     },
     profileInfo: { flex: 1, minWidth: '200px' },
     username: { margin: '0 0 4px', fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' },
-    memberSince: { margin: '0 0 14px', fontSize: '13px', color: '#b3b3b3' },
-    bio: { margin: '0 0 20px', fontSize: '14px', color: '#e0e0e0', lineHeight: 1.6, maxWidth: '480px' },
-    bioEmpty: { color: '#4d4d4d', fontStyle: 'italic' },
+    memberSince: { margin: '0 0 14px', fontSize: '13px', color: 'var(--text-secondary)' },
+    bio: { margin: '0 0 20px', fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6, maxWidth: '480px' },
+    bioEmpty: { color: 'var(--text-muted)', fontStyle: 'italic' },
+    profileLink: {
+        display: 'inline-block',
+        margin: '-12px 0 18px',
+        fontSize: '13px',
+        color: 'var(--accent)',
+        textDecoration: 'none',
+        fontWeight: '600',
+        maxWidth: '320px',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+    },
     socialRow: { display: 'flex', alignItems: 'center', gap: '20px' },
     socialBtn: {
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '2px',
     },
-    socialNumber: { fontSize: '20px', fontWeight: '700', color: '#fff' },
-    socialLabel: { fontSize: '12px', color: '#b3b3b3' },
-    socialDivider: { width: '1px', height: '36px', backgroundColor: '#333' },
+    socialNumber: { fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' },
+    socialLabel: { fontSize: '12px', color: 'var(--text-secondary)' },
+    socialDivider: { width: '1px', height: '36px', backgroundColor: 'var(--bg-elevated)' },
 
     editBtn: {
         padding: '10px 22px',
-        border: '1px solid #4d4d4d',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         backgroundColor: 'transparent',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '13px',
         fontWeight: '700',
         cursor: 'pointer',
@@ -382,17 +405,17 @@ const s = {
     followWrap: { position: 'relative', alignSelf: 'flex-start', flexShrink: 0 },
     followBtn: {
         padding: '10px 28px', border: 'none', borderRadius: '9999px',
-        backgroundColor: '#1ed760', color: '#000', fontSize: '13px', fontWeight: '700',
+        backgroundColor: 'var(--accent)', color: 'var(--text-inverse)', fontSize: '13px', fontWeight: '700',
         cursor: 'pointer', fontFamily: font, letterSpacing: '0.5px',
     },
     followingBtn: {
-        padding: '10px 28px', border: '1px solid #4d4d4d', borderRadius: '9999px',
-        backgroundColor: 'transparent', color: '#fff', fontSize: '13px', fontWeight: '700',
+        padding: '10px 28px', border: '1px solid var(--border-visible)', borderRadius: '9999px',
+        backgroundColor: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '700',
         cursor: 'pointer', fontFamily: font, letterSpacing: '0.5px',
     },
     unfollowMenu: {
         position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-        backgroundColor: '#2a2a2a', borderRadius: '8px', border: '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-elevated)', borderRadius: '8px', border: '1px solid var(--border-subtle)',
         overflow: 'hidden', zIndex: 10, minWidth: '140px',
     },
     unfollowMenuItem: {
@@ -407,9 +430,9 @@ const s = {
     sectionHeader: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px',
     },
-    sectionTitle: { margin: 0, fontSize: '20px', fontWeight: '700', color: '#fff' },
-    seeAllLink: { fontSize: '13px', color: '#b3b3b3', textDecoration: 'none', fontWeight: '600' },
-    emptyText: { color: '#4d4d4d', fontSize: '14px', fontStyle: 'italic', margin: 0 },
+    sectionTitle: { margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' },
+    seeAllLink: { fontSize: '13px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600' },
+    emptyText: { color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic', margin: 0 },
 
     // Collection preview
     posterGrid: {
@@ -417,13 +440,13 @@ const s = {
     },
     posterWrap: {
         borderRadius: '8px', overflow: 'hidden', display: 'block',
-        aspectRatio: '2 / 3', backgroundColor: '#2a2a2a',
+        aspectRatio: '2 / 3', backgroundColor: 'var(--bg-elevated)',
     },
     poster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     posterFallback: {
         width: '100%', height: '100%', display: 'flex',
         alignItems: 'center', justifyContent: 'center',
-        fontSize: '28px', backgroundColor: '#2a2a2a',
+        fontSize: '28px', backgroundColor: 'var(--bg-elevated)',
     },
 
     // Lists
@@ -431,34 +454,34 @@ const s = {
     listCard: {
         textDecoration: 'none', cursor: 'pointer', display: 'flex',
         flexDirection: 'column', borderRadius: '8px', overflow: 'hidden',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
     },
     listPosterStack: { position: 'relative', height: '180px', borderRadius: '6px', overflow: 'hidden' },
     listPoster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
-    listPosterFallback: { width: '100%', height: '100%', backgroundColor: '#1e1e1e' },
+    listPosterFallback: { width: '100%', height: '100%', backgroundColor: 'var(--bg-secondary)' },
     listOverlayInner: { display: 'none' },
-    listInfo: { padding: '10px 12px', backgroundColor: '#1e1e1e' },
+    listInfo: { padding: '10px 12px', backgroundColor: 'var(--bg-secondary)' },
     listName: {
-        fontSize: '13px', fontWeight: '700', color: '#fff',
+        fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)',
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: '2px',
     },
-    listCount: { fontSize: '12px', color: '#ccc' },
+    listCount: { fontSize: '12px', color: 'var(--text-secondary)' },
 
     // Logout
     logoutWrap: {
         display: 'flex',
         justifyContent: 'center',
         paddingTop: '24px',
-        borderTop: '1px solid #2a2a2a',
+        borderTop: '1px solid var(--border)',
         marginTop: '8px',
     },
     logoutBtn: {
         padding: '10px 32px',
         fontSize: '13px',
         fontWeight: '700',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         backgroundColor: 'transparent',
-        border: '1px solid #3a3a3a',
+        border: '1px solid var(--border-subtle)',
         borderRadius: '9999px',
         cursor: 'pointer',
         fontFamily: font,
@@ -471,22 +494,22 @@ const s = {
         display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
     },
     modalBox: {
-        backgroundColor: '#1e1e1e', borderRadius: '16px', padding: '28px',
+        backgroundColor: 'var(--bg-secondary)', borderRadius: '16px', padding: '28px',
         width: '360px', maxHeight: '70vh', overflowY: 'auto',
     },
     modalHeader: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px',
     },
-    modalTitle: { margin: 0, fontSize: '18px', fontWeight: '700', color: '#fff' },
-    modalClose: { background: 'none', border: 'none', color: '#b3b3b3', fontSize: '18px', cursor: 'pointer', padding: 0 },
-    modalEmpty: { color: '#b3b3b3', fontSize: '14px', textAlign: 'center', margin: '20px 0' },
+    modalTitle: { margin: 0, fontSize: '18px', fontWeight: '700', color: 'var(--text-primary)' },
+    modalClose: { background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '18px', cursor: 'pointer', padding: 0 },
+    modalEmpty: { color: 'var(--text-secondary)', fontSize: '14px', textAlign: 'center', margin: '20px 0' },
     userList: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: '12px' },
     userLink: { display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' },
     miniAvatar: { width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' },
     miniAvatarFallback: {
-        width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#333',
+        width: '40px', height: '40px', borderRadius: '50%', backgroundColor: 'var(--bg-elevated)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: '16px', fontWeight: '700', color: '#fff', flexShrink: 0,
+        fontSize: '16px', fontWeight: '700', color: 'var(--text-primary)', flexShrink: 0,
     },
-    userUsername: { fontSize: '14px', fontWeight: '600', color: '#fff' },
+    userUsername: { fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)' },
 };

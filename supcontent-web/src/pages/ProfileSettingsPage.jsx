@@ -1,24 +1,28 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../api/users';
+import { useTheme } from '../context/ThemeContext';
+import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount, exportUserData } from '../api/users';
 
 const font    = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const MAX_BIO = 500;
 
 export default function ProfileSettingsPage() {
     const { user, updateUser, logout } = useAuth();
+    const { isDark, toggleTheme }      = useTheme();
     const navigate = useNavigate();
 
     const [username, setUsername] = useState('');
-    const [bio, setBio] = useState('');
+    const [bio, setBio]           = useState('');
+    const [link, setLink]         = useState('');
     const [avatarUrl, setAvatarUrl] = useState('');
     const [avatarFile, setAvatarFile] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [saving, setSaving] = useState(false);
+    const [preview, setPreview]   = useState(null);
+    const [saving, setSaving]     = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
-    const [errorMsg, setErrorMsg] = useState('');
+    const [errorMsg, setErrorMsg]   = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [focusedField, setFocusedField] = useState('');
 
@@ -34,6 +38,7 @@ export default function ProfileSettingsPage() {
             .then(profile => {
                 setUsername(profile.username ?? '');
                 setBio(profile.bio ?? '');
+                setLink(profile.link ?? '');
                 setAvatarUrl(profile.avatar ?? '');
             })
             .catch(() => {
@@ -103,7 +108,7 @@ export default function ProfileSettingsPage() {
 
         setSaving(true);
         try {
-            const updated = await updateMyProfile({ username: username.trim(), bio });
+            const updated = await updateMyProfile({ username: username.trim(), bio, link: link.trim() || null });
             updateUser({ username: updated.username, bio: updated.bio });
             setSuccessMsg('Profile saved!');
             setTimeout(() => setSuccessMsg(''), 3000);
@@ -111,6 +116,17 @@ export default function ProfileSettingsPage() {
             setErrorMsg(err.response?.data?.message || 'Failed to save profile.');
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleExport(format) {
+        setExporting(true);
+        try {
+            await exportUserData(format);
+        } catch {
+            setErrorMsg('Export failed. Please try again.');
+        } finally {
+            setExporting(false);
         }
     }
 
@@ -218,7 +234,7 @@ export default function ProfileSettingsPage() {
                             onBlur={() => setFocusedField('')}
                             rows={4}
                             maxLength={MAX_BIO}
-                            placeholder="Tell us a little about yourself…"
+                            placeholder="Tell us a little about yourself..."
                             style={{
                                 ...inputStyle(focusedField === 'bio'),
                                 resize: 'vertical',
@@ -227,10 +243,24 @@ export default function ProfileSettingsPage() {
                         />
                         <span style={{
                             ...s.charCount,
-                            color: bio.length > MAX_BIO * 0.9 ? '#f5a623' : '#b3b3b3',
+                            color: bio.length > MAX_BIO * 0.9 ? '#f5a623' : 'var(--text-secondary)',
                         }}>
                             {bio.length} / {MAX_BIO}
                         </span>
+                    </div>
+
+                    {/* Feature 7 — Website link */}
+                    <div style={s.field}>
+                        <label style={s.label}>Website</label>
+                        <input
+                            type="url"
+                            value={link}
+                            onChange={e => setLink(e.target.value)}
+                            onFocus={() => setFocusedField('link')}
+                            onBlur={() => setFocusedField('')}
+                            placeholder="https://yourwebsite.com"
+                            style={inputStyle(focusedField === 'link')}
+                        />
                     </div>
 
                     <button
@@ -238,9 +268,54 @@ export default function ProfileSettingsPage() {
                         disabled={saving}
                         style={{ ...s.primaryBtn, alignSelf: 'flex-start' }}
                     >
-                        {saving ? 'Saving…' : 'Save changes'}
+                        {saving ? 'Saving...' : 'Save changes'}
                     </button>
                 </form>
+            </section>
+
+            {/* Feature 10 — Theme toggle */}
+            <section style={s.card}>
+                <h2 style={s.cardTitle}>Preferences</h2>
+                <div style={s.prefRow}>
+                    <div>
+                        <p style={s.prefLabel}>Theme</p>
+                        <p style={s.prefDesc}>{isDark ? 'Dark mode is active' : 'Light mode is active'}</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={toggleTheme}
+                        style={s.themeToggleBtn}
+                        aria-label="Toggle theme"
+                    >
+                        <span style={{ ...s.themeToggleKnob, transform: isDark ? 'translateX(0)' : 'translateX(22px)' }} />
+                    </button>
+                </div>
+            </section>
+
+            {/* Feature 5 — Export RGPD */}
+            <section style={s.card}>
+                <h2 style={s.cardTitle}>My data (RGPD)</h2>
+                <p style={s.dangerText}>
+                    Download your collection and reviews in CSV or JSON format.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        onClick={() => handleExport('csv')}
+                        disabled={exporting}
+                        style={s.secondaryBtn}
+                    >
+                        {exporting ? 'Exporting...' : 'Export CSV'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExport('json')}
+                        disabled={exporting}
+                        style={s.secondaryBtn}
+                    >
+                        {exporting ? 'Exporting...' : 'Export JSON'}
+                    </button>
+                </div>
             </section>
 
             <section style={{ ...s.card, borderColor: '#3a1a1a' }}>
@@ -294,10 +369,10 @@ function inputStyle(focused) {
         padding: '12px 14px',
         fontSize: '14px',
         fontFamily: font,
-        backgroundColor: '#1f1f1f',
-        border: `1px solid ${focused ? '#1ed760' : '#3a3a3a'}`,
+        backgroundColor: 'var(--bg-input)',
+        border: `1px solid ${focused ? 'var(--accent)' : 'var(--border-subtle)'}`,
         borderRadius: '8px',
-        color: '#fff',
+        color: 'var(--text-primary)',
         outline: 'none',
         boxSizing: 'border-box',
         transition: 'border-color 0.15s',
@@ -310,7 +385,7 @@ const s = {
         margin: '0 auto',
         padding: '48px 32px 80px',
         fontFamily: font,
-        color: '#fff',
+        color: 'var(--text-primary)',
         minHeight: '100vh',
     },
     header: {
@@ -319,7 +394,7 @@ const s = {
     backLink: {
         display: 'inline-block',
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
         marginBottom: '16px',
         transition: 'color 0.15s',
@@ -333,9 +408,9 @@ const s = {
     successBanner: {
         padding: '12px 16px',
         backgroundColor: '#0d2b1a',
-        border: '1px solid #1ed760',
+        border: '1px solid var(--accent)',
         borderRadius: '8px',
-        color: '#1ed760',
+        color: 'var(--accent)',
         fontSize: '14px',
         marginBottom: '20px',
     },
@@ -349,17 +424,17 @@ const s = {
         marginBottom: '20px',
     },
     card: {
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '12px',
         padding: '28px 32px',
         marginBottom: '24px',
-        border: '1px solid #2a2a2a',
+        border: '1px solid var(--border)',
     },
     cardTitle: {
         margin: '0 0 24px',
         fontSize: '16px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     avatarSection: {
         display: 'flex',
@@ -383,20 +458,20 @@ const s = {
         borderRadius: '50%',
         objectFit: 'cover',
         display: 'block',
-        border: '3px solid #2a2a2a',
+        border: '3px solid var(--border)',
     },
     avatarFallback: {
         width: '96px',
         height: '96px',
         borderRadius: '50%',
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '40px',
         fontWeight: '700',
-        color: '#fff',
-        border: '3px solid #2a2a2a',
+        color: 'var(--text-primary)',
+        border: '3px solid var(--border)',
     },
     avatarOverlay: {
         position: 'absolute',
@@ -419,7 +494,7 @@ const s = {
     avatarHint: {
         margin: 0,
         fontSize: '12px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     form: {
         display: 'flex',
@@ -434,19 +509,19 @@ const s = {
     label: {
         fontSize: '13px',
         fontWeight: '700',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         letterSpacing: '0.5px',
         textTransform: 'uppercase',
     },
     charCount: {
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textAlign: 'right',
     },
     primaryBtn: {
         padding: '11px 24px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         border: 'none',
         borderRadius: '9999px',
         fontSize: '14px',
@@ -458,18 +533,59 @@ const s = {
     secondaryBtn: {
         padding: '11px 24px',
         backgroundColor: 'transparent',
-        color: '#fff',
-        border: '1px solid #4d4d4d',
+        color: 'var(--text-primary)',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         fontSize: '14px',
         fontWeight: '700',
         cursor: 'pointer',
         fontFamily: font,
     },
+    prefRow: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '16px',
+    },
+    prefLabel: {
+        margin: '0 0 4px',
+        fontSize: '14px',
+        fontWeight: '700',
+        color: 'var(--text-primary)',
+        fontFamily: font,
+    },
+    prefDesc: {
+        margin: 0,
+        fontSize: '13px',
+        color: 'var(--text-secondary)',
+        fontFamily: font,
+    },
+    themeToggleBtn: {
+        position: 'relative',
+        width: '44px',
+        height: '24px',
+        borderRadius: '12px',
+        backgroundColor: 'var(--accent)',
+        border: 'none',
+        cursor: 'pointer',
+        flexShrink: 0,
+        padding: 0,
+    },
+    themeToggleKnob: {
+        position: 'absolute',
+        top: '3px',
+        left: '3px',
+        width: '18px',
+        height: '18px',
+        borderRadius: '50%',
+        backgroundColor: '#000',
+        transition: 'transform 0.2s ease',
+        display: 'block',
+    },
     dangerText: {
         margin: '0 0 20px',
         fontSize: '14px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         lineHeight: 1.6,
     },
     dangerBtn: {
@@ -493,8 +609,8 @@ const s = {
         zIndex: 1000,
     },
     modal: {
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
         borderRadius: '16px',
         padding: '36px',
         maxWidth: '420px',
@@ -509,7 +625,7 @@ const s = {
     modalText: {
         margin: '0 0 28px',
         fontSize: '14px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         lineHeight: 1.6,
     },
     modalActions: {

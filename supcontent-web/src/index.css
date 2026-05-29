@@ -1,3 +1,114 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   SUPCONTENT — Global styles & CSS design tokens
+   All color values are exposed as CSS custom properties so both dark (default)
+   and light themes work everywhere, including React inline-styles via var().
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Dark theme (default) ────────────────────────────────────────────────── */
+:root {
+  /* Backgrounds */
+  --bg-primary:   #121212;   /* page background */
+  --bg-secondary: #1e1e1e;   /* cards, panels */
+  --bg-elevated:  #181818;   /* header dropdown, active contact, slightly elevated */
+  --bg-input:     #1f1f1f;   /* form inputs, search fields */
+  --bg-deep:      #0e0e0e;   /* alt section, very dark */
+  --bg-header:    rgba(18, 18, 18, 0.92); /* sticky header with blur */
+
+  /* Special gradients */
+  --hero-bg:   radial-gradient(ellipse 80% 60% at 50% 0%, rgba(30,215,96,0.08) 0%, transparent 60%), #121212;
+  --hero-glow: radial-gradient(ellipse, rgba(30,215,96,0.08) 0%, transparent 70%);
+
+  /* Backdrop overlay — fades from transparent to page background */
+  --backdrop-overlay: linear-gradient(to bottom, rgba(18,18,18,0.15) 0%, rgba(18,18,18,0.65) 55%, rgba(18,18,18,1) 90%);
+
+  /* Text */
+  --text-primary:   #ffffff;
+  --text-secondary: #b3b3b3;
+  --text-muted:     #4d4d4d;
+  --text-inverse:   #000000; /* text on accent buttons & active tabs */
+
+  /* Borders */
+  --border:         #2a2a2a;
+  --border-subtle:  #3a3a3a;
+  --border-visible: #4d4d4d;
+  --border-alpha:   rgba(255, 255, 255, 0.06);
+
+  /* Active tabs (inverted pill in dark = white bg, black text) */
+  --tab-active-bg:   #ffffff;
+  --tab-active-text: #000000;
+
+  /* Accent (green) */
+  --accent:       #1ed760;
+  --accent-hover: #1db954;
+  --accent-text:  #000000; /* text on the green button */
+
+  /* Shadows */
+  --shadow:       rgba(0, 0, 0, 0.5);
+  --shadow-heavy: rgba(0, 0, 0, 0.7);
+
+  /* Semi-transparent text (white-based in dark mode) */
+  --text-soft:   rgba(255, 255, 255, 0.55);
+  --text-faint:  rgba(255, 255, 255, 0.4);
+  --text-ghost:  rgba(255, 255, 255, 0.5);
+  --text-dim:    rgba(255, 255, 255, 0.7);
+
+  /* Glass / frosted surfaces (light on dark) */
+  --glass-bg:     rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-subtle: rgba(255, 255, 255, 0.05);
+  --glass-faint:  rgba(255, 255, 255, 0.02);
+  --glass-tab-bg: rgba(255, 255, 255, 0.04);
+}
+
+/* ── Light theme override ─────────────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:   #f4f4f4;
+  --bg-secondary: #ffffff;
+  --bg-elevated:  #ebebeb;
+  --bg-input:     #f9f9f9;
+  --bg-deep:      #e8e8e8;
+  --bg-header:    rgba(255, 255, 255, 0.92);
+
+  --hero-bg:   radial-gradient(ellipse 80% 60% at 50% 0%, rgba(23,168,74,0.06) 0%, transparent 60%), #f4f4f4;
+  --hero-glow: radial-gradient(ellipse, rgba(23,168,74,0.06) 0%, transparent 70%);
+
+  --backdrop-overlay: linear-gradient(to bottom, rgba(244,244,244,0.1) 0%, rgba(244,244,244,0.7) 55%, rgba(244,244,244,1) 90%);
+
+  --text-primary:   #111111;
+  --text-secondary: #555555;
+  --text-muted:     #888888;
+  --text-inverse:   #ffffff;
+
+  --border:         #e0e0e0;
+  --border-subtle:  #cccccc;
+  --border-visible: #aaaaaa;
+  --border-alpha:   rgba(0, 0, 0, 0.08);
+
+  --tab-active-bg:   #111111;
+  --tab-active-text: #ffffff;
+
+  --accent:       #17a84a;
+  --accent-hover: #149040;
+  --accent-text:  #ffffff;
+
+  --shadow:       rgba(0, 0, 0, 0.1);
+  --shadow-heavy: rgba(0, 0, 0, 0.2);
+
+  /* Semi-transparent text (dark-based in light mode) */
+  --text-soft:   rgba(0, 0, 0, 0.6);
+  --text-faint:  rgba(0, 0, 0, 0.45);
+  --text-ghost:  rgba(0, 0, 0, 0.5);
+  --text-dim:    rgba(0, 0, 0, 0.65);
+
+  /* Glass / frosted surfaces (dark on light) */
+  --glass-bg:     rgba(0, 0, 0, 0.04);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --glass-subtle: rgba(0, 0, 0, 0.05);
+  --glass-faint:  rgba(0, 0, 0, 0.02);
+  --glass-tab-bg: rgba(0, 0, 0, 0.04);
+}
+
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -16,36 +127,45 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #121212;
-  color: #fff;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 #root {
   min-height: 100vh;
 }
 
-/* ── Header ── */
+/* ── Header nav links ────────────────────────────────────────────────────── */
 .header-nav-link {
   transition: color 0.15s;
 }
-.header-nav-link:hover {
-  color: #fff !important;
-}
-.header-nav-link.active {
-  color: #fff !important;
-}
+.header-nav-link:hover  { color: var(--text-primary) !important; }
+.header-nav-link.active { color: var(--text-primary) !important; }
 
-.header-avatar-link {
-  transition: opacity 0.15s;
-}
-.header-avatar-link:hover {
-  opacity: 0.75;
-}
+.header-avatar-link { transition: opacity 0.15s; }
+.header-avatar-link:hover { opacity: 0.75; }
 
-.header-dropdown-link {
-  transition: background-color 0.15s, color 0.15s;
-}
+.header-dropdown-link { transition: background-color 0.15s, color 0.15s; }
 .header-dropdown-link:hover {
-  background-color: #2a2a2a !important;
-  color: #fff !important;
+  background-color: var(--border) !important;
+  color: var(--text-primary) !important;
+}
+
+/* ── Light mode: inputs need a visible outline ───────────────────────────── */
+[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+  outline: 1px solid var(--border-subtle);
+  outline-offset: 0;
+}
+[data-theme="light"] input:focus:not([type="checkbox"]):not([type="radio"]),
+[data-theme="light"] textarea:focus {
+  outline-color: var(--accent);
+}
+
+/* ── Selection color ─────────────────────────────────────────────────────── */
+::selection {
+  background-color: var(--accent);
+  color: var(--accent-text);
 }

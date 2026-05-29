@@ -23,7 +23,7 @@ export default function LoginPage() {
             login(data.user, data.token);
             navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || 'Échec de la connexion.');
+            setError(err.response?.data?.message || 'Login failed.');
         } finally {
             setLoading(false);
         }

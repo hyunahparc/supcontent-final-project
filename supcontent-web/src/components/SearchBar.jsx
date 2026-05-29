@@ -114,8 +114,8 @@ export default function SearchBar() {
         <div ref={wrapperRef} style={styles.wrapper}>
             <div style={styles.inputWrap}>
                 <svg style={styles.searchIcon} viewBox="0 0 20 20" fill="none">
-                    <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
-                    <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
+                    <circle cx="9" cy="9" r="6" stroke="var(--text-secondary)" strokeWidth="1.8" />
+                    <path d="M13.5 13.5L17 17" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
                 <input
                     type="text"
@@ -217,8 +217,8 @@ const styles = {
         borderRadius:    '500px',
         border:          'none',
         outline:         'none',
-        backgroundColor: '#1f1f1f',
-        color:           '#fff',
+        backgroundColor: 'var(--bg-input)',
+        color:           'var(--text-primary)',
         boxSizing:       'border-box',
         fontFamily:      font,
     },
@@ -226,7 +226,7 @@ const styles = {
         position: 'absolute',
         right:    '14px',
         fontSize: '14px',
-        color:    '#b3b3b3',
+        color: 'var(--text-secondary)',
     },
     dropdown: {
         position:        'absolute',
@@ -237,7 +237,7 @@ const styles = {
         margin:          0,
         padding:         '6px 0',
         listStyle:       'none',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius:    '8px',
         boxShadow:       '0 8px 24px rgba(0,0,0,0.5)',
         maxHeight:       '400px',
@@ -245,7 +245,7 @@ const styles = {
     },
     message: {
         padding:    '12px 16px',
-        color:      '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize:   '13px',
         fontFamily: font,
     },
@@ -267,7 +267,7 @@ const styles = {
         width:           '40px',
         height:          '58px',
         borderRadius:    '4px',
-        backgroundColor: '#1f1f1f',
+        backgroundColor: 'var(--bg-input)',
         flexShrink:      0,
     },
     info: {
@@ -278,16 +278,16 @@ const styles = {
     itemTitle: {
         fontWeight: '700',
         fontSize:   '13px',
-        color:      '#fff',
+        color:      'var(--text-primary)',
         fontFamily: font,
     },
     itemMeta: {
         fontSize:   '12px',
-        color:      '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontFamily: font,
     },
     advancedLinkItem: {
-        borderTop:  '1px solid #2a2a2a',
+        borderTop:  '1px solid var(--border)',
         marginTop:  '4px',
         paddingTop: '4px',
     },
@@ -298,11 +298,11 @@ const styles = {
         padding:        '10px 14px',
         fontSize:       '12px',
         fontWeight:     '600',
-        color:          '#1ed760',
+        color:          'var(--accent)',
         textDecoration: 'none',
         fontFamily:     font,
     },
     advancedLinkArrow: {
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
 };

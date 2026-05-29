@@ -52,7 +52,7 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
                         }}
                     >
                         {/* Base layer: empty star */}
-                        <span style={{ color: '#4d4d4d', position: 'absolute', left: 0, top: 0 }}>★</span>
+                        <span style={{ color: 'var(--text-muted)', position: 'absolute', left: 0, top: 0 }}>★</span>
                         {/* Fill layer: full or half width */}
                         {type !== 'empty' && (
                             <span style={{
@@ -146,13 +146,13 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
                 {currentUserId && (
                     <button
                         onClick={() => onLike(review.review_id)}
-                        style={{ ...cardStyles.actionBtn, color: review.liked_by_me ? '#1ed760' : '#b3b3b3' }}
+                        style={{ ...cardStyles.actionBtn, color: review.liked_by_me ? 'var(--accent)' : 'var(--text-secondary)' }}
                     >
                         ♥ {review.likes_count}
                     </button>
                 )}
                 {!currentUserId && review.likes_count > 0 && (
-                    <span style={{ ...cardStyles.actionBtn, cursor: 'default', color: '#b3b3b3' }}>
+                    <span style={{ ...cardStyles.actionBtn, cursor: 'default', color: 'var(--text-secondary)' }}>
                         ♥ {review.likes_count}
                     </span>
                 )}
@@ -163,7 +163,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
 
             {showComments && (
                 <div style={cardStyles.commentsBox}>
-                    {loadingComments && <p style={{ fontSize: '13px', color: '#b3b3b3' }}>Loading…</p>}
+                    {loadingComments && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading…</p>}
                     {comments.map(c => (
                         <div key={c.comment_id} style={cardStyles.commentRow}>
                             <span style={cardStyles.commentUser}>{c.username}</span>
@@ -355,7 +355,7 @@ const sectionStyles = {
         margin: 0,
         fontSize: '24px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     avg: {
         display: 'flex',
@@ -369,22 +369,22 @@ const sectionStyles = {
     },
     dim: {
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
     },
     writeBox: {
         marginBottom: '28px',
     },
     loginPrompt: {
         marginBottom: '28px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '14px',
     },
     writeBtn: {
         padding: '10px 22px',
         backgroundColor: 'transparent',
-        border: '1px solid #4d4d4d',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '13px',
         fontWeight: '700',
         cursor: 'pointer',
@@ -395,17 +395,17 @@ const sectionStyles = {
         display: 'flex',
         flexDirection: 'column',
         gap: '14px',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         padding: '20px',
         borderRadius: '8px',
         maxWidth: '600px',
     },
     textarea: {
         padding: '12px 14px',
-        backgroundColor: '#1f1f1f',
-        border: '1px solid #4d4d4d',
+        backgroundColor: 'var(--bg-input)',
+        border: '1px solid var(--border-visible)',
         borderRadius: '6px',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '14px',
         fontFamily: font,
         resize: 'vertical',
@@ -413,8 +413,8 @@ const sectionStyles = {
     },
     submitBtn: {
         padding: '10px 22px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         border: 'none',
         borderRadius: '9999px',
         fontSize: '13px',
@@ -425,9 +425,9 @@ const sectionStyles = {
     cancelBtn: {
         padding: '10px 22px',
         backgroundColor: 'transparent',
-        border: '1px solid #4d4d4d',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '13px',
         cursor: 'pointer',
         fontFamily: font,
@@ -436,7 +436,7 @@ const sectionStyles = {
 
 const cardStyles = {
     card: {
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius: '8px',
         padding: '20px',
         marginBottom: '16px',
@@ -453,7 +453,7 @@ const cardStyles = {
         background: 'none',
         border: 'none',
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         cursor: 'pointer',
         fontFamily: font,
         padding: '2px 4px',
@@ -470,7 +470,7 @@ const cardStyles = {
         borderRadius: '50%',
         overflow: 'hidden',
         flexShrink: 0,
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -483,21 +483,21 @@ const cardStyles = {
     avatarFallback: {
         fontSize: '16px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     username: {
         fontSize: '14px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     date: {
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         marginTop: '2px',
     },
     comment: {
         fontSize: '14px',
-        color: '#e0e0e0',
+        color: 'var(--text-primary)',
         lineHeight: 1.6,
         margin: '0 0 14px',
     },
@@ -510,7 +510,7 @@ const cardStyles = {
         background: 'none',
         border: 'none',
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         cursor: 'pointer',
         padding: 0,
         fontFamily: font,
@@ -520,7 +520,7 @@ const cardStyles = {
     },
     commentsBox: {
         marginTop: '16px',
-        borderTop: '1px solid #2a2a2a',
+        borderTop: '1px solid var(--border)',
         paddingTop: '14px',
         display: 'flex',
         flexDirection: 'column',
@@ -534,18 +534,18 @@ const cardStyles = {
     },
     commentUser: {
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         flexShrink: 0,
     },
     commentText: {
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         flex: 1,
         lineHeight: 1.5,
     },
     commentDelete: {
         background: 'none',
         border: 'none',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
         cursor: 'pointer',
         fontSize: '16px',
         padding: '0 4px',
@@ -560,18 +560,18 @@ const cardStyles = {
     commentInput: {
         flex: 1,
         padding: '8px 12px',
-        backgroundColor: '#1f1f1f',
-        border: '1px solid #4d4d4d',
+        backgroundColor: 'var(--bg-input)',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '13px',
         fontFamily: font,
         outline: 'none',
     },
     commentSubmit: {
         padding: '8px 16px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         border: 'none',
         borderRadius: '9999px',
         fontSize: '13px',

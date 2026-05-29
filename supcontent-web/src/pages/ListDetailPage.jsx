@@ -118,19 +118,19 @@ export default function ListDetailPage() {
 
 const styles = {
     page: {
-        backgroundColor: '#121212',
+        backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontFamily: font,
         paddingBottom: '60px',
     },
     state: {
-        backgroundColor: '#121212',
+        backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '14px',
         fontFamily: font,
     },
@@ -157,22 +157,22 @@ const styles = {
     },
     badge: {
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
     },
     count: {
         fontSize: '13px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     backBtn: {
         fontSize: '13px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
         padding: '8px 16px',
-        border: '1px solid #333',
+        border: '1px solid var(--border-subtle)',
         borderRadius: '9999px',
     },
     empty: {
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
         fontSize: '14px',
     },
     grid: {
@@ -182,7 +182,7 @@ const styles = {
     },
     card: {
         position: 'relative',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius: '8px',
         overflow: 'hidden',
     },
@@ -200,7 +200,7 @@ const styles = {
     posterFallback: {
         width: '100%',
         aspectRatio: '2/3',
-        backgroundColor: '#1f1f1f',
+        backgroundColor: 'var(--bg-input)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -212,7 +212,7 @@ const styles = {
     mediaTitle: {
         fontSize: '13px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         marginBottom: '4px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -220,7 +220,7 @@ const styles = {
     },
     mediaYear: {
         fontSize: '11px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         marginBottom: '2px',
     },
     mediaRating: {
@@ -235,7 +235,7 @@ const styles = {
         height: '26px',
         borderRadius: '50%',
         backgroundColor: 'rgba(0,0,0,0.7)',
-        color: '#fff',
+        color: '#ffffff',
         border: 'none',
         fontSize: '12px',
         cursor: 'pointer',

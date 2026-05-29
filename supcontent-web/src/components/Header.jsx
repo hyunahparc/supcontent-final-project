@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '../api/notifications';
 import { getUnreadMessageCount } from '../api/messages';
 import SearchBar from './SearchBar';
@@ -35,7 +36,7 @@ const BREAKPOINT = 768;
 
 function HamburgerIcon() {
     return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="2" strokeLinecap="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="2" strokeLinecap="round">
             <line x1="3" y1="6"  x2="21" y2="6"  />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
@@ -45,7 +46,7 @@ function HamburgerIcon() {
 
 function BellIcon() {
     return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
             <path d="M13.73 21a2 2 0 0 1-3.46 0" />
         </svg>
@@ -54,7 +55,7 @@ function BellIcon() {
 
 function MessageIcon() {
     return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
         </svg>
     );
@@ -203,7 +204,8 @@ function MobileMenu({
 }
 
 export default function Header() {
-    const { user }  = useAuth();
+    const { user }         = useAuth();
+    const { isDark, toggleTheme } = useTheme();
     const navigate  = useNavigate();
     const location  = useLocation();
 
@@ -384,6 +386,15 @@ export default function Header() {
                                     </div>
                                 )}
 
+                                <button
+                                    onClick={toggleTheme}
+                                    style={styles.themeBtn}
+                                    aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                                    title={isDark ? 'Light mode' : 'Dark mode'}
+                                >
+                                    {isDark ? '☀' : '☾'}
+                                </button>
+
                                 <UserAvatar user={user} />
                             </div>
                         </>
@@ -414,8 +425,8 @@ const styles = {
     header: {
         width: '100%',
         height: '56px',
-        borderBottom: '1px solid #2a2a2a',
-        backgroundColor: 'rgba(18, 18, 18, 0.92)',
+        borderBottom: '1px solid var(--border)',
+        backgroundColor: 'var(--bg-header)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         boxSizing: 'border-box',
@@ -440,7 +451,7 @@ const styles = {
     logo: {
         fontSize: '14px',
         fontWeight: '900',
-        color: '#1ed760',
+        color: 'var(--accent)',
         textDecoration: 'none',
         letterSpacing: '1.5px',
         textTransform: 'uppercase',
@@ -454,7 +465,7 @@ const styles = {
     navLink: {
         fontSize: '13px',
         fontWeight: '700',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
         letterSpacing: '0.2px',
         padding: '6px 10px',
@@ -504,8 +515,8 @@ const styles = {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         fontSize: '10px',
         fontWeight: '700',
         borderRadius: '9999px',
@@ -521,8 +532,8 @@ const styles = {
         top: 'calc(100% + 12px)',
         right: 0,
         width: 'min(340px, calc(100vw - 32px))',
-        backgroundColor: '#1e1e1e',
-        border: '1px solid #2a2a2a',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
         borderRadius: '12px',
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         zIndex: 300,
@@ -533,19 +544,19 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '14px 16px 10px',
-        borderBottom: '1px solid #2a2a2a',
+        borderBottom: '1px solid var(--border)',
     },
     notifTitle: {
         fontSize: '14px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     markAllBtn: {
         background: 'none',
         border: 'none',
         cursor: 'pointer',
         fontSize: '12px',
-        color: '#1ed760',
+        color: 'var(--accent)',
         fontWeight: '600',
         fontFamily: font,
         padding: 0,
@@ -553,7 +564,7 @@ const styles = {
     notifEmpty: {
         padding: '24px 16px',
         textAlign: 'center',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
         fontSize: '13px',
         margin: 0,
     },
@@ -570,7 +581,7 @@ const styles = {
         gap: '12px',
         padding: '12px 16px',
         cursor: 'pointer',
-        borderBottom: '1px solid #242424',
+        borderBottom: '1px solid var(--border)',
     },
     notifItemUnread: {
         backgroundColor: '#1a2a1a',
@@ -586,13 +597,13 @@ const styles = {
         width: '36px',
         height: '36px',
         borderRadius: '50%',
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '14px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         flexShrink: 0,
     },
     notifContent: {
@@ -603,13 +614,13 @@ const styles = {
         margin: '0 0 2px',
         fontSize: '13px',
         fontWeight: '600',
-        color: '#fff',
+        color: 'var(--text-primary)',
         lineHeight: 1.4,
     },
     notifMedia: {
         margin: '0 0 2px',
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
@@ -617,7 +628,7 @@ const styles = {
     notifTime: {
         margin: 0,
         fontSize: '11px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     notifSeeAll: {
         display: 'block',
@@ -625,15 +636,15 @@ const styles = {
         padding: '12px',
         fontSize: '13px',
         fontWeight: '600',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
-        borderTop: '1px solid #2a2a2a',
+        borderTop: '1px solid var(--border)',
     },
     notifDot: {
         width: '8px',
         height: '8px',
         borderRadius: '50%',
-        backgroundColor: '#1ed760',
+        backgroundColor: 'var(--accent)',
         flexShrink: 0,
     },
     avatarLink: {
@@ -652,8 +663,8 @@ const styles = {
         width: '34px',
         height: '34px',
         borderRadius: '50%',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         fontSize: '14px',
         fontWeight: '900',
         display: 'flex',
@@ -661,10 +672,26 @@ const styles = {
         justifyContent: 'center',
         fontFamily: font,
     },
+    themeBtn: {
+        background:  'none',
+        border:      'none',
+        cursor:      'pointer',
+        padding:     '6px',
+        fontSize:    '16px',
+        lineHeight:  1,
+        borderRadius:'6px',
+        color: 'var(--text-secondary)',
+        display:     'inline-flex',
+        alignItems:  'center',
+        justifyContent: 'center',
+        width:       '32px',
+        height:      '32px',
+        flexShrink:  0,
+    },
     signIn: {
         fontSize: '13px',
         fontWeight: '600',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
         padding: '6px 12px',
         borderRadius: '6px',
@@ -672,10 +699,10 @@ const styles = {
     signUp: {
         fontSize: '13px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         textDecoration: 'none',
         padding: '6px 16px',
-        border: '1px solid #7c7c7c',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         letterSpacing: '0.2px',
     },
@@ -687,8 +714,8 @@ const styles = {
         top: '56px',
         left: 0,
         right: 0,
-        backgroundColor: '#1a1a1a',
-        borderBottom: '1px solid #2a2a2a',
+        backgroundColor: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--border)',
         boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
         padding: '16px 20px',
         zIndex: 200,
@@ -698,7 +725,7 @@ const styles = {
     },
     mobileDivider: {
         height: '1px',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: 'var(--bg-elevated)',
         margin: '12px 0',
     },
     mobileLink: {
@@ -709,7 +736,7 @@ const styles = {
         padding: '10px 12px',
         fontSize: '14px',
         fontWeight: '700',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         textDecoration: 'none',
         borderRadius: '8px',
     },
@@ -721,8 +748,8 @@ const styles = {
         height: '18px',
         padding: '0 6px',
         borderRadius: '9999px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         fontSize: '10px',
         fontWeight: '800',
         flexShrink: 0,
