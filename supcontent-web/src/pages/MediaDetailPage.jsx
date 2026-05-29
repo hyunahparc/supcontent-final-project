@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getMediaById } from '../api/media';
 import { useAuth } from '../context/AuthContext';
 import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
@@ -21,6 +21,7 @@ function getIsNarrowLayout() {
 
 export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const mediaType = routeMediaType ?? (searchParams.get('type') === 'Series' ? 'Series' : 'Movie');
     const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const [showListMenu, setShowListMenu] = useState(false);
     const [listFeedback, setListFeedback] = useState(null);
     const [newListName, setNewListName] = useState('');
+    const [showTrailer, setShowTrailer] = useState(false);
     const [isNarrow, setIsNarrow] = useState(getIsNarrowLayout);
     const similarGridRef = useRef(null);
 
@@ -44,6 +46,10 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
             .then(setMedia)
             .catch(err => setError(err.response?.data?.message || 'Failed to load media.'))
             .finally(() => setLoading(false));
+    }, [id, mediaType]);
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0 });
     }, [id, mediaType]);
 
     // Fetch current collection status and user's lists if logged in
@@ -95,6 +101,14 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
         setShowStatusMenu(false);
     }
 
+    function handleCollectionClick() {
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        setShowStatusMenu(m => !m);
+    }
+
     function handleSimilarScroll(direction) {
         similarGridRef.current?.scrollBy({
             left: direction * 344,
@@ -135,7 +149,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                             {media.runtime && <><span style={styles.dot}>·</span>{media.runtime} min</>}
                             {media.vote_average && (
                                 <><span style={styles.dot}>·</span>
-                                <span style={styles.rating}>�?{media.vote_average.toFixed(1)}</span></>
+                                <span style={styles.rating}>⭐ {media.vote_average.toFixed(1)}</span></>
                             )}
                         </div>
 
@@ -148,18 +162,26 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                         )}
 
                         <div style={styles.actions}>
-                            <button style={styles.watchBtn}>Watch</button>
+                            {media.trailer && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowTrailer(true)}
+                                    style={styles.watchBtn}
+                                >
+                                    ▶ Watch Trailer
+                                </button>
+                            )}
 
                             {/* Collection status button ??disabled for guests */}
                             <div style={{ position: 'relative' }}>
                                 <button
-                                    onClick={() => user && setShowStatusMenu(m => !m)}
+                                    onClick={handleCollectionClick}
                                     style={{
                                         ...styles.collectionBtn,
                                         backgroundColor: collectionStatus ? '#fff' : 'transparent',
                                         color: collectionStatus ? '#111' : '#fff',
-                                        opacity: user ? 1 : 0.4,
-                                        cursor: user ? 'pointer' : 'default',
+                                        opacity: 1,
+                                        cursor: 'pointer',
                                     }}
                                 >
                                     {collectionStatus ?? '+ Collection'}
@@ -292,7 +314,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                     )}
                                     <div style={styles.similarTitle}>{m.title}</div>
                                     {m.vote_average && (
-                                        <div style={styles.similarRating}>�?{m.vote_average.toFixed(1)}</div>
+                                        <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
                                     )}
                                 </Link>
                             ))}
@@ -310,6 +332,28 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
             )}
 
             <ReviewsSection externalId={id} mediaType={mediaType} />
+
+            {showTrailer && media.trailer && (
+                <div style={styles.trailerOverlay} onClick={() => setShowTrailer(false)}>
+                    <div style={styles.trailerModal} onClick={(e) => e.stopPropagation()}>
+                        <button
+                            type="button"
+                            onClick={() => setShowTrailer(false)}
+                            style={styles.trailerClose}
+                            aria-label="Close trailer"
+                        >
+                            ×
+                        </button>
+                        <iframe
+                            title={media.trailer.name ?? 'Trailer'}
+                            src={`https://www.youtube.com/embed/${media.trailer.key}?autoplay=1`}
+                            style={styles.trailerFrame}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -440,6 +484,9 @@ const styles = {
         alignItems: 'center',
     },
     watchBtn: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         padding: '11px 28px',
         backgroundColor: '#1ed760',
         color: '#000',
@@ -450,6 +497,46 @@ const styles = {
         cursor: 'pointer',
         letterSpacing: '1.4px',
         textTransform: 'uppercase',
+        textDecoration: 'none',
+    },
+    trailerOverlay: {
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        backgroundColor: 'rgba(0,0,0,0.78)',
+    },
+    trailerModal: {
+        position: 'relative',
+        width: 'min(960px, 100%)',
+        aspectRatio: '16 / 9',
+        backgroundColor: '#000',
+        borderRadius: '8px',
+        boxShadow: 'rgba(0,0,0,0.55) 0 18px 48px',
+    },
+    trailerClose: {
+        position: 'absolute',
+        top: '-42px',
+        right: 0,
+        width: '34px',
+        height: '34px',
+        borderRadius: '50%',
+        border: '1px solid rgba(255,255,255,0.35)',
+        backgroundColor: 'rgba(0,0,0,0.65)',
+        color: '#fff',
+        fontSize: '24px',
+        lineHeight: 1,
+        cursor: 'pointer',
+    },
+    trailerFrame: {
+        width: '100%',
+        height: '100%',
+        border: 'none',
+        borderRadius: '8px',
+        display: 'block',
     },
     collectionBtn: {
         padding: '11px 24px',

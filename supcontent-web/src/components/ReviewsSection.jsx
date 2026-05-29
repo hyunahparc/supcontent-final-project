@@ -311,9 +311,14 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                     )}
                 </div>
             )}
+            {!user && (
+                <div style={sectionStyles.loginPrompt}>
+                    Log in to write a review.
+                </div>
+            )}
 
             {/* Review list */}
-            {reviews.length === 0 && (
+            {user && reviews.length === 0 && (
                 <p style={sectionStyles.dim}>No reviews yet. Be the first!</p>
             )}
             {reviews.map(review => (
@@ -368,6 +373,11 @@ const sectionStyles = {
     },
     writeBox: {
         marginBottom: '28px',
+    },
+    loginPrompt: {
+        marginBottom: '28px',
+        color: '#b3b3b3',
+        fontSize: '14px',
     },
     writeBtn: {
         padding: '10px 22px',
