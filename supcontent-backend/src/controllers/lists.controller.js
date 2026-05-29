@@ -1,5 +1,9 @@
 const db = require('../config/db');
 
+function normalizeMediaType(type) {
+    return type === 'Series' || type === 'tv' ? 'Series' : 'Movie';
+}
+
 const createList = async(req, res) => {
     const { name, is_public } = req.body;
     const user_id = req.user.user_id;
@@ -28,11 +32,12 @@ const getLists = async (req, res) => {
     try {
         const { rows } = await db.query(
             `SELECT cl.*,
-                    COUNT(cli.external_id)::int AS films_count,
+                    COUNT(cli.external_id)::int AS media_count,
                     ARRAY(
                         SELECT m.full_data->>'poster_path'
                         FROM custom_list_items i
                         JOIN media_cache m ON m.external_id = i.external_id
+                                          AND m.media_type = i.media_type
                         WHERE i.list_id = cl.list_id
                           AND m.full_data->>'poster_path' IS NOT NULL
                         ORDER BY i.added_at DESC
@@ -73,17 +78,18 @@ const getListById = async (req, res) => {
             return res.status(403).json({ message: 'This list is private.' });
         }
 
-        // Get films in the list
-        const { rows: films } = await db.query(
+        // Get media items in the list
+        const { rows: mediaItems } = await db.query(
             `SELECT cli.added_at, m.external_id, m.media_type, m.full_data
              FROM custom_list_items cli
              JOIN media_cache m ON m.external_id = cli.external_id
+                               AND m.media_type = cli.media_type
              WHERE cli.list_id = $1
              ORDER BY cli.added_at DESC`,
             [id]
         );
 
-        return res.json({ ...list, films });
+        return res.json({ ...list, media_items: mediaItems });
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
     }
@@ -139,9 +145,10 @@ const deleteList = async (req, res) => {
     }
 };
 
-const addFilmToList = async (req, res) => {
+const addMediaToList = async (req, res) => {
     const { id } = req.params;
     const { external_id } = req.body;
+    const media_type = normalizeMediaType(req.body.media_type);
     const user_id = req.user.user_id;
 
     if (!external_id) {
@@ -160,11 +167,11 @@ const addFilmToList = async (req, res) => {
         }
 
         const { rows } = await db.query(
-            `INSERT INTO custom_list_items (list_id, external_id)
-             VALUES ($1, $2)
+            `INSERT INTO custom_list_items (list_id, external_id, media_type)
+             VALUES ($1, $2, $3)
              ON CONFLICT DO NOTHING
              RETURNING *`,
-            [id, external_id]
+            [id, external_id, media_type]
         );
 
         return res.status(201).json(rows[0] ?? { message: 'Already in list.' });
@@ -173,8 +180,9 @@ const addFilmToList = async (req, res) => {
     }
 };
 
-const removeFilmFromList = async (req, res) => {
+const removeMediaFromList = async (req, res) => {
     const { id, external_id } = req.params;
+    const media_type = normalizeMediaType(req.query.media_type);
     const user_id = req.user.user_id;
 
     try {
@@ -189,15 +197,15 @@ const removeFilmFromList = async (req, res) => {
         }
 
         const { rowCount } = await db.query(
-            'DELETE FROM custom_list_items WHERE list_id = $1 AND external_id = $2',
-            [id, external_id]
+            'DELETE FROM custom_list_items WHERE list_id = $1 AND external_id = $2 AND media_type = $3',
+            [id, external_id, media_type]
         );
 
         if (rowCount === 0) {
-            return res.status(404).json({ message: 'Film not found in list.' });
+            return res.status(404).json({ message: 'Media item not found in list.' });
         }
 
-        return res.json({ message: 'Film removed from list.' });
+        return res.json({ message: 'Media item removed from list.' });
     } catch (err) {
         return res.status(500).json({ message: 'Server error.', error: err.message });
     }
@@ -212,11 +220,12 @@ const getUserPublicLists = async (req, res) => {
     try {
         const { rows } = await db.query(
             `SELECT cl.*,
-                    COUNT(cli.external_id)::int AS films_count,
+                    COUNT(cli.external_id)::int AS media_count,
                     ARRAY(
                         SELECT m.full_data->>'poster_path'
                         FROM custom_list_items i
                         JOIN media_cache m ON m.external_id = i.external_id
+                                          AND m.media_type = i.media_type
                         WHERE i.list_id = cl.list_id
                           AND m.full_data->>'poster_path' IS NOT NULL
                         ORDER BY i.added_at DESC
@@ -236,5 +245,5 @@ const getUserPublicLists = async (req, res) => {
     }
 };
 
-module.exports = { createList, getLists, getUserPublicLists, getListById, updateList, deleteList, addFilmToList, removeFilmFromList };
+module.exports = { createList, getLists, getUserPublicLists, getListById, updateList, deleteList, addMediaToList, removeMediaFromList };
 

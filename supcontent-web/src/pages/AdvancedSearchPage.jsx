@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { advancedSearch, getGenres, searchUsers, searchLists } from '../api/search';
+import { mediaHref } from '../utils/media';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w300';
@@ -65,7 +66,7 @@ function ListCard({ list }) {
                 <p style={s.listCardName}>{list.name}</p>
                 <p style={s.listCardMeta}>
                     by <span style={s.listCardOwner}>{list.owner_username}</span>
-                    {' · '}{list.films_count} film{list.films_count !== 1 ? 's' : ''}
+                    {' · '}{list.media_count} item{list.media_count !== 1 ? 's' : ''}
                 </p>
             </div>
         </Link>
@@ -80,7 +81,7 @@ function ResultCard({ item }) {
 
     return (
         <Link
-            to={`/films/${item.external_id}`}
+            to={mediaHref(item)}
             style={{ ...s.card, ...(hovered ? s.cardHovered : {}) }}
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
@@ -167,9 +168,9 @@ function Pagination({ page, totalPages, onPageChange }) {
 }
 
 const CATEGORIES = [
-    { id: 'films',  label: '🎬 Films & TV'  },
-    { id: 'users',  label: '👤 People'       },
-    { id: 'lists',  label: '📋 Lists'        },
+    { id: 'films',  label: 'Movies & TV shows'  },
+    { id: 'users',  label: 'People'       },
+    { id: 'lists',  label: 'Lists'        },
 ];
 
 // ── Main page ────────────────────────────────────────────────────────────────
@@ -335,7 +336,7 @@ export default function AdvancedSearchPage() {
             <div style={s.pageHeader}>
                 <h1 style={s.heading}>Explore</h1>
                 <p style={s.subtitle}>
-                    Search across films, TV shows, users, and public lists.
+                    Search across movies, TV shows, users, and public lists.
                 </p>
             </div>
 
@@ -510,14 +511,14 @@ export default function AdvancedSearchPage() {
                                 onClick={() => handleTypeChange('movie')}
                                 style={{ ...s.typeBtn, ...(type === 'movie' ? s.typeBtnActive : {}) }}
                             >
-                                🎬 Movie
+                                Movie
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleTypeChange('tv')}
                                 style={{ ...s.typeBtn, ...(type === 'tv' ? s.typeBtnActive : {}) }}
                             >
-                                📺 TV Show
+                                TV Show
                             </button>
                         </div>
                     </div>

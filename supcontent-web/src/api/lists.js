@@ -11,7 +11,7 @@ function authHeader() {
 export const getMyLists = () =>
     api.get('/lists', { headers: authHeader() }).then(res => res.data);
 
-// Fetch a single list with its films (works for public lists too)
+// Fetch a single list with its media items (works for public lists too)
 export const getListById = (listId) =>
     api.get(`/lists/${listId}`, { headers: authHeader() }).then(res => res.data);
 
@@ -27,13 +27,13 @@ export const updateList = (listId, name, isPublic) =>
 export const deleteList = (listId) =>
     api.delete(`/lists/${listId}`, { headers: authHeader() }).then(res => res.data);
 
-// Add a film to a list
-export const addFilmToList = (listId, externalId) =>
-    api.post(`/lists/${listId}/films`, { external_id: externalId }, { headers: authHeader() }).then(res => res.data);
+// Add a media item to a list
+export const addMediaToList = (listId, externalId, mediaType = 'Movie') =>
+    api.post(`/lists/${listId}/media`, { external_id: externalId, media_type: mediaType }, { headers: authHeader() }).then(res => res.data);
 
-// Remove a film from a list
-export const removeFilmFromList = (listId, externalId) =>
-    api.delete(`/lists/${listId}/films/${externalId}`, { headers: authHeader() }).then(res => res.data);
+// Remove a media item from a list
+export const removeMediaFromList = (listId, externalId, mediaType = 'Movie') =>
+    api.delete(`/lists/${listId}/media/${externalId}`, { params: { media_type: mediaType }, headers: authHeader() }).then(res => res.data);
 
 // Fetch another user's public lists
 export const getUserPublicLists = (userId) =>

@@ -136,7 +136,7 @@ export default function ListsPage() {
                                                     <div style={styles.listName}>{list.name}</div>
                                                     <span style={styles.badge}>{list.is_public ? '🌐' : '🔒'}</span>
                                                 </div>
-                                                <div style={styles.count}>{list.films_count ?? 0} films</div>
+                                                <div style={styles.count}>{list.media_count ?? 0} items</div>
                                             </div>
                                         </Link>
 

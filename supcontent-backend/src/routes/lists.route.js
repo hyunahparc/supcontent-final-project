@@ -7,8 +7,8 @@ const {
     getListById,
     updateList,
     deleteList,
-    addFilmToList,
-    removeFilmFromList,
+    addMediaToList,
+    removeMediaFromList,
 } = require('../controllers/lists.controller');
 
 const router = express.Router();
@@ -28,10 +28,10 @@ router.put('/:id', auth, updateList);
 // Delete a list
 router.delete('/:id', auth, deleteList);
 
-// Add a film to a list
-router.post('/:id/films', auth, addFilmToList);
+// Add a media item to a list
+router.post('/:id/media', auth, addMediaToList);
 
-// Remove a film from a list
-router.delete('/:id/films/:external_id', auth, removeFilmFromList);
+// Remove a media item from a list
+router.delete('/:id/media/:external_id', auth, removeMediaFromList);
 
 module.exports = router;
