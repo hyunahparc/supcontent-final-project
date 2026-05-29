@@ -191,7 +191,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
 }
 
 // --- Main ReviewsSection ---
-export default function ReviewsSection({ externalId }) {
+export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
     const { user } = useAuth();
     const [reviews, setReviews]   = useState([]);
     const [myReview, setMyReview] = useState(null);
@@ -203,28 +203,28 @@ export default function ReviewsSection({ externalId }) {
     const [showForm,    setShowForm]    = useState(false);
 
     const fetchReviews = useCallback(() => {
-        getReviews(externalId).then(setReviews).catch(() => setReviews([]));
-    }, [externalId]);
+        getReviews(externalId, mediaType).then(setReviews).catch(() => setReviews([]));
+    }, [externalId, mediaType]);
 
     useEffect(() => { fetchReviews(); }, [fetchReviews]);
 
     // Pre-fill form if user already has a review
     useEffect(() => {
         if (!user) { setMyReview(null); return; }
-        getMyReview(externalId).then(r => {
+        getMyReview(externalId, mediaType).then(r => {
             setMyReview(r);
             if (r) { setFormRating(r.rating ?? 0); setFormComment(r.comment ?? ''); }
         });
-    }, [externalId, user]);
+    }, [externalId, mediaType, user]);
 
     async function handleSubmitReview(e) {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await upsertReview(externalId, formRating || null, formComment || null);
+            await upsertReview(externalId, mediaType, formRating || null, formComment || null);
             setShowForm(false);
             fetchReviews();
-            const updated = await getMyReview(externalId);
+            const updated = await getMyReview(externalId, mediaType);
             setMyReview(updated);
         } finally {
             setSubmitting(false);

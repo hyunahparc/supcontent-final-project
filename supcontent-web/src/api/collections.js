@@ -7,20 +7,20 @@ function authHeader() {
     return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// Fetch the current collection status for a film (called when FilmDetailPage loads)
-export const getCollectionStatus = (externalId) =>
-    api.get(`/collections/${externalId}`, { headers: authHeader() })
+// Fetch the current collection status for a media item.
+export const getCollectionStatus = (externalId, mediaType = 'Movie') =>
+    api.get(`/collections/${externalId}`, { params: { media_type: mediaType }, headers: authHeader() })
         .then(res => res.data.status)
         .catch(() => null);
 
 // Add a film to the collection or update its status
-export const upsertCollection = (externalId, status) =>
-    api.post('/collections', { external_id: externalId, status }, { headers: authHeader() })
+export const upsertCollection = (externalId, mediaType = 'Movie', status) =>
+    api.post('/collections', { external_id: externalId, media_type: mediaType, status }, { headers: authHeader() })
         .then(res => res.data);
 
 // Remove a film from the collection
-export const removeFromCollection = (externalId) =>
-    api.delete(`/collections/${externalId}`, { headers: authHeader() })
+export const removeFromCollection = (externalId, mediaType = 'Movie') =>
+    api.delete(`/collections/${externalId}`, { params: { media_type: mediaType }, headers: authHeader() })
         .then(res => res.data);
 
 // Fetch a user's library, optionally filtered by status

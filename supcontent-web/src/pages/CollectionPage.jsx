@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getLibrary } from '../api/collections';
+import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
@@ -51,13 +52,13 @@ export default function CollectionPage() {
             {loading ? (
                 <div style={styles.state}>Loading...</div>
             ) : items.length === 0 ? (
-                <div style={styles.state}>No films in this list.</div>
+                <div style={styles.state}>No media items in this collection.</div>
             ) : (
                 <div style={styles.grid}>
                     {items.map(item => (
                         <Link
                             key={item.collection_id}
-                            to={`/films/${item.external_id}`}
+                            to={mediaHref(item)}
                             style={{
                                 ...styles.card,
                                 opacity: hoveredId === item.collection_id ? 0.8 : 1,

@@ -16,10 +16,12 @@ const getNotifications = async (req, res) => {
                 u.user_id  AS source_user_id,
                 u.username AS source_username,
                 u.avatar   AS source_avatar,
-                mc.full_data->>'title' AS media_title
+                mc.media_type,
+                COALESCE(mc.full_data->>'title', mc.full_data->>'name') AS media_title
              FROM notifications n
              LEFT JOIN users u        ON u.user_id      = n.source_user_id
              LEFT JOIN media_cache mc ON mc.external_id = n.media_id
+                                     AND mc.media_type = n.media_type
              WHERE n.user_id = $1
              ORDER BY n.created_at DESC
              LIMIT 50`,

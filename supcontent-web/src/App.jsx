@@ -3,7 +3,7 @@
 
 import { Routes, Route } from 'react-router-dom';
 
-import FilmDetailPage from './pages/FilmDetailPage';
+import MediaDetailPage from './pages/MediaDetailPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
@@ -31,7 +31,8 @@ export default function App() {
                 {/* Advanced search — accessible from /search?q=...&type=...&year=... */}
                 <Route path="/search" element={<AdvancedSearchPage />} />
 
-                <Route path="/films/:id" element={<FilmDetailPage />} />
+                <Route path="/movie/:id" element={<MediaDetailPage mediaType="Movie" />} />
+                <Route path="/tv/:id" element={<MediaDetailPage mediaType="Series" />} />
                 <Route path="/users/:id/collection" element={<CollectionPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />

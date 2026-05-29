@@ -1,12 +1,15 @@
 import axios from 'axios';
+import { mediaPathFromType } from '../utils/media';
 
 const api = axios.create({ baseURL: '/api' });
 
-export const getFilmById = (id) => api.get(`/films/${id}`).then(res => res.data);
+export const getMediaById = (id, type = 'Movie') => (
+  api.get(`/media/${mediaPathFromType(type)}/${id}`).then(res => res.data)
+);
 
 export async function getTrending(type = 'all', limit = 12) {
   const params = new URLSearchParams({ type, limit });
-  const res = await fetch(`/api/films/trending?${params}`);
+  const res = await fetch(`/api/media/trending?${params}`);
   if (!res.ok) throw new Error('Failed to load trending content.');
   return res.json();
 }

@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { getFilmById } from '../api/films';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { getMediaById } from '../api/media';
 import { useAuth } from '../context/AuthContext';
 import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
-import { getMyLists, addFilmToList, createList } from '../api/lists';
+import { getMyLists, addMediaToList, createList } from '../api/lists';
 import ReviewsSection from '../components/ReviewsSection';
+import { mediaIdHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -18,10 +19,12 @@ function getIsNarrowLayout() {
     return window.innerWidth < NARROW_LAYOUT_WIDTH;
 }
 
-export default function FilmDetailPage() {
+export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const mediaType = routeMediaType ?? (searchParams.get('type') === 'Series' ? 'Series' : 'Movie');
     const { user } = useAuth();
-    const [film, setFilm] = useState(null);
+    const [media, setMedia] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [collectionStatus, setCollectionStatus] = useState(null);
@@ -33,26 +36,26 @@ export default function FilmDetailPage() {
     const [isNarrow, setIsNarrow] = useState(getIsNarrowLayout);
     const similarGridRef = useRef(null);
 
-    // Fetch film data
+    // Fetch media data
     useEffect(() => {
         setLoading(true);
         setError(null);
-        getFilmById(id)
-            .then(setFilm)
-            .catch(err => setError(err.response?.data?.message || 'Failed to load film.'))
+        getMediaById(id, mediaType)
+            .then(setMedia)
+            .catch(err => setError(err.response?.data?.message || 'Failed to load media.'))
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [id, mediaType]);
 
     // Fetch current collection status and user's lists if logged in
     useEffect(() => {
         if (user) {
-            getCollectionStatus(id).then(setCollectionStatus);
+            getCollectionStatus(id, mediaType).then(setCollectionStatus);
             getMyLists().then(setMyLists).catch(() => {});
         } else {
             setCollectionStatus(null);
             setMyLists([]);
         }
-    }, [id, user]);
+    }, [id, mediaType, user]);
 
     useEffect(() => {
         const handleResize = () => setIsNarrow(getIsNarrowLayout());
@@ -63,10 +66,10 @@ export default function FilmDetailPage() {
 
     async function handleAddToList(listId) {
         try {
-            await addFilmToList(listId, id);
+            await addMediaToList(listId, id, mediaType);
             setListFeedback('Added!');
-        } catch {
-            setListFeedback('Already in list.');
+        } catch (err) {
+            setListFeedback(err.response?.data?.message ?? 'Unable to add.');
         }
         setShowListMenu(false);
         setTimeout(() => setListFeedback(null), 2000);
@@ -81,12 +84,12 @@ export default function FilmDetailPage() {
     }
 
     async function handleStatusSelect(status) {
-        // Clicking the active status removes the film from the collection
+        // Clicking the active status removes the media from the collection
         if (status === collectionStatus) {
-            await removeFromCollection(id);
+            await removeFromCollection(id, mediaType);
             setCollectionStatus(null);
         } else {
-            await upsertCollection(id, status);
+            await upsertCollection(id, mediaType, status);
             setCollectionStatus(status);
         }
         setShowStatusMenu(false);
@@ -101,53 +104,53 @@ export default function FilmDetailPage() {
 
     if (loading) return <div style={styles.state}>Loading...</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
-    if (!film)   return null;
+    if (!media)   return null;
 
     return (
         <div style={styles.page}>
             <div style={styles.heroStage}>
                 <div style={{
                     ...styles.backdrop,
-                    backgroundImage: film.backdrop_path
-                        ? `url(${BACKDROP_BASE}${film.backdrop_path})`
+                    backgroundImage: media.backdrop_path
+                        ? `url(${BACKDROP_BASE}${media.backdrop_path})`
                         : 'none',
-                    backgroundColor: film.backdrop_path ? undefined : '#1a1a1a',
+                    backgroundColor: media.backdrop_path ? undefined : '#1a1a1a',
                 }}>
                     <div style={styles.backdropOverlay} />
                 </div>
 
                 <div style={{ ...styles.hero, ...(isNarrow ? styles.heroNarrow : {}) }}>
-                    {film.poster_path && (
+                    {media.poster_path && (
                         <img
-                            src={`${POSTER_BASE}${film.poster_path}`}
-                            alt={film.title}
+                            src={`${POSTER_BASE}${media.poster_path}`}
+                            alt={media.title}
                             style={{ ...styles.poster, ...(isNarrow ? styles.posterNarrow : {}) }}
                         />
                     )}
                     <div style={{ ...styles.info, ...(isNarrow ? styles.infoNarrow : {}) }}>
-                        <h1 style={{ ...styles.title, ...(isNarrow ? styles.titleNarrow : {}) }}>{film.title}</h1>
+                        <h1 style={{ ...styles.title, ...(isNarrow ? styles.titleNarrow : {}) }}>{media.title}</h1>
 
                         <div style={styles.meta}>
-                            {film.release_date?.slice(0, 4)}
-                            {film.runtime && <><span style={styles.dot}>·</span>{film.runtime} min</>}
-                            {film.vote_average && (
+                            {media.release_date?.slice(0, 4)}
+                            {media.runtime && <><span style={styles.dot}>·</span>{media.runtime} min</>}
+                            {media.vote_average && (
                                 <><span style={styles.dot}>·</span>
-                                <span style={styles.rating}>⭐ {film.vote_average.toFixed(1)}</span></>
+                                <span style={styles.rating}>�?{media.vote_average.toFixed(1)}</span></>
                             )}
                         </div>
 
-                        {film.genres?.length > 0 && (
+                        {media.genres?.length > 0 && (
                             <div style={styles.genres}>
-                                {film.genres.map(g => (
+                                {media.genres.map(g => (
                                     <span key={g.id} style={styles.genre}>{g.name}</span>
                                 ))}
                             </div>
                         )}
 
                         <div style={styles.actions}>
-                            <button style={styles.watchBtn}>▶ Watch</button>
+                            <button style={styles.watchBtn}>Watch</button>
 
-                            {/* Collection status button — disabled for guests */}
+                            {/* Collection status button ??disabled for guests */}
                             <div style={{ position: 'relative' }}>
                                 <button
                                     onClick={() => user && setShowStatusMenu(m => !m)}
@@ -179,7 +182,7 @@ export default function FilmDetailPage() {
                                 )}
                             </div>
 
-                            {/* Add to list button — logged-in users only */}
+                            {/* Add to list button ??logged-in users only */}
                             {user && (
                                 <div style={{ position: 'relative' }}>
                                     <button
@@ -193,15 +196,18 @@ export default function FilmDetailPage() {
                                             {myLists.length === 0 && (
                                                 <div style={styles.emptyMenuText}>No lists yet.</div>
                                             )}
-                                            {myLists.map(list => (
+                                            {myLists.map(list => {
+                                                const listId = list.list_id ?? list.id;
+                                                return (
                                                 <button
-                                                    key={list.id}
-                                                    onClick={() => handleAddToList(list.id)}
+                                                    key={listId}
+                                                    onClick={() => handleAddToList(listId)}
                                                     style={styles.statusOption}
                                                 >
                                                     {list.name}
                                                 </button>
-                                            ))}
+                                                );
+                                            })}
                                             <form onSubmit={handleCreateList} style={styles.inlineForm}>
                                                 <input
                                                     value={newListName}
@@ -217,25 +223,25 @@ export default function FilmDetailPage() {
                             )}
                         </div>
 
-                        {film.director && (
+                        {media.director && (
                             <div style={styles.director}>
                                 <span style={styles.directorLabel}>Director</span>
-                                {film.director}
+                                {media.director}
                             </div>
                         )}
 
-                        {film.overview && (
-                            <p style={styles.overview}>{film.overview}</p>
+                        {media.overview && (
+                            <p style={styles.overview}>{media.overview}</p>
                         )}
                     </div>
                 </div>
             </div>
 
-            {film.cast?.length > 0 && (
+            {media.cast?.length > 0 && (
                 <section style={styles.castSection}>
                     <h2 style={styles.sectionTitle}>Cast</h2>
                     <div style={styles.castGrid}>
-                        {film.cast.map(actor => (
+                        {media.cast.map(actor => (
                             <div key={actor.id} style={styles.castCard}>
                                 {actor.profile_path ? (
                                     <img
@@ -256,9 +262,9 @@ export default function FilmDetailPage() {
                 </section>
             )}
 
-            {film.similar?.length > 0 && (
+            {media.similar?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>Similar Films</h2>
+                    <h2 style={styles.sectionTitle}>You May Also Like</h2>
                     <div style={styles.similarSlider}>
                         <button
                             type="button"
@@ -269,8 +275,12 @@ export default function FilmDetailPage() {
                             &lt;
                         </button>
                         <div ref={similarGridRef} style={styles.similarGrid}>
-                            {film.similar.map(m => (
-                                <a key={m.id} href={`/films/${m.id}`} style={styles.similarCard}>
+                            {media.similar.map(m => (
+                                <Link
+                                    key={m.id}
+                                    to={mediaIdHref(m.id, m.media_type ?? mediaType)}
+                                    style={styles.similarCard}
+                                >
                                     {m.poster_path ? (
                                         <img
                                             src={`${POSTER_BASE}${m.poster_path}`}
@@ -282,9 +292,9 @@ export default function FilmDetailPage() {
                                     )}
                                     <div style={styles.similarTitle}>{m.title}</div>
                                     {m.vote_average && (
-                                        <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
+                                        <div style={styles.similarRating}>�?{m.vote_average.toFixed(1)}</div>
                                     )}
-                                </a>
+                                </Link>
                             ))}
                         </div>
                         <button
@@ -299,7 +309,7 @@ export default function FilmDetailPage() {
                 </section>
             )}
 
-            <ReviewsSection externalId={id} />
+            <ReviewsSection externalId={id} mediaType={mediaType} />
         </div>
     );
 }
