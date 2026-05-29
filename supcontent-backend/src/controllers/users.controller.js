@@ -207,7 +207,50 @@ const uploadAvatar = async (req, res) => {
     }
 };
 
+// ── GET /api/users/me/export?format=csv|json  (authentifié — RGPD) ───────────
+const exportData = async (req, res) => {
+    const user_id = req.user.user_id;
+    const format  = req.query.format === 'csv' ? 'csv' : 'json';
 
+    try {
+        const { rows } = await db.query(
+            `SELECT
+                m.full_data->>'title'        AS title,
+                m.media_type,
+                m.full_data->>'release_date' AS release_date,
+                c.status,
+                c.created_at                 AS added_at,
+                r.rating,
+                r.comment                    AS review,
+                r.created_at                 AS reviewed_at
+             FROM collections c
+             JOIN media_cache m  ON m.external_id = c.external_id
+             LEFT JOIN reviews r ON r.user_id = c.user_id AND r.external_id = c.external_id
+             WHERE c.user_id = $1
+             ORDER BY c.created_at DESC`,
+            [user_id]
+        );
+
+        if (format === 'csv') {
+            const esc = (v) => v == null ? '' : '"' + String(v).replace(/"/g, '""') + '"';
+            const header = 'title,media_type,release_date,status,added_at,rating,review,reviewed_at\n';
+            const body   = rows.map(r =>
+                [r.title, r.media_type, r.release_date, r.status,
+                 r.added_at, r.rating, r.review, r.reviewed_at].map(esc).join(',')
+            ).join('\n');
+            res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+            res.setHeader('Content-Disposition', 'attachment; filename="supcontent-export.csv"');
+            return res.send(header + body);
+        }
+
+        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Disposition', 'attachment; filename="supcontent-export.json"');
+        return res.json(rows);
+    } catch (err) {
+        console.error('[exportData]', err.message);
+        return res.status(500).json({ message: 'Server error.', error: err.message });
+    }
+};
 
 // ── DELETE /api/users/me  (authentifié — RGPD) ───────────────────────────────
 const deleteAccount = async (req, res) => {
@@ -227,5 +270,6 @@ module.exports = {
     getProfileStats,
     updateProfile,
     uploadAvatar,
+    exportData,
     deleteAccount,
 };

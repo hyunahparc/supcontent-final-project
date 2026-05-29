@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount } from '../api/users';
+import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount, exportUserData } from '../api/users';
 
 const font    = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const MAX_BIO = 500;
@@ -20,6 +20,7 @@ export default function ProfileSettingsPage() {
     const [preview, setPreview]   = useState(null);
     const [saving, setSaving]     = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg]   = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -115,6 +116,17 @@ export default function ProfileSettingsPage() {
             setErrorMsg(err.response?.data?.message || 'Failed to save profile.');
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleExport(format) {
+        setExporting(true);
+        try {
+            await exportUserData(format);
+        } catch {
+            setErrorMsg('Export failed. Please try again.');
+        } finally {
+            setExporting(false);
         }
     }
 
@@ -276,6 +288,32 @@ export default function ProfileSettingsPage() {
                         aria-label="Toggle theme"
                     >
                         <span style={{ ...s.themeToggleKnob, transform: isDark ? 'translateX(0)' : 'translateX(22px)' }} />
+                    </button>
+                </div>
+            </section>
+
+            {/* Feature 5 — Export RGPD */}
+            <section style={s.card}>
+                <h2 style={s.cardTitle}>My data (RGPD)</h2>
+                <p style={s.dangerText}>
+                    Download your collection and reviews in CSV or JSON format.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                    <button
+                        type="button"
+                        onClick={() => handleExport('csv')}
+                        disabled={exporting}
+                        style={s.secondaryBtn}
+                    >
+                        {exporting ? 'Exporting...' : 'Export CSV'}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleExport('json')}
+                        disabled={exporting}
+                        style={s.secondaryBtn}
+                    >
+                        {exporting ? 'Exporting...' : 'Export JSON'}
                     </button>
                 </div>
             </section>

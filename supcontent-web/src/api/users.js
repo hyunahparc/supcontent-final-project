@@ -55,3 +55,22 @@ export const uploadAvatar = (file) => {
 export const deleteMyAccount = () =>
     api.delete('/users/me', { headers: authHeader() })
         .then(res => res.data);
+
+/**
+ * Télécharge les données personnelles au format CSV ou JSON (RGPD).
+ * @param {'csv'|'json'} format
+ */
+export async function exportUserData(format = 'json') {
+    const token = localStorage.getItem('token');
+    const res = await fetch(`/api/users/me/export?format=${format}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error('Export failed.');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `supcontent-export.${format}`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
