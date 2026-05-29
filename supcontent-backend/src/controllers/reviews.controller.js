@@ -2,10 +2,15 @@ const db = require('../config/db');
 const { ACTIVITY_TYPES, createActivity } = require('../services/activity.service');
 const { NOTIFICATION_TYPES, createNotification } = require('../services/notification.service');
 
+function normalizeMediaType(type) {
+    return type === 'Series' || type === 'tv' ? 'Series' : 'Movie';
+}
+
 // GET /api/reviews/:external_id
 // Returns all reviews for a film with like count, comment count, and whether the current user liked it
 const getReviews = async (req, res) => {
     const { external_id } = req.params;
+    const media_type = normalizeMediaType(req.query.media_type);
     // user_id from optional auth — 0 if not logged in (no match possible, liked_by_me = false)
     const viewer_id = req.user?.user_id ?? 0;
 
@@ -21,9 +26,10 @@ const getReviews = async (req, res) => {
              LEFT JOIN review_likes rl ON rl.review_id = r.review_id
              LEFT JOIN review_comments rc ON rc.review_id = r.review_id
              WHERE r.external_id = $1
+               AND r.media_type = $3
              GROUP BY r.review_id, u.username, u.avatar
              ORDER BY r.created_at DESC`,
-            [external_id, viewer_id]
+            [external_id, viewer_id, media_type]
         );
         return res.json(rows);
     } catch (err) {
@@ -34,12 +40,13 @@ const getReviews = async (req, res) => {
 // GET /api/reviews/:external_id/my  — fetch the logged-in user's own review for a film
 const getMyReview = async (req, res) => {
     const { external_id } = req.params;
+    const media_type = normalizeMediaType(req.query.media_type);
     const user_id = req.user.user_id;
 
     try {
         const { rows } = await db.query(
-            'SELECT * FROM reviews WHERE user_id = $1 AND external_id = $2',
-            [user_id, external_id]
+            'SELECT * FROM reviews WHERE user_id = $1 AND external_id = $2 AND media_type = $3',
+            [user_id, external_id, media_type]
         );
         return res.json(rows[0] ?? null);
     } catch (err) {
@@ -47,10 +54,11 @@ const getMyReview = async (req, res) => {
     }
 };
 
-// POST /api/reviews  { external_id, rating, comment }
+// POST /api/reviews  { external_id, media_type, rating, comment }
 // Creates or updates the user's review for a film (one review per user per film)
 const upsertReview = async (req, res) => {
     const { external_id, rating, comment } = req.body;
+    const media_type = normalizeMediaType(req.body.media_type);
     const user_id = req.user.user_id;
 
     if (!external_id) {
@@ -62,18 +70,19 @@ const upsertReview = async (req, res) => {
 
     try {
         const { rows } = await db.query(
-            `INSERT INTO reviews (user_id, external_id, rating, comment, updated_at)
-             VALUES ($1, $2, $3, $4, NOW())
-             ON CONFLICT (user_id, external_id)
-             DO UPDATE SET rating = $3, comment = $4, updated_at = NOW()
+            `INSERT INTO reviews (user_id, external_id, media_type, rating, comment, updated_at)
+             VALUES ($1, $2, $3, $4, $5, NOW())
+             ON CONFLICT (user_id, external_id, media_type)
+             DO UPDATE SET rating = $4, comment = $5, updated_at = NOW()
              RETURNING *`,
-            [user_id, external_id, rating ?? null, comment ?? null]
+            [user_id, external_id, media_type, rating ?? null, comment ?? null]
         );
 
         await createActivity({
             userId: user_id,
             activityType: ACTIVITY_TYPES.REVIEW,
             mediaId: external_id,
+            mediaType: media_type,
             reviewId: rows[0].review_id,
             metadata: {
                 rating: rows[0].rating,
@@ -130,7 +139,7 @@ const toggleLike = async (req, res) => {
                 [review_id, user_id]
             );
             const { rows: reviewRows } = await db.query(
-                'SELECT user_id, external_id FROM reviews WHERE review_id = $1',
+                'SELECT user_id, external_id, media_type FROM reviews WHERE review_id = $1',
                 [review_id]
             );
             if (reviewRows.length > 0) {
@@ -139,6 +148,7 @@ const toggleLike = async (req, res) => {
                     type: NOTIFICATION_TYPES.LIKE,
                     sourceUserId: user_id,
                     mediaId: reviewRows[0].external_id,
+                    mediaType: reviewRows[0].media_type,
                     reviewId: Number(review_id),
                 });
             }
@@ -191,7 +201,7 @@ const addComment = async (req, res) => {
             [review_id, user_id, content.trim()]
         );
         const { rows: reviewRows } = await db.query(
-            'SELECT user_id, external_id FROM reviews WHERE review_id = $1',
+            'SELECT user_id, external_id, media_type FROM reviews WHERE review_id = $1',
             [review_id]
         );
         if (reviewRows.length > 0) {
@@ -200,6 +210,7 @@ const addComment = async (req, res) => {
                 type: NOTIFICATION_TYPES.COMMENT,
                 sourceUserId: user_id,
                 mediaId: reviewRows[0].external_id,
+                mediaType: reviewRows[0].media_type,
                 reviewId: Number(review_id),
             });
         }

@@ -3,6 +3,10 @@ const { ACTIVITY_TYPES, createActivity } = require('../services/activity.service
 
 const VALID_STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
 
+function normalizeMediaType(type) {
+    return type === 'Series' || type === 'tv' ? 'Series' : 'Movie';
+}
+
 // GET /api/users/:id/library?status=xxx
 const getLibrary = async (req, res) => {
     const { id } = req.params;
@@ -25,6 +29,7 @@ const getLibrary = async (req, res) => {
                     c.external_id, m.media_type, m.full_data
              FROM collections c
              JOIN media_cache m ON m.external_id = c.external_id
+                               AND m.media_type = c.media_type
              WHERE c.user_id = $1 ${statusFilter}
              ORDER BY c.created_at DESC`,
             params
@@ -36,9 +41,10 @@ const getLibrary = async (req, res) => {
     }
 };
 
-// POST /api/collections  { external_id, status }
+// POST /api/collections  { external_id, media_type, status }
 const upsertCollection = async (req, res) => {
     const { external_id, status } = req.body;
+    const media_type = normalizeMediaType(req.body.media_type);
     const user_id = req.user.user_id;
 
     if (!external_id || !status) {
@@ -50,17 +56,18 @@ const upsertCollection = async (req, res) => {
 
     try {
         const { rows } = await db.query(
-            `INSERT INTO collections (user_id, external_id, status)
-             VALUES ($1, $2, $3)
-             ON CONFLICT (user_id, external_id) DO UPDATE SET status = $3
+            `INSERT INTO collections (user_id, external_id, media_type, status)
+             VALUES ($1, $2, $3, $4)
+             ON CONFLICT (user_id, external_id, media_type) DO UPDATE SET status = $4
              RETURNING *`,
-            [user_id, external_id, status]
+            [user_id, external_id, media_type, status]
         );
 
         await createActivity({
             userId: user_id,
             activityType: ACTIVITY_TYPES.COLLECTION,
             mediaId: external_id,
+            mediaType: media_type,
             metadata: { status },
         });
 
@@ -73,12 +80,13 @@ const upsertCollection = async (req, res) => {
 // DELETE /api/collections/:external_id
 const removeFromCollection = async (req, res) => {
     const { external_id } = req.params;
+    const media_type = normalizeMediaType(req.query.media_type);
     const user_id = req.user.user_id;
 
     try {
         await db.query(
-            'DELETE FROM collections WHERE user_id = $1 AND external_id = $2',
-            [user_id, external_id]
+            'DELETE FROM collections WHERE user_id = $1 AND external_id = $2 AND media_type = $3',
+            [user_id, external_id, media_type]
         );
         return res.json({ message: 'Removed from collection.' });
     } catch (err) {
@@ -89,12 +97,13 @@ const removeFromCollection = async (req, res) => {
 // GET /api/collections/:external_id  (check current status for a film)
 const getCollectionStatus = async (req, res) => {
     const { external_id } = req.params;
+    const media_type = normalizeMediaType(req.query.media_type);
     const user_id = req.user.user_id;
 
     try {
         const { rows } = await db.query(
-            'SELECT status FROM collections WHERE user_id = $1 AND external_id = $2',
-            [user_id, external_id]
+            'SELECT status FROM collections WHERE user_id = $1 AND external_id = $2 AND media_type = $3',
+            [user_id, external_id, media_type]
         );
         return res.json({ status: rows[0]?.status ?? null });
     } catch (err) {

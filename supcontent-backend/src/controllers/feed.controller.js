@@ -31,6 +31,7 @@ const getFeed = async (req, res) => {
                 ON actor.user_id = a.user_id
             LEFT JOIN media_cache m
                 ON m.external_id = a.media_id
+               AND m.media_type = a.media_type
             WHERE f.follower_id = $1
               AND a.activity_type IN ('review', 'collection')
             ORDER BY a.created_at DESC

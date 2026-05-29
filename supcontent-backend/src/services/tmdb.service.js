@@ -3,14 +3,22 @@ const db = require('../config/db');
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 const CACHE_TTL_DAYS = 7;
 
-const getFilmById = async (id) => {
+function normalizeType(type) {
+    return type === 'Series' || type === 'tv' ? 'Series' : 'Movie';
+}
+
+const getMediaById = async (id, type = 'Movie') => {
+    const mediaType = normalizeType(type);
+    const tmdbType = mediaType === 'Series' ? 'tv' : 'movie';
+
     // Check cache first
     const { rows } = await db.query(
-        `SELECT full_data FROM media_cache
+        `SELECT media_type, full_data FROM media_cache
          WHERE external_id = $1
+           AND media_type = $2
            AND full_data IS NOT NULL
            AND updated_at > NOW() - INTERVAL '${CACHE_TTL_DAYS} days'`,
-        [id]
+        [id, mediaType]
     );
 
     if (rows.length > 0) {
@@ -18,11 +26,11 @@ const getFilmById = async (id) => {
     }
 
     // Fetch from TMDB
-    const url = `${TMDB_BASE}/movie/${id}?api_key=${process.env.TMDB_API_KEY}&language=en-US&append_to_response=credits,similar`;
+    const url = `${TMDB_BASE}/${tmdbType}/${id}?api_key=${process.env.TMDB_API_KEY}&language=en-US&append_to_response=credits,similar`;
     const response = await fetch(url);
 
     if (response.status === 404) {
-        const err = new Error('Film not found on TMDB.');
+        const err = new Error('Media not found on TMDB.');
         err.status = 404;
         throw err;
     }
@@ -35,29 +43,43 @@ const getFilmById = async (id) => {
     const data = await response.json();
 
     // Keep only fields needed for the detail page (no full dump)
+    const runtime = mediaType === 'Series'
+        ? data.episode_run_time?.[0] ?? null
+        : data.runtime ?? null;
+    const director = mediaType === 'Series'
+        ? data.created_by?.map(c => c.name).filter(Boolean).join(', ') || null
+        : data.credits?.crew?.find(c => c.job === 'Director')?.name ?? null;
+
     const cached = {
         id:            data.id,
-        title:         data.title,
+        media_type:    mediaType,
+        title:         data.title ?? data.name ?? null,
         overview:      data.overview,
         poster_path:   data.poster_path,
         backdrop_path: data.backdrop_path,
-        release_date:  data.release_date,
-        runtime:       data.runtime,
+        release_date:  data.release_date ?? data.first_air_date ?? null,
+        runtime,
         genres:        data.genres,
         vote_average:  data.vote_average,
-        director: data.credits?.crew?.find(c => c.job === 'Director')?.name ?? null,
+        director,
         cast: data.credits?.cast?.slice(0, 10).map(a => ({ id: a.id, name: a.name, character: a.character, profile_path: a.profile_path ?? null })) ?? [],
-        similar: data.similar?.results?.slice(0, 10).map(m => ({ id: m.id, title: m.title, poster_path: m.poster_path ?? null, vote_average: m.vote_average ?? null })) ?? [],
+        similar: data.similar?.results?.slice(0, 10).map(m => ({
+            id: m.id,
+            media_type: mediaType,
+            title: m.title ?? m.name ?? null,
+            poster_path: m.poster_path ?? null,
+            vote_average: m.vote_average ?? null,
+        })) ?? [],
     };
 
     // Upsert into cache
     await db.query(
         `INSERT INTO media_cache (external_id, media_type, full_data)
-         VALUES ($1, 'Movie', $2)
-         ON CONFLICT (external_id) DO UPDATE SET
+         VALUES ($1, $2, $3)
+         ON CONFLICT (external_id, media_type) DO UPDATE SET
              full_data  = EXCLUDED.full_data,
              updated_at = NOW()`,
-        [cached.id, JSON.stringify(cached)]
+        [cached.id, mediaType, JSON.stringify(cached)]
     );
 
     return cached;
@@ -88,4 +110,4 @@ const getTrending = async (type = 'all', limit = 12) => {
     }));
 };
 
-module.exports = { getFilmById, getTrending };
+module.exports = { getMediaById, getTrending };

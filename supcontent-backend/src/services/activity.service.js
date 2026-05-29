@@ -10,6 +10,7 @@ async function createActivity({
     activityType,
     targetUserId = null,
     mediaId = null,
+    mediaType = null,
     reviewId = null,
     metadata = {},
 }) {
@@ -27,12 +28,13 @@ async function createActivity({
             activity_type,
             target_user_id,
             media_id,
+            media_type,
             review_id,
             metadata
         )
-        VALUES ($1, $2, $3, $4, $5, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING *`,
-        [userId, activityType, targetUserId, mediaId, reviewId, JSON.stringify(metadata)]
+        [userId, activityType, targetUserId, mediaId, mediaType, reviewId, JSON.stringify(metadata)]
     );
 
     return rows[0];
