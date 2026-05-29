@@ -18,7 +18,7 @@ app.use(passport.initialize());
 
 // Routes
 const authRouter = require('./src/routes/auth.route');
-const filmsRouter = require('./src/routes/films.route');
+const mediaRouter = require('./src/routes/media.route');
 const searchRouter = require('./src/routes/search.route');
 const collectionsRouter = require('./src/routes/collections.route');
 const usersRouter = require('./src/routes/users.route');
@@ -30,7 +30,7 @@ const notificationsRouter = require('./src/routes/notifications.route');
 const messagesRouter = require('./src/routes/messages.route');
 app.use('/api/search', searchRouter);
 app.use('/api/auth', authRouter);
-app.use('/api/films', filmsRouter);
+app.use('/api/media', mediaRouter);
 app.use('/api/collections', collectionsRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/reviews', reviewsRouter);
