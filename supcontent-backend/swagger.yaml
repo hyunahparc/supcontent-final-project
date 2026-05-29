@@ -73,6 +73,29 @@ components:
                 director:
                     type: string
                     nullable: true
+                trailer:
+                    type: object
+                    nullable: true
+                    properties:
+                        key:
+                            type: string
+                            example: SUXWAEX2jlg
+                        name:
+                            type: string
+                            example: Official Trailer
+                        site:
+                            type: string
+                            example: YouTube
+                        type:
+                            type: string
+                            example: Trailer
+                        official:
+                            type: boolean
+                            example: true
+                        url:
+                            type: string
+                            format: uri
+                            example: https://www.youtube.com/watch?v=SUXWAEX2jlg
                 cast:
                     type: array
                     items:

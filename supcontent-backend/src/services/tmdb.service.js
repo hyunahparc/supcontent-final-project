@@ -26,7 +26,7 @@ const getMediaById = async (id, type = 'Movie') => {
     }
 
     // Fetch from TMDB
-    const url = `${TMDB_BASE}/${tmdbType}/${id}?api_key=${process.env.TMDB_API_KEY}&language=en-US&append_to_response=credits,similar`;
+    const url = `${TMDB_BASE}/${tmdbType}/${id}?api_key=${process.env.TMDB_API_KEY}&language=en-US&append_to_response=credits,similar,videos`;
     const response = await fetch(url);
 
     if (response.status === 404) {
@@ -49,6 +49,12 @@ const getMediaById = async (id, type = 'Movie') => {
     const director = mediaType === 'Series'
         ? data.created_by?.map(c => c.name).filter(Boolean).join(', ') || null
         : data.credits?.crew?.find(c => c.job === 'Director')?.name ?? null;
+    const videos = data.videos?.results ?? [];
+    const trailer =
+        videos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official) ??
+        videos.find(v => v.site === 'YouTube' && v.type === 'Trailer') ??
+        videos.find(v => v.site === 'YouTube' && v.type === 'Teaser') ??
+        null;
 
     const cached = {
         id:            data.id,
@@ -62,6 +68,14 @@ const getMediaById = async (id, type = 'Movie') => {
         genres:        data.genres,
         vote_average:  data.vote_average,
         director,
+        trailer: trailer ? {
+            key: trailer.key,
+            name: trailer.name,
+            site: trailer.site,
+            type: trailer.type,
+            official: trailer.official ?? false,
+            url: `https://www.youtube.com/watch?v=${trailer.key}`,
+        } : null,
         cast: data.credits?.cast?.slice(0, 10).map(a => ({ id: a.id, name: a.name, character: a.character, profile_path: a.profile_path ?? null })) ?? [],
         similar: data.similar?.results?.slice(0, 10).map(m => ({
             id: m.id,
