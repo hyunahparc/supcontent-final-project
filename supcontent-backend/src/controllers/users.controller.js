@@ -90,16 +90,12 @@ const updateProfile = async (req, res) => {
     if (username !== undefined) {
         const trimmed = (username || '').trim();
         if (trimmed.length < 3 || trimmed.length > 50) {
-            return res.status(400).json({
-                message: "Le nom d'utilisateur doit contenir entre 3 et 50 caractères.",
-            });
+            return res.status(400).json({ message: 'Username must be between 3 and 50 characters.' });
         }
     }
 
     if (bio !== undefined && bio.length > 500) {
-        return res.status(400).json({
-            message: 'La biographie ne peut pas dépasser 500 caractères.',
-        });
+        return res.status(400).json({ message: 'Bio cannot exceed 500 characters.' });
     }
 
     try {
@@ -115,10 +111,10 @@ const updateProfile = async (req, res) => {
         return res.json(rows[0]);
     } catch (err) {
         if (err.code === '23505') {
-            return res.status(409).json({ message: "Ce nom d'utilisateur est déjà pris." });
+            return res.status(409).json({ message: 'This username is already taken.' });
         }
         console.error('[updateProfile]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
