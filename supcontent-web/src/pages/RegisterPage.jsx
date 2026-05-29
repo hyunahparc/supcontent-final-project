@@ -97,7 +97,7 @@ export default function RegisterPage() {
                                 {rules.map((r) => {
                                     const ok = r.test(form.password);
                                     return (
-                                        <div key={r.label} style={{ ...ruleStyles.item, color: ok ? '#38a169' : '#aaa' }}>
+                                        <div key={r.label} style={{ ...ruleStyles.item, color: ok ? 'var(--accent)' : 'var(--text-muted)' }}>
                                             <span>{ok ? '✓' : '○'}</span>
                                             {r.label}
                                         </div>
@@ -144,8 +144,8 @@ const ruleStyles = {
         flexDirection: 'column',
         gap: '4px',
         padding: '10px 12px',
-        backgroundColor: '#fafafa',
-        border: '1px solid #f0f0f0',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border)',
         borderRadius: '8px',
     },
     item: {

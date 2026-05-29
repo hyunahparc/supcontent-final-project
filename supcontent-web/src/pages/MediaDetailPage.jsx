@@ -2,10 +2,85 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { getMediaById } from '../api/media';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { getCollectionStatus, upsertCollection, removeFromCollection } from '../api/collections';
 import { getMyLists, addMediaToList, createList } from '../api/lists';
 import ReviewsSection from '../components/ReviewsSection';
 import { mediaIdHref } from '../utils/media';
+
+// ── Hook: sample backdrop luminosity and return the best title color ──────────
+function useBackdropTextColor(backdropPath, isDark) {
+    const [titleColor,  setTitleColor]  = useState('#ffffff');
+    const [titleShadow, setTitleShadow] = useState('0 2px 12px rgba(0,0,0,0.8)');
+
+    useEffect(() => {
+        if (!backdropPath) {
+            // No image — use theme default
+            setTitleColor(isDark ? '#ffffff' : '#111111');
+            setTitleShadow(isDark ? '0 2px 12px rgba(0,0,0,0.8)' : 'none');
+            return;
+        }
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = `https://image.tmdb.org/t/p/w300${backdropPath}`;
+
+        img.onload = () => {
+            try {
+                const W = img.naturalWidth;
+                const H = img.naturalHeight;
+                const canvas = document.createElement('canvas');
+                canvas.width  = W;
+                canvas.height = H;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                // Sample the zone where the title sits (~40–70 % of height)
+                const sY = Math.floor(H * 0.40);
+                const sH = Math.floor(H * 0.30);
+                const { data } = ctx.getImageData(0, sY, W, sH);
+
+                let totalLum = 0;
+                const count  = data.length / 4;
+                for (let i = 0; i < data.length; i += 4) {
+                    const r = data[i]     / 255;
+                    const g = data[i + 1] / 255;
+                    const b = data[i + 2] / 255;
+                    // Perceived luminance (WCAG)
+                    totalLum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                }
+                const imgLum = totalLum / count;
+
+                // Blend with the theme-aware overlay at ~55 % opacity at the title zone
+                // Dark theme overlay ≈ lum 0.07 (#121212), light ≈ lum 0.91 (#f4f4f4)
+                const overlayLum     = isDark ? 0.07 : 0.91;
+                const overlayOpacity = 0.55;
+                const effectiveLum   = imgLum * (1 - overlayOpacity) + overlayLum * overlayOpacity;
+
+                if (effectiveLum > 0.5) {
+                    // Effective background is LIGHT → dark text
+                    setTitleColor('#111111');
+                    setTitleShadow('0 1px 6px rgba(255,255,255,0.6)');
+                } else {
+                    // Effective background is DARK → white text
+                    setTitleColor('#ffffff');
+                    setTitleShadow('0 2px 12px rgba(0,0,0,0.8)');
+                }
+            } catch {
+                // Canvas tainted by CORS — safe fallback
+                setTitleColor(isDark ? '#ffffff' : '#111111');
+                setTitleShadow(isDark ? '0 2px 12px rgba(0,0,0,0.8)' : 'none');
+            }
+        };
+
+        img.onerror = () => {
+            setTitleColor(isDark ? '#ffffff' : '#111111');
+            setTitleShadow(isDark ? '0 2px 12px rgba(0,0,0,0.8)' : 'none');
+        };
+    }, [backdropPath, isDark]);
+
+    return { titleColor, titleShadow };
+}
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
@@ -24,7 +99,8 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const mediaType = routeMediaType ?? (searchParams.get('type') === 'Series' ? 'Series' : 'Movie');
-    const { user } = useAuth();
+    const { user }   = useAuth();
+    const { isDark } = useTheme();
     const [media, setMedia] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -37,6 +113,12 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const [showTrailer, setShowTrailer] = useState(false);
     const [isNarrow, setIsNarrow] = useState(getIsNarrowLayout);
     const similarGridRef = useRef(null);
+
+    // Dynamic title color based on backdrop brightness + theme
+    const { titleColor, titleShadow } = useBackdropTextColor(
+        media?.backdrop_path ?? null,
+        isDark
+    );
 
     // Fetch media data
     useEffect(() => {
@@ -128,7 +210,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                     backgroundImage: media.backdrop_path
                         ? `url(${BACKDROP_BASE}${media.backdrop_path})`
                         : 'none',
-                    backgroundColor: media.backdrop_path ? undefined : '#1a1a1a',
+                    backgroundColor: media.backdrop_path ? undefined : 'var(--bg-secondary)',
                 }}>
                     <div style={styles.backdropOverlay} />
                 </div>
@@ -142,7 +224,14 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                         />
                     )}
                     <div style={{ ...styles.info, ...(isNarrow ? styles.infoNarrow : {}) }}>
-                        <h1 style={{ ...styles.title, ...(isNarrow ? styles.titleNarrow : {}) }}>{media.title}</h1>
+                        <h1 style={{
+                            ...styles.title,
+                            ...(isNarrow ? styles.titleNarrow : {}),
+                            color:      titleColor,
+                            textShadow: titleShadow,
+                        }}>
+                            {media.title}
+                        </h1>
 
                         <div style={styles.meta}>
                             {media.release_date?.slice(0, 4)}
@@ -178,8 +267,8 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                     onClick={handleCollectionClick}
                                     style={{
                                         ...styles.collectionBtn,
-                                        backgroundColor: collectionStatus ? '#fff' : 'transparent',
-                                        color: collectionStatus ? '#111' : '#fff',
+                                        backgroundColor: collectionStatus ? 'var(--tab-active-bg)' : 'transparent',
+                                        color: collectionStatus ? 'var(--tab-active-text)' : 'var(--text-primary)',
                                         opacity: 1,
                                         cursor: 'pointer',
                                     }}
@@ -194,7 +283,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                                 onClick={() => handleStatusSelect(s)}
                                                 style={{
                                                     ...styles.statusOption,
-                                                    backgroundColor: s === collectionStatus ? '#333' : 'transparent',
+                                                    backgroundColor: s === collectionStatus ? 'var(--bg-elevated)' : 'transparent',
                                                 }}
                                             >
                                                 {s}
@@ -362,19 +451,19 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 const styles = {
     page: {
-        backgroundColor: '#121212',
+        backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontFamily: font,
         paddingBottom: '60px',
     },
     state: {
-        backgroundColor: '#121212',
+        backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize: '14px',
         fontFamily: font,
     },
@@ -393,7 +482,7 @@ const styles = {
     backdropOverlay: {
         position: 'absolute',
         inset: 0,
-        background: 'linear-gradient(to bottom, rgba(18,18,18,0.2) 0%, rgba(18,18,18,0.7) 60%, rgba(18,18,18,1) 100%)',
+        background: 'var(--backdrop-overlay)',
     },
     hero: {
         maxWidth: '1200px',
@@ -415,7 +504,7 @@ const styles = {
         maxWidth: '100%',
         flexShrink: 0,
         borderRadius: '8px',
-        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
+        boxShadow: 'var(--shadow) 0px 8px 24px',
     },
     posterNarrow: {
         width: 'min(280px, 72vw)',
@@ -439,7 +528,7 @@ const styles = {
         fontWeight: '700',
         letterSpacing: '-0.5px',
         lineHeight: 1.1,
-        textShadow: '0 2px 8px rgba(0,0,0,0.5)',
+        transition: 'color 0.3s ease, text-shadow 0.3s ease',
     },
     titleNarrow: {
         fontSize: '32px',
@@ -453,12 +542,12 @@ const styles = {
         justifyContent: 'flex-start',
         gap: '4px',
         fontSize: '14px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         marginBottom: '14px',
     },
     dot: {
         margin: '0 4px',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     rating: {
         color: '#f5c518',
@@ -471,10 +560,10 @@ const styles = {
     },
     genre: {
         padding: '4px 12px',
-        border: '1px solid #4d4d4d',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         fontSize: '12px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
     },
     actions: {
         display: 'flex',
@@ -488,8 +577,8 @@ const styles = {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '11px 28px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         border: 'none',
         borderRadius: '9999px',
         fontSize: '14px',
@@ -526,7 +615,7 @@ const styles = {
         borderRadius: '50%',
         border: '1px solid rgba(255,255,255,0.35)',
         backgroundColor: 'rgba(0,0,0,0.65)',
-        color: '#fff',
+        color: '#ffffff',
         fontSize: '24px',
         lineHeight: 1,
         cursor: 'pointer',
@@ -540,7 +629,7 @@ const styles = {
     },
     collectionBtn: {
         padding: '11px 24px',
-        border: '1px solid #7c7c7c',
+        border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         fontSize: '14px',
         fontWeight: '700',
@@ -552,8 +641,8 @@ const styles = {
         position: 'absolute',
         top: 'calc(100% + 8px)',
         left: 0,
-        backgroundColor: '#181818',
-        boxShadow: 'rgba(0,0,0,0.5) 0px 8px 24px',
+        backgroundColor: 'var(--bg-elevated)',
+        boxShadow: 'var(--shadow) 0px 8px 24px',
         borderRadius: '8px',
         overflow: 'hidden',
         zIndex: 100,
@@ -566,7 +655,7 @@ const styles = {
         textAlign: 'left',
         border: 'none',
         backgroundColor: 'transparent',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '14px',
         fontWeight: '400',
         cursor: 'pointer',
@@ -577,23 +666,23 @@ const styles = {
         alignItems: 'center',
         gap: '6px',
         padding: '8px 12px',
-        borderTop: '1px solid #2a2a2a',
+        borderTop: '1px solid var(--border)',
     },
     inlineInput: {
         flex: 1,
         padding: '6px 10px',
-        backgroundColor: '#222',
-        border: '1px solid #444',
+        backgroundColor: 'var(--bg-input)',
+        border: '1px solid var(--border-visible)',
         borderRadius: '6px',
-        color: '#fff',
+        color: 'var(--text-primary)',
         fontSize: '13px',
         fontFamily: font,
         outline: 'none',
     },
     inlineBtn: {
         padding: '6px 12px',
-        backgroundColor: '#1ed760',
-        color: '#000',
+        backgroundColor: 'var(--accent)',
+        color: 'var(--text-inverse)',
         border: 'none',
         borderRadius: '6px',
         fontSize: '14px',
@@ -603,12 +692,12 @@ const styles = {
     },
     director: {
         fontSize: '14px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         marginBottom: '14px',
         overflowWrap: 'anywhere',
     },
     directorLabel: {
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontWeight: '700',
         textTransform: 'uppercase',
         fontSize: '11px',
@@ -617,7 +706,7 @@ const styles = {
     },
     overview: {
         fontSize: '17px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         lineHeight: 1.6,
         margin: 0,
         maxWidth: '600px',
@@ -632,7 +721,7 @@ const styles = {
         margin: '0 0 20px',
         fontSize: '24px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
     },
     castGrid: {
         display: 'grid',
@@ -642,10 +731,10 @@ const styles = {
     castCard: {
         display: 'flex',
         flexDirection: 'column',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius: '8px',
         overflow: 'hidden',
-        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
+        boxShadow: 'var(--shadow) 0px 8px 8px',
     },
     castAvatar: {
         width: '100%',
@@ -655,18 +744,18 @@ const styles = {
     castAvatarFallback: {
         width: '100%',
         aspectRatio: '3/4',
-        backgroundColor: '#1f1f1f',
+        backgroundColor: 'var(--bg-input)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         fontSize: '32px',
         fontWeight: '700',
-        color: '#4d4d4d',
+        color: 'var(--text-muted)',
     },
     actorName: {
         fontSize: '12px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         padding: '8px 10px 2px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -674,7 +763,7 @@ const styles = {
     },
     actorRole: {
         fontSize: '11px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         padding: '0 10px 10px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -698,7 +787,7 @@ const styles = {
         borderRadius: '50%',
         border: '1px solid rgba(255,255,255,0.2)',
         backgroundColor: 'rgba(0,0,0,0.6)',
-        color: '#fff',
+        color: '#ffffff',
         fontSize: '22px',
         fontWeight: '700',
         cursor: 'pointer',
@@ -726,18 +815,18 @@ const styles = {
         objectFit: 'cover',
         borderRadius: '6px',
         display: 'block',
-        boxShadow: 'rgba(0,0,0,0.3) 0px 8px 8px',
+        boxShadow: 'var(--shadow) 0px 8px 8px',
     },
     similarPosterFallback: {
         width: '160px',
         height: '240px',
-        backgroundColor: '#181818',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius: '6px',
     },
     similarTitle: {
         fontSize: '12px',
         fontWeight: '700',
-        color: '#fff',
+        color: 'var(--text-primary)',
         marginTop: '8px',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
@@ -745,7 +834,7 @@ const styles = {
     },
     similarRating: {
         fontSize: '11px',
-        color: '#b3b3b3',
+        color: 'var(--text-secondary)',
         marginTop: '3px',
     },
 };

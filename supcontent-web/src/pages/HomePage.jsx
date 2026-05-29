@@ -39,8 +39,8 @@ function HeroSection() {
         <form onSubmit={handleSearch} style={s.searchForm}>
           <div style={s.searchWrap}>
             <svg style={s.searchIcon} viewBox="0 0 20 20" fill="none">
-              <circle cx="9" cy="9" r="6" stroke="rgba(255,255,255,0.4)" strokeWidth="1.8"/>
-              <path d="M13.5 13.5L17 17" stroke="rgba(255,255,255,0.4)" strokeWidth="1.8" strokeLinecap="round"/>
+              <circle cx="9" cy="9" r="6" stroke="var(--text-faint)" strokeWidth="1.8"/>
+              <path d="M13.5 13.5L17 17" stroke="var(--text-faint)" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
             <input
               type="text"
@@ -146,7 +146,7 @@ function TrendingSection() {
           {loading
             ? Array.from({ length: 12 }, (_, i) => <SkeletonCard key={i} />)
             : (data?.map((item) => <MediaCard key={`${item.external_id}-${item.media_type}`} item={item} />) ?? (
-                <p style={{ color: '#b3b3b3', fontFamily: font }}>No content available.</p>
+                <p style={{ color: 'var(--text-secondary)', fontFamily: font }}>No content available.</p>
               ))
           }
         </div>
@@ -332,7 +332,7 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     padding: '80px 24px 60px',
-    background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(30,215,96,0.08) 0%, transparent 60%), #121212',
+    background: 'var(--hero-bg)',
     overflow: 'hidden',
   },
   heroGrain: {
@@ -349,7 +349,7 @@ const s = {
     transform: 'translateX(-50%)',
     width: '600px',
     height: '300px',
-    background: 'radial-gradient(ellipse, rgba(30,215,96,0.08) 0%, transparent 70%)',
+    background: 'var(--hero-glow)',
     pointerEvents: 'none',
   },
   heroContent: {
@@ -368,7 +368,7 @@ const s = {
     borderRadius: '20px',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#1ed760',
+    color: 'var(--accent)',
     letterSpacing: '0.5px',
     marginBottom: '24px',
     textTransform: 'uppercase',
@@ -378,25 +378,25 @@ const s = {
     width: '6px',
     height: '6px',
     borderRadius: '50%',
-    backgroundColor: '#1ed760',
+    backgroundColor: 'var(--accent)',
     animation: 'pulse 2s ease-in-out infinite',
   },
   heroTitle: {
     fontSize: 'clamp(32px, 5vw, 60px)',
     fontWeight: '800',
-    color: '#fff',
+    color: 'var(--text-primary)',
     lineHeight: 1.1,
     letterSpacing: '-1.5px',
     margin: '0 0 20px',
     fontFamily: font,
   },
   heroTitleAccent: {
-    color: '#1ed760',
+    color: 'var(--accent)',
     position: 'relative',
   },
   heroSubtitle: {
     fontSize: '17px',
-    color: 'rgba(255,255,255,0.55)',
+    color: 'var(--text-soft)',
     lineHeight: 1.7,
     maxWidth: '520px',
     margin: '0 auto 36px',
@@ -409,8 +409,8 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     gap: '0',
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'var(--glass-bg)',
+    border: '1px solid var(--glass-border)',
     borderRadius: '14px',
     padding: '5px 5px 5px 16px',
     backdropFilter: 'blur(8px)',
@@ -422,15 +422,15 @@ const s = {
     border: 'none',
     outline: 'none',
     fontSize: '15px',
-    color: '#fff',
+    color: 'var(--text-primary)',
     padding: '8px 0',
     minWidth: 0,
     fontFamily: font,
   },
   searchBtn: {
     padding: '10px 20px',
-    background: '#1ed760',
-    color: '#000',
+    background: 'var(--accent)',
+    color: 'var(--text-inverse)',
     border: 'none',
     borderRadius: '10px',
     fontSize: '14px',
@@ -450,8 +450,8 @@ const s = {
     flexWrap: 'wrap',
   },
   stat: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
-  statValue: { fontSize: '24px', fontWeight: '800', color: '#fff', letterSpacing: '-0.5px', fontFamily: font },
-  statLabel: { fontSize: '12px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: font },
+  statValue: { fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', fontFamily: font },
+  statLabel: { fontSize: '12px', color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: font },
 
   // Scroll hint
   scrollHint: {
@@ -466,19 +466,19 @@ const s = {
   scrollLine: {
     width: '1px',
     height: '40px',
-    background: 'linear-gradient(to bottom, rgba(255,255,255,0.3), transparent)',
+    background: 'linear-gradient(to bottom, var(--text-secondary), transparent)',
     animation: 'scrollFade 2s ease-in-out infinite',
   },
 
   // ── Sections layout ────────────────────────────────────────────────────
   section: {
-    backgroundColor: '#121212',
+    backgroundColor: 'var(--bg-primary)',
     padding: '80px 0',
   },
   sectionAlt: {
-    backgroundColor: '#0e0e0e',
-    borderTop: '1px solid rgba(255,255,255,0.04)',
-    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    backgroundColor: 'var(--bg-deep)',
+    borderTop: '1px solid var(--border-alpha)',
+    borderBottom: '1px solid var(--border-alpha)',
   },
   sectionInner: {
     maxWidth: '1200px',
@@ -496,7 +496,7 @@ const s = {
   sectionEyebrow: {
     fontSize: '11px',
     fontWeight: '700',
-    color: '#1ed760',
+    color: 'var(--accent)',
     textTransform: 'uppercase',
     letterSpacing: '1.5px',
     margin: '0 0 8px',
@@ -505,7 +505,7 @@ const s = {
   sectionTitle: {
     fontSize: '28px',
     fontWeight: '800',
-    color: '#fff',
+    color: 'var(--text-primary)',
     letterSpacing: '-0.5px',
     margin: 0,
     fontFamily: font,
@@ -515,8 +515,8 @@ const s = {
   tabs: {
     display: 'flex',
     gap: '4px',
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.07)',
+    background: 'var(--glass-tab-bg)',
+    border: '1px solid var(--border-alpha)',
     borderRadius: '10px',
     padding: '4px',
   },
@@ -524,7 +524,7 @@ const s = {
     padding: '6px 16px',
     fontSize: '13px',
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'var(--text-ghost)',
     background: 'none',
     border: 'none',
     borderRadius: '7px',
@@ -533,8 +533,8 @@ const s = {
     fontFamily: font,
   },
   tabActive: {
-    background: '#1ed760',
-    color: '#000',
+    background: 'var(--accent)',
+    color: 'var(--text-inverse)',
   },
 
   // Error
@@ -573,8 +573,8 @@ const s = {
     textDecoration: 'none',
     borderRadius: '12px',
     overflow: 'hidden',
-    background: '#1e1e1e',
-    border: '1px solid rgba(255,255,255,0.06)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-alpha)',
     transition: 'transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease',
   },
   cardHovered: {
@@ -586,7 +586,7 @@ const s = {
     position: 'relative',
     paddingTop: '150%',
     overflow: 'hidden',
-    backgroundColor: '#2a2a2a',
+    backgroundColor: 'var(--bg-elevated)',
   },
   cardImg: {
     position: 'absolute',
@@ -603,7 +603,7 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#2a2a2a',
+    background: 'var(--bg-elevated)',
   },
   typeBadge: {
     position: 'absolute',
@@ -615,10 +615,10 @@ const s = {
     borderRadius: '6px',
     fontSize: '10px',
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.85)',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    border: '1px solid rgba(255,255,255,0.1)',
+    border: '1px solid var(--glass-border)',
     fontFamily: font,
   },
   typeBadgeSeries: { color: '#60b3ff' },
@@ -648,7 +648,7 @@ const s = {
   viewBtn: {
     fontSize: '12px',
     fontWeight: '700',
-    color: '#1ed760',
+    color: 'var(--accent)',
     opacity: 0,
     transform: 'translateY(8px)',
     transition: 'all 0.3s ease',
@@ -665,7 +665,7 @@ const s = {
   cardTitle: {
     fontSize: '13px',
     fontWeight: '700',
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: 0,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -674,7 +674,7 @@ const s = {
   },
   cardYear: {
     fontSize: '11px',
-    color: 'rgba(255,255,255,0.4)',
+    color: 'var(--text-faint)',
     fontFamily: font,
   },
 
@@ -682,27 +682,27 @@ const s = {
   skeleton: {
     borderRadius: '12px',
     overflow: 'hidden',
-    background: '#1e1e1e',
-    border: '1px solid rgba(255,255,255,0.04)',
+    background: 'var(--bg-secondary)',
+    border: '1px solid var(--border-alpha)',
     padding: '0 0 12px',
   },
   skeletonImg: {
     paddingTop: '150%',
-    background: 'linear-gradient(90deg, #2a2a2a 25%, #333 50%, #2a2a2a 75%)',
+    background: 'linear-gradient(90deg, var(--bg-elevated) 25%, var(--border-subtle) 50%, var(--bg-elevated) 75%)',
     backgroundSize: '200% 100%',
     animation: 'shimmer 1.5s infinite',
   },
   skeletonTitle: {
     height: '12px',
     borderRadius: '6px',
-    background: '#2a2a2a',
+    background: 'var(--bg-elevated)',
     margin: '12px 12px 6px',
   },
   skeletonYear: {
     height: '10px',
     width: '40%',
     borderRadius: '6px',
-    background: '#242424',
+    background: 'var(--bg-elevated)',
     margin: '0 12px',
   },
 
@@ -714,8 +714,8 @@ const s = {
   },
   featureCard: {
     padding: '28px 24px',
-    background: 'rgba(255,255,255,0.02)',
-    border: '1px solid rgba(255,255,255,0.06)',
+    background: 'var(--glass-faint)',
+    border: '1px solid var(--border-alpha)',
     borderRadius: '16px',
     transition: 'all 0.25s ease',
   },
@@ -733,13 +733,13 @@ const s = {
   featureTitle: {
     fontSize: '15px',
     fontWeight: '700',
-    color: '#fff',
+    color: 'var(--text-primary)',
     margin: '0 0 8px',
     fontFamily: font,
   },
   featureDesc: {
     fontSize: '13px',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'var(--text-ghost)',
     lineHeight: 1.7,
     margin: 0,
     fontFamily: font,
@@ -748,7 +748,7 @@ const s = {
   // ── CTA ───────────────────────────────────────────────────────────────
   ctaSection: {
     padding: '100px 24px',
-    background: '#0e0e0e',
+    background: 'var(--bg-deep)',
     textAlign: 'center',
   },
   ctaInner: {
@@ -763,14 +763,14 @@ const s = {
     transform: 'translateX(-50%)',
     width: '400px',
     height: '200px',
-    background: 'radial-gradient(ellipse, rgba(30,215,96,0.1) 0%, transparent 70%)',
+    background: 'var(--hero-glow)',
     pointerEvents: 'none',
   },
   ctaTitle: {
     position: 'relative',
     fontSize: 'clamp(28px, 4vw, 44px)',
     fontWeight: '800',
-    color: '#fff',
+    color: 'var(--text-primary)',
     letterSpacing: '-1px',
     margin: '0 0 16px',
     fontFamily: font,
@@ -778,7 +778,7 @@ const s = {
   ctaSubtitle: {
     position: 'relative',
     fontSize: '16px',
-    color: 'rgba(255,255,255,0.5)',
+    color: 'var(--text-ghost)',
     margin: '0 0 40px',
     lineHeight: 1.7,
     fontFamily: font,
@@ -792,8 +792,8 @@ const s = {
   },
   ctaBtnPrimary: {
     padding: '14px 28px',
-    background: '#1ed760',
-    color: '#000',
+    background: 'var(--accent)',
+    color: 'var(--text-inverse)',
     textDecoration: 'none',
     borderRadius: '9999px',
     fontSize: '14px',
@@ -805,12 +805,12 @@ const s = {
   ctaBtnGhost: {
     padding: '14px 28px',
     background: 'transparent',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'var(--text-dim)',
     textDecoration: 'none',
     borderRadius: '9999px',
     fontSize: '14px',
     fontWeight: '600',
-    border: '1px solid rgba(255,255,255,0.15)',
+    border: '1px solid var(--glass-border)',
     transition: 'all 0.2s',
     fontFamily: font,
   },

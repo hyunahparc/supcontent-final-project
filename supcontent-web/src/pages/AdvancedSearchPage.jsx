@@ -360,8 +360,8 @@ export default function AdvancedSearchPage() {
                     <form onSubmit={handlePeopleSearch} style={s.simpleForm}>
                         <div style={s.searchInputWrap}>
                             <svg style={s.searchIcon} viewBox="0 0 20 20" fill="none">
-                                <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
-                                <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
+                                <circle cx="9" cy="9" r="6" stroke="var(--text-secondary)" strokeWidth="1.8" />
+                                <path d="M13.5 13.5L17 17" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" />
                             </svg>
                             <input
                                 type="text"
@@ -422,8 +422,8 @@ export default function AdvancedSearchPage() {
                     <form onSubmit={handleListsSearch} style={s.simpleForm}>
                         <div style={s.searchInputWrap}>
                             <svg style={s.searchIcon} viewBox="0 0 20 20" fill="none">
-                                <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
-                                <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
+                                <circle cx="9" cy="9" r="6" stroke="var(--text-secondary)" strokeWidth="1.8" />
+                                <path d="M13.5 13.5L17 17" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" />
                             </svg>
                             <input
                                 type="text"
@@ -484,8 +484,8 @@ export default function AdvancedSearchPage() {
                 <div style={s.searchRow}>
                     <div style={s.searchInputWrap}>
                         <svg style={s.searchIcon} viewBox="0 0 20 20" fill="none">
-                            <circle cx="9" cy="9" r="6" stroke="#b3b3b3" strokeWidth="1.8" />
-                            <path d="M13.5 13.5L17 17" stroke="#b3b3b3" strokeWidth="1.8" strokeLinecap="round" />
+                            <circle cx="9" cy="9" r="6" stroke="var(--text-secondary)" strokeWidth="1.8" />
+                            <path d="M13.5 13.5L17 17" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" />
                         </svg>
                         <input
                             type="text"
@@ -611,7 +611,7 @@ export default function AdvancedSearchPage() {
                         <p style={s.emptyTitle}>Start Exploring</p>
                         <p style={s.emptyText}>
                             Enter a title or choose filters above,<br />
-                            then click <strong style={{ color: '#1ed760' }}>Search</strong>.
+                            then click <strong style={{ color: 'var(--accent)' }}>Search</strong>.
                         </p>
                     </div>
                 )}
@@ -659,20 +659,20 @@ const s = {
         margin:     '0 auto',
         padding:    '40px 32px 80px',
         fontFamily: font,
-        color:      '#fff',
+        color:      'var(--text-primary)',
         minHeight:  '100vh',
     },
 
     pageHeader: { marginBottom: '20px' },
     heading:    { margin: '0 0 8px', fontSize: '28px', fontWeight: '700', letterSpacing: '-0.3px' },
-    subtitle:   { margin: 0, fontSize: '14px', color: '#b3b3b3', lineHeight: 1.6, maxWidth: '640px' },
+    subtitle:   { margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '640px' },
 
     // ── Category tabs ──
     categoryTabs: {
         display:      'flex',
         gap:          '6px',
         marginBottom: '24px',
-        borderBottom: '1px solid #2a2a2a',
+        borderBottom: '1px solid var(--border)',
         paddingBottom: '0',
     },
     categoryTab: {
@@ -683,15 +683,15 @@ const s = {
         borderBottom:    '2px solid transparent',
         marginBottom:    '-1px',
         backgroundColor: 'transparent',
-        color:           '#b3b3b3',
+        color: 'var(--text-secondary)',
         cursor:          'pointer',
         fontFamily:      font,
         transition:      'all 0.15s',
         borderRadius:    '0',
     },
     categoryTabActive: {
-        color:        '#fff',
-        borderBottom: '2px solid #1ed760',
+        color:        'var(--text-primary)',
+        borderBottom: '2px solid var(--accent)',
     },
 
     // ── Simple search form (people / lists) ──
@@ -699,10 +699,10 @@ const s = {
         display:         'flex',
         gap:             '12px',
         marginBottom:    '24px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:    '12px',
         padding:         '20px 24px',
-        border:          '1px solid #2a2a2a',
+        border: '1px solid var(--border)',
         flexWrap:        'wrap',
     },
 
@@ -718,9 +718,9 @@ const s = {
         alignItems:     'center',
         gap:            '14px',
         padding:        '16px',
-        backgroundColor:'#1e1e1e',
+        backgroundColor:'var(--bg-secondary)',
         borderRadius:   '12px',
-        border:         '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid var(--glass-subtle)',
         textDecoration: 'none',
         transition:     'all 0.2s ease',
     },
@@ -735,28 +735,28 @@ const s = {
         borderRadius: '50%',
         objectFit:    'cover',
         flexShrink:   0,
-        border:       '2px solid #2a2a2a',
+        border:       '2px solid var(--border)',
     },
     userAvatarFallback: {
         width:           '52px',
         height:          '52px',
         borderRadius:    '50%',
-        backgroundColor: '#333',
+        backgroundColor: 'var(--bg-elevated)',
         display:         'flex',
         alignItems:      'center',
         justifyContent:  'center',
         fontSize:        '20px',
         fontWeight:      '700',
-        color:           '#fff',
+        color:           'var(--text-primary)',
         flexShrink:      0,
-        border:          '2px solid #2a2a2a',
+        border:          '2px solid var(--border)',
     },
     userInfo: { flex: 1, minWidth: 0 },
     userName: {
         margin:       '0 0 4px',
         fontSize:     '14px',
         fontWeight:   '700',
-        color:        '#fff',
+        color:        'var(--text-primary)',
         whiteSpace:   'nowrap',
         overflow:     'hidden',
         textOverflow: 'ellipsis',
@@ -764,7 +764,7 @@ const s = {
     userBio: {
         margin:       0,
         fontSize:     '12px',
-        color:        '#b3b3b3',
+        color: 'var(--text-secondary)',
         whiteSpace:   'nowrap',
         overflow:     'hidden',
         textOverflow: 'ellipsis',
@@ -782,9 +782,9 @@ const s = {
         alignItems:     'center',
         gap:            '16px',
         padding:        '18px',
-        backgroundColor:'#1e1e1e',
+        backgroundColor:'var(--bg-secondary)',
         borderRadius:   '12px',
-        border:         '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid var(--glass-subtle)',
         textDecoration: 'none',
         transition:     'all 0.2s ease',
     },
@@ -800,7 +800,7 @@ const s = {
         display:         'flex',
         alignItems:      'center',
         justifyContent:  'center',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: 'var(--bg-elevated)',
         borderRadius:    '10px',
         flexShrink:      0,
     },
@@ -809,13 +809,13 @@ const s = {
         margin:       '0 0 4px',
         fontSize:     '14px',
         fontWeight:   '700',
-        color:        '#fff',
+        color:        'var(--text-primary)',
         whiteSpace:   'nowrap',
         overflow:     'hidden',
         textOverflow: 'ellipsis',
     },
-    listCardMeta:  { margin: 0, fontSize: '12px', color: '#b3b3b3' },
-    listCardOwner: { color: '#1ed760', fontWeight: '600' },
+    listCardMeta:  { margin: 0, fontSize: '12px', color: 'var(--text-secondary)' },
+    listCardOwner: { color: 'var(--accent)', fontWeight: '600' },
 
     // ── Skeletons (people / lists) ──
     userCardSkeleton: {
@@ -823,15 +823,15 @@ const s = {
         alignItems:      'center',
         gap:             '14px',
         padding:         '16px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:    '12px',
-        border:          '1px solid rgba(255,255,255,0.04)',
+        border: '1px solid var(--glass-faint)',
     },
     userAvatarSkeleton: {
         width:           '52px',
         height:          '52px',
         borderRadius:    '50%',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: 'var(--bg-elevated)',
         flexShrink:      0,
     },
     listCardSkeleton: {
@@ -839,30 +839,30 @@ const s = {
         alignItems:      'center',
         gap:             '16px',
         padding:         '18px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:    '12px',
-        border:          '1px solid rgba(255,255,255,0.04)',
+        border: '1px solid var(--glass-faint)',
     },
     listCardIconSkeleton: {
         width:           '52px',
         height:          '52px',
         borderRadius:    '10px',
-        backgroundColor: '#2a2a2a',
+        backgroundColor: 'var(--bg-elevated)',
         flexShrink:      0,
     },
     skeletonLine: {
         height:       '12px',
         borderRadius: '6px',
-        background:   '#2a2a2a',
+        background: 'var(--bg-elevated)',
         width:        '80%',
     },
 
     form: {
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:    '12px',
         padding:         '24px',
         marginBottom:    '28px',
-        border:          '1px solid #2a2a2a',
+        border: '1px solid var(--border)',
     },
 
     searchRow: {
@@ -890,18 +890,18 @@ const s = {
         width:           '100%',
         padding:         '11px 14px 11px 42px',
         fontSize:        '14px',
-        backgroundColor: '#121212',
-        border:          '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-primary)',
+        border: '1px solid var(--border-subtle)',
         borderRadius:    '8px',
-        color:           '#fff',
+        color:           'var(--text-primary)',
         fontFamily:      font,
         outline:         'none',
         boxSizing:       'border-box',
     },
     submitBtn: {
         padding:         '11px 28px',
-        backgroundColor: '#1ed760',
-        color:           '#000',
+        backgroundColor: 'var(--accent)',
+        color:           'var(--accent-text)',
         border:          'none',
         borderRadius:    '8px',
         fontSize:        '14px',
@@ -925,7 +925,7 @@ const s = {
     filterLabel: {
         fontSize:      '11px',
         fontWeight:    '700',
-        color:         '#b3b3b3',
+        color: 'var(--text-secondary)',
         textTransform: 'uppercase',
         letterSpacing: '0.8px',
     },
@@ -933,10 +933,10 @@ const s = {
     typeToggle: {
         display:         'flex',
         gap:             '3px',
-        backgroundColor: '#121212',
+        backgroundColor: 'var(--bg-primary)',
         padding:         '3px',
         borderRadius:    '8px',
-        border:          '1px solid #3a3a3a',
+        border: '1px solid var(--border-subtle)',
     },
     typeBtn: {
         padding:         '7px 14px',
@@ -947,22 +947,22 @@ const s = {
         cursor:          'pointer',
         fontFamily:      font,
         backgroundColor: 'transparent',
-        color:           '#b3b3b3',
+        color: 'var(--text-secondary)',
         transition:      'all 0.15s',
         whiteSpace:      'nowrap',
     },
     typeBtnActive: {
-        backgroundColor: '#1ed760',
-        color:           '#000',
+        backgroundColor: 'var(--accent)',
+        color:           'var(--accent-text)',
     },
 
     numberInput: {
         padding:         '8px 12px',
         fontSize:        '13px',
-        backgroundColor: '#121212',
-        border:          '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-primary)',
+        border: '1px solid var(--border-subtle)',
         borderRadius:    '8px',
-        color:           '#fff',
+        color:           'var(--text-primary)',
         fontFamily:      font,
         outline:         'none',
         width:           '110px',
@@ -971,10 +971,10 @@ const s = {
     select: {
         padding:         '8px 12px',
         fontSize:        '13px',
-        backgroundColor: '#121212',
-        border:          '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-primary)',
+        border: '1px solid var(--border-subtle)',
         borderRadius:    '8px',
-        color:           '#fff',
+        color:           'var(--text-primary)',
         fontFamily:      font,
         outline:         'none',
         cursor:          'pointer',
@@ -983,16 +983,16 @@ const s = {
     resetBtn: {
         padding:         '8px 16px',
         backgroundColor: 'transparent',
-        border:          '1px solid #4d4d4d',
+        border: '1px solid var(--border-visible)',
         borderRadius:    '8px',
-        color:           '#b3b3b3',
+        color: 'var(--text-secondary)',
         fontSize:        '12px',
         fontWeight:      '600',
         cursor:          'pointer',
         fontFamily:      font,
     },
 
-    resultCount: { margin: '0 0 20px', fontSize: '14px', color: '#b3b3b3', fontWeight: '600' },
+    resultCount: { margin: '0 0 20px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '600' },
     errorBox: {
         padding:         '16px 20px',
         backgroundColor: 'rgba(243,114,127,0.1)',
@@ -1006,12 +1006,12 @@ const s = {
     emptyState: {
         textAlign:       'center',
         padding:         '80px 40px',
-        backgroundColor: '#1e1e1e',
+        backgroundColor: 'var(--bg-secondary)',
         borderRadius:    '16px',
     },
     emptyIcon:  { fontSize: '48px', display: 'block', marginBottom: '16px' },
-    emptyTitle: { margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: '#fff' },
-    emptyText:  { margin: 0, fontSize: '14px', color: '#b3b3b3', lineHeight: 1.7 },
+    emptyTitle: { margin: '0 0 8px', fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' },
+    emptyText:  { margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7 },
 
     grid: {
         display:             'grid',
@@ -1025,8 +1025,8 @@ const s = {
         textDecoration: 'none',
         borderRadius:   '10px',
         overflow:       'hidden',
-        backgroundColor:'#181818',
-        border:         '1px solid rgba(255,255,255,0.05)',
+        backgroundColor:'var(--bg-elevated)',
+        border: '1px solid var(--glass-subtle)',
         transition:     'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
     },
     cardHovered: {
@@ -1038,7 +1038,7 @@ const s = {
         position:        'relative',
         paddingTop:      '150%',
         overflow:        'hidden',
-        backgroundColor: '#1a1a1a',
+        backgroundColor: 'var(--bg-secondary)',
     },
     poster: {
         position:   'absolute',
@@ -1080,7 +1080,7 @@ const s = {
         borderRadius:    '6px',
         fontSize:        '10px',
         fontWeight:      '700',
-        color:           'rgba(255,255,255,0.8)',
+        color: 'rgba(255,255,255,0.85)',
         textTransform:   'uppercase',
         letterSpacing:   '0.4px',
     },
@@ -1089,34 +1089,34 @@ const s = {
         margin:        '0 0 4px',
         fontSize:      '12px',
         fontWeight:    '600',
-        color:         '#fff',
+        color:         'var(--text-primary)',
         overflow:      'hidden',
         textOverflow:  'ellipsis',
         whiteSpace:    'nowrap',
     },
-    cardYear: { fontSize: '11px', color: '#b3b3b3' },
+    cardYear: { fontSize: '11px', color: 'var(--text-secondary)' },
 
     skeleton: {
         borderRadius:    '10px',
         overflow:        'hidden',
-        backgroundColor: '#181818',
-        border:          '1px solid rgba(255,255,255,0.05)',
+        backgroundColor: 'var(--bg-elevated)',
+        border: '1px solid var(--glass-subtle)',
     },
     skeletonImg: {
         paddingTop:  '150%',
-        background:  'linear-gradient(135deg, #1e1e1e 25%, #2a2a2a 50%, #1e1e1e 75%)',
+        background:  'linear-gradient(135deg, var(--bg-secondary) 25%, var(--bg-elevated) 50%, var(--bg-secondary) 75%)',
     },
     skeletonTitle: {
         height:       '12px',
         borderRadius: '6px',
-        background:   '#242424',
+        background: 'var(--bg-elevated)',
         margin:       '12px 12px 6px',
     },
     skeletonYear: {
         height:       '10px',
         width:        '40%',
         borderRadius: '6px',
-        background:   '#1e1e1e',
+        background: 'var(--bg-secondary)',
         margin:       '0 12px 12px',
     },
 
@@ -1130,20 +1130,20 @@ const s = {
     },
     pageBtn: {
         padding:         '8px 14px',
-        backgroundColor: '#1e1e1e',
-        border:          '1px solid #3a3a3a',
+        backgroundColor: 'var(--bg-secondary)',
+        border: '1px solid var(--border-subtle)',
         borderRadius:    '8px',
-        color:           '#fff',
+        color:           'var(--text-primary)',
         fontSize:        '13px',
         fontWeight:      '600',
         cursor:          'pointer',
         fontFamily:      font,
     },
     pageBtnActive: {
-        backgroundColor: '#1ed760',
-        borderColor:     '#1ed760',
-        color:           '#000',
+        backgroundColor: 'var(--accent)',
+        borderColor:     'var(--accent)',
+        color:           'var(--accent-text)',
     },
     pageBtnDisabled: { opacity: 0.3, cursor: 'not-allowed' },
-    pageEllipsis:    { color: '#4d4d4d', fontSize: '13px', padding: '0 4px' },
+    pageEllipsis:    { color: 'var(--text-muted)', fontSize: '13px', padding: '0 4px' },
 };
