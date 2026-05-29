@@ -24,6 +24,7 @@ const getProfile = async (req, res) => {
                 u.username,
                 u.avatar,
                 u.bio,
+                u.link,
                 u.created_at,
                 COUNT(DISTINCT f_in.follower_id)::int  AS followers_count,
                 COUNT(DISTINCT f_out.followee_id)::int AS following_count,
@@ -85,7 +86,7 @@ const getProfileStats = async (req, res) => {
 // ── PUT /api/users/me/profile  (authentifié) ─────────────────────────────────
 const updateProfile = async (req, res) => {
     const user_id = req.user.user_id;
-    const { username, bio } = req.body;
+    const { username, bio, link } = req.body;
 
     if (username !== undefined) {
         const trimmed = (username || '').trim();
@@ -98,14 +99,23 @@ const updateProfile = async (req, res) => {
         return res.status(400).json({ message: 'Bio cannot exceed 500 characters.' });
     }
 
+    if (link !== undefined && link !== null && link !== '') {
+        try {
+            new URL(link);
+        } catch {
+            return res.status(400).json({ message: 'Invalid URL format.' });
+        }
+    }
+
     try {
         const { rows } = await db.query(
             `UPDATE users
              SET username = COALESCE($1, username),
-                 bio      = COALESCE($2, bio)
-             WHERE user_id = $3
-             RETURNING user_id, username, avatar, bio`,
-            [username?.trim() ?? null, bio ?? null, user_id]
+                 bio      = COALESCE($2, bio),
+                 link     = COALESCE($3, link)
+             WHERE user_id = $4
+             RETURNING user_id, username, avatar, bio, link`,
+            [username?.trim() ?? null, bio ?? null, link ?? null, user_id]
         );
 
         return res.json(rows[0]);
@@ -196,6 +206,8 @@ const uploadAvatar = async (req, res) => {
         return res.status(500).json({ message: "Erreur lors de l'upload.", error: err.message });
     }
 };
+
+
 
 // ── DELETE /api/users/me  (authentifié — RGPD) ───────────────────────────────
 const deleteAccount = async (req, res) => {

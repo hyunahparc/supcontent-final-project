@@ -10,9 +10,12 @@ CREATE TABLE users (
     password    VARCHAR(255),
     avatar      VARCHAR(255),
     bio         TEXT,
+    link        VARCHAR(255),
     created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
     UNIQUE (email, provider)
 );
+-- Migration for existing databases:
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS link VARCHAR(255);
 
 -- 2. FOLLOWS
 CREATE TABLE follows (
