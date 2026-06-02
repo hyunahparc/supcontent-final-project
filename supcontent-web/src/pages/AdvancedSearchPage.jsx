@@ -9,6 +9,15 @@ import { mediaHref } from '../utils/media';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w300';
 
+function getResultColumns() {
+    if (typeof window === 'undefined') return 5;
+    if (window.innerWidth >= 1024) return 5;
+    if (window.innerWidth >= 760) return 4;
+    if (window.innerWidth >= 560) return 3;
+    if (window.innerWidth >= 420) return 2;
+    return 1;
+}
+
 // Sorting criteria available (values matching TMDB API)
 const SORT_OPTIONS = [
     { value: 'popularity.desc',           label: 'Popularity'               },
@@ -194,6 +203,7 @@ export default function AdvancedSearchPage() {
     const [loading,      setLoading]      = useState(false);
     const [error,        setError]        = useState(null);
     const [hasSearched,  setHasSearched]  = useState(false);
+    const [resultColumns, setResultColumns] = useState(getResultColumns);
 
     // People / Lists search state
     const [peopleQuery,    setPeopleQuery]    = useState('');
@@ -209,6 +219,12 @@ export default function AdvancedSearchPage() {
     useEffect(() => {
         getGenres(type).then(setGenres).catch(() => setGenres([]));
     }, [type]);
+
+    useEffect(() => {
+        const handleResize = () => setResultColumns(getResultColumns());
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Auto-run search if URL contains filters
     useEffect(() => {
@@ -330,6 +346,10 @@ export default function AdvancedSearchPage() {
     }
 
     const currentYear = new Date().getFullYear();
+    const resultGridStyle = {
+        ...s.grid,
+        gridTemplateColumns: `repeat(${resultColumns}, minmax(0, 1fr))`,
+    };
 
     return (
         <div style={s.page}>
@@ -617,7 +637,7 @@ export default function AdvancedSearchPage() {
                 )}
 
                 {loading && (
-                    <div style={s.grid}>
+                    <div style={resultGridStyle}>
                         {Array.from({ length: 20 }).map((_, i) => (
                             <div key={i} style={s.skeleton} aria-hidden="true">
                                 <div style={s.skeletonImg} />
@@ -629,7 +649,7 @@ export default function AdvancedSearchPage() {
                 )}
 
                 {!loading && results.length > 0 && (
-                    <div style={s.grid}>
+                    <div style={resultGridStyle}>
                         {results.map(item => (
                             <ResultCard
                                 key={`${item.external_id}-${item.media_type}`}
@@ -655,16 +675,16 @@ export default function AdvancedSearchPage() {
 // ── Styles ───────────────────────────────────────────────────────────────────
 const s = {
     page: {
-        maxWidth:   '1400px',
+        maxWidth:   '1200px',
         margin:     '0 auto',
-        padding:    '40px 32px 80px',
+        padding:    '40px 40px 60px',
         fontFamily: font,
         color:      'var(--text-primary)',
         minHeight:  '100vh',
     },
 
     pageHeader: { marginBottom: '20px' },
-    heading:    { margin: '0 0 8px', fontSize: '28px', fontWeight: '700', letterSpacing: '-0.3px' },
+    heading:    { margin: '0 0 8px', fontSize: '24px', fontWeight: '700' },
     subtitle:   { margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '640px' },
 
     // ── Category tabs ──
@@ -722,10 +742,9 @@ const s = {
         borderRadius:   '12px',
         border: '1px solid var(--glass-subtle)',
         textDecoration: 'none',
-        transition:     'all 0.2s ease',
+        transition:     'transform 0.2s ease, box-shadow 0.2s ease',
     },
     userCardHovered: {
-        borderColor: 'rgba(30,215,96,0.25)',
         transform:   'translateY(-2px)',
         boxShadow:   '0 8px 24px rgba(0,0,0,0.3)',
     },
@@ -786,10 +805,9 @@ const s = {
         borderRadius:   '12px',
         border: '1px solid var(--glass-subtle)',
         textDecoration: 'none',
-        transition:     'all 0.2s ease',
+        transition:     'transform 0.2s ease, box-shadow 0.2s ease',
     },
     listSearchCardHovered: {
-        borderColor: 'rgba(30,215,96,0.25)',
         transform:   'translateY(-2px)',
         boxShadow:   '0 8px 24px rgba(0,0,0,0.3)',
     },
@@ -1015,7 +1033,7 @@ const s = {
 
     grid: {
         display:             'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(135px, 1fr))',
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
         gap:                 '14px',
         marginBottom:        '40px',
     },
@@ -1027,12 +1045,11 @@ const s = {
         overflow:       'hidden',
         backgroundColor:'var(--bg-elevated)',
         border: '1px solid var(--glass-subtle)',
-        transition:     'transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease',
+        transition:     'transform 0.2s ease, box-shadow 0.2s ease',
     },
     cardHovered: {
         transform:    'translateY(-4px)',
         boxShadow:    '0 12px 30px rgba(0,0,0,0.5)',
-        borderColor:  'rgba(30,215,96,0.3)',
     },
     posterWrap: {
         position:        'relative',

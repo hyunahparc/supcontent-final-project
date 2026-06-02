@@ -135,7 +135,7 @@ const styles = {
         fontFamily: font,
     },
     inner: {
-        maxWidth: '1100px',
+        maxWidth: '1200px',
         margin: '0 auto',
         padding: '48px 40px',
     },
@@ -176,12 +176,13 @@ const styles = {
         fontSize: '14px',
     },
     grid: {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+        display: 'flex',
+        flexWrap: 'wrap',
         gap: '20px',
     },
     card: {
         position: 'relative',
+        flex: '0 0 calc((100% - 101px) / 6)',
         backgroundColor: 'var(--bg-elevated)',
         borderRadius: '8px',
         overflow: 'hidden',
