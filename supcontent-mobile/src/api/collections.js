@@ -24,3 +24,13 @@ export function removeFromCollection(externalId, mediaType = 'Movie', token) {
     token,
   });
 }
+
+export function getLibrary(userId, token, status = null) {
+  const params = new URLSearchParams();
+
+  if (status) params.set('status', status);
+
+  const query = params.toString();
+
+  return apiRequest(`/users/${userId}/collection${query ? `?${query}` : ''}`, { token });
+}
