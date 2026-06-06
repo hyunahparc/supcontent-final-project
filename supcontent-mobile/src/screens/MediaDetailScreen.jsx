@@ -18,6 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getMediaById } from '../api/media';
 import { getCollectionStatus, removeFromCollection, upsertCollection } from '../api/collections';
+import { addMediaToList, getMyLists } from '../api/lists';
 import { addComment, getComments, getMyReview, getReviews, toggleLike, upsertReview } from '../api/reviews';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme/colors';
@@ -50,8 +51,9 @@ function mediaRoute(item, fallbackType) {
 }
 
 export default function MediaDetailScreen({ mediaType }) {
-  const { id } = useLocalSearchParams();
+  const { from, id } = useLocalSearchParams();
   const mediaId = Array.isArray(id) ? id[0] : id;
+  const showBackButton = from === 'list';
   const insets = useSafeAreaInsets();
   const { token } = useAuth();
   const [media, setMedia] = useState(null);
@@ -59,6 +61,9 @@ export default function MediaDetailScreen({ mediaType }) {
   const [error, setError] = useState('');
   const [collectionStatus, setCollectionStatus] = useState(null);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [myLists, setMyLists] = useState([]);
+  const [showListMenu, setShowListMenu] = useState(false);
+  const [listFeedback, setListFeedback] = useState('');
   const [reviews, setReviews] = useState([]);
   const [myReview, setMyReview] = useState(null);
   const [reviewRating, setReviewRating] = useState(0);
@@ -114,6 +119,28 @@ export default function MediaDetailScreen({ mediaType }) {
       cancelled = true;
     };
   }, [mediaId, mediaType, token]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!token) {
+      setMyLists([]);
+      setShowListMenu(false);
+      return undefined;
+    }
+
+    getMyLists(token)
+      .then((data) => {
+        if (!cancelled) setMyLists(data ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setMyLists([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -190,6 +217,29 @@ export default function MediaDetailScreen({ mediaType }) {
     }
 
     setShowStatusMenu(false);
+  }
+
+  function handleListPress() {
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    setShowListMenu((current) => !current);
+  }
+
+  async function handleAddToList(listId) {
+    if (!token) return;
+
+    try {
+      await addMediaToList(listId, mediaId, mediaType, token);
+      setListFeedback('Added!');
+    } catch (err) {
+      setListFeedback(err.message || 'Unable to add.');
+    } finally {
+      setShowListMenu(false);
+      setTimeout(() => setListFeedback(''), 1800);
+    }
   }
 
   async function handleSaveReview() {
@@ -344,10 +394,20 @@ export default function MediaDetailScreen({ mediaType }) {
             imageStyle={styles.backdropImage}
           >
             <View style={styles.backdropShade} />
+            {showBackButton ? (
+              <Pressable onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+              </Pressable>
+            ) : null}
           </ImageBackground>
         ) : (
           <View style={[styles.backdrop, { paddingTop: insets.top + 10 }]}>
             <View style={styles.backdropShade} />
+            {showBackButton ? (
+              <Pressable onPress={() => router.back()} style={styles.backButton}>
+                <Ionicons name="chevron-back" size={24} color={colors.text} />
+              </Pressable>
+            ) : null}
           </View>
         )}
 
@@ -397,6 +457,11 @@ export default function MediaDetailScreen({ mediaType }) {
                 <Ionicons name="add" size={18} color={colors.text} />
                 <Text style={styles.outlineButtonText}>{collectionStatus ?? 'Collection'}</Text>
               </Pressable>
+
+              <Pressable onPress={handleListPress} style={({ pressed }) => [styles.outlineButton, pressed && styles.pressed]}>
+                <Ionicons name="add" size={18} color={colors.text} />
+                <Text style={styles.outlineButtonText}>{listFeedback || 'List'}</Text>
+              </Pressable>
             </View>
 
             {showStatusMenu ? (
@@ -412,6 +477,22 @@ export default function MediaDetailScreen({ mediaType }) {
                     </Text>
                   </Pressable>
                 ))}
+              </View>
+            ) : null}
+
+            {showListMenu ? (
+              <View style={styles.listMenu}>
+                {myLists.length ? (
+                  myLists.map((list) => (
+                    <Pressable key={list.list_id} onPress={() => handleAddToList(list.list_id)} style={styles.statusOption}>
+                      <Text style={styles.statusOptionText} numberOfLines={1}>{list.name}</Text>
+                    </Pressable>
+                  ))
+                ) : (
+                  <View style={styles.statusOption}>
+                    <Text style={styles.statusOptionText}>No lists yet</Text>
+                  </View>
+                )}
               </View>
             ) : null}
 
@@ -699,6 +780,17 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(18,18,18,0.58)',
   },
+  backButton: {
+    width: 42,
+    height: 42,
+    marginLeft: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+    backgroundColor: 'rgba(0,0,0,0.42)',
+  },
   hero: {
     alignItems: 'center',
     gap: 24,
@@ -811,6 +903,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   statusMenu: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: -8,
+    marginBottom: 20,
+  },
+  listMenu: {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     flexWrap: 'wrap',
