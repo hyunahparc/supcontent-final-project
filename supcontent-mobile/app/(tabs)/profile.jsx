@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Link, router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLibrary } from '../../src/api/collections';
@@ -29,6 +29,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState(null);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [libraryError, setLibraryError] = useState('');
+  const hasLoadedRef = useRef(false);
   const pageStyle = [
     styles.page,
     {
@@ -45,10 +46,11 @@ export default function ProfileScreen() {
         setCollection([]);
         setLists([]);
         setProfile(null);
+        hasLoadedRef.current = false;
         return undefined;
       }
 
-      setLoadingLibrary(true);
+      setLoadingLibrary(!hasLoadedRef.current);
       setLibraryError('');
 
       Promise.all([
@@ -61,6 +63,7 @@ export default function ProfileScreen() {
           setProfile(profileData);
           setCollection(libraryData ?? []);
           setLists(listsData ?? []);
+          hasLoadedRef.current = true;
         })
         .catch((err) => {
           if (!cancelled) setLibraryError(err.message || 'Failed to load profile data.');
@@ -163,7 +166,9 @@ export default function ProfileScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My collection</Text>
-          <Text style={styles.seeAllLink}>See all ({profile?.media_count ?? collection.length})</Text>
+          <Pressable onPress={() => router.push('/library')} hitSlop={8}>
+            <Text style={styles.seeAllLink}>See all ({profile?.media_count ?? collection.length})</Text>
+          </Pressable>
         </View>
         {collectionPreview.length ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.posterRow}>
@@ -179,7 +184,9 @@ export default function ProfileScreen() {
       <View style={[styles.section, styles.lastSection]}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>My lists</Text>
-          <Text style={styles.seeAllLink}>See all ({lists.length})</Text>
+          <Pressable onPress={() => router.push('/library?view=lists')} hitSlop={8}>
+            <Text style={styles.seeAllLink}>See all ({lists.length})</Text>
+          </Pressable>
         </View>
         {listsPreview.length ? (
           <View style={styles.listsGrid}>
@@ -218,7 +225,7 @@ function ListCard({ list }) {
   const posters = list.preview_posters ?? [];
 
   return (
-    <Pressable style={({ pressed }) => [styles.listCard, pressed && styles.pressed]}>
+    <Pressable onPress={() => router.push(`/lists/${list.list_id}`)} style={({ pressed }) => [styles.listCard, pressed && styles.pressed]}>
       <View style={styles.listPosterGrid}>
         {[0, 1, 2, 3].map((index) => {
           const poster = posterUrl(posters[index]);
