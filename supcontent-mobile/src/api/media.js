@@ -5,3 +5,11 @@ export function getTrending(type = 'all', limit = 12) {
 
   return apiRequest(`/media/trending?${params.toString()}`);
 }
+
+function getMediaApiType(mediaType) {
+  return mediaType === 'Series' || mediaType === 'tv' ? 'tv' : 'movie';
+}
+
+export function getMediaById(id, mediaType = 'Movie') {
+  return apiRequest(`/media/${getMediaApiType(mediaType)}/${id}`);
+}

@@ -137,6 +137,7 @@ export default function HomeScreen() {
 function MediaCard({ item }) {
   const year = item.release_date?.slice(0, 4) || 'N/A';
   const score = Number(item.vote_average || 0).toFixed(1);
+  const routeType = item.media_type === 'Series' ? 'tv' : 'movie';
   const posterUri = item.poster_path?.startsWith('http')
     ? item.poster_path
     : item.poster_path
@@ -144,7 +145,10 @@ function MediaCard({ item }) {
       : null;
 
   return (
-    <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+    <Pressable
+      onPress={() => router.push(`/${routeType}/${item.external_id}`)}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+    >
       <View style={styles.posterWrap}>
         {posterUri ? (
           <Image source={{ uri: posterUri }} style={styles.poster} resizeMode="cover" />
