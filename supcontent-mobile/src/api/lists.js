@@ -4,6 +4,10 @@ export function getMyLists(token) {
   return apiRequest('/lists', { token });
 }
 
+export function getUserPublicLists(userId) {
+  return apiRequest(`/users/${userId}/lists`);
+}
+
 export function getListById(listId, token) {
   return apiRequest(`/lists/${listId}`, { token });
 }
