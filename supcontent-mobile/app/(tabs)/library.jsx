@@ -173,11 +173,6 @@ export default function LibraryScreen() {
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
-      <View style={styles.header}>
-        <Text style={styles.heading}>Library</Text>
-        <Text style={styles.subheading}>Your saved media and custom lists.</Text>
-      </View>
-
       <View style={styles.viewTabs}>
         {VIEW_TABS.map((tab) => {
           const isActive = activeView === tab.id;
