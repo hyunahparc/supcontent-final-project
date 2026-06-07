@@ -235,6 +235,10 @@ exports.advancedSearch = async (req, res) => {
     const currentYear = new Date().getFullYear();
     let sanitizedYear = null;
     if (year) {
+        if (!/^\d{4}$/.test(String(year))) {
+            return res.status(400).json({ error: 'Year must be a 4-digit number.' });
+        }
+
         const parsedYear = parseInt(year);
         if (!isNaN(parsedYear) && parsedYear >= 1888 && parsedYear <= currentYear + 2) {
             sanitizedYear = parsedYear;
@@ -266,10 +270,6 @@ exports.advancedSearch = async (req, res) => {
         if (trimmedQuery.length >= 2) {
             // Text search mode: /search
             url = `${TMDB_BASE}/search/${mediaType}?api_key=${process.env.TMDB_API_KEY}&query=${encodeURIComponent(trimmedQuery)}&language=en-US&page=${sanitizedPage}&include_adult=false`;
-            if (sanitizedYear) {
-                const yearParam = mediaType === 'tv' ? 'first_air_date_year' : 'year';
-                url += `&${yearParam}=${sanitizedYear}`;
-            }
         } else {
             // Discover mode: /discover with full filters
             url = `${TMDB_BASE}/discover/${mediaType}?api_key=${process.env.TMDB_API_KEY}&language=en-US&sort_by=${sanitizedSort}&page=${sanitizedPage}&include_adult=false`;
@@ -290,8 +290,55 @@ exports.advancedSearch = async (req, res) => {
 
         const data = await response.json();
 
+        let tmdbResults = data.results ?? [];
+
+        if (trimmedQuery.length >= 2) {
+            if (sanitizedYear) {
+                const dateKey = mediaType === 'tv' ? 'first_air_date' : 'release_date';
+                tmdbResults = tmdbResults.filter(item => {
+                    const itemYear = parseInt((item[dateKey] || '').slice(0, 4));
+                    return itemYear === sanitizedYear;
+                });
+            }
+
+            if (sanitizedGenre) {
+                tmdbResults = tmdbResults.filter(item => item.genre_ids?.includes(sanitizedGenre));
+            }
+
+            if (sanitizedMinRating !== null) {
+                tmdbResults = tmdbResults.filter(item =>
+                    Number(item.vote_average ?? 0) >= sanitizedMinRating &&
+                    Number(item.vote_count ?? 0) >= 50
+                );
+            }
+
+            tmdbResults = [...tmdbResults].sort((a, b) => {
+                if (sanitizedSort === 'vote_average.desc') {
+                    return Number(b.vote_average ?? 0) - Number(a.vote_average ?? 0);
+                }
+
+                if (sanitizedSort === 'popularity.desc') {
+                    return Number(b.popularity ?? 0) - Number(a.popularity ?? 0);
+                }
+
+                if (sanitizedSort === 'revenue.desc') {
+                    return Number(b.revenue ?? 0) - Number(a.revenue ?? 0);
+                }
+
+                const dateKey = mediaType === 'tv' ? 'first_air_date' : 'release_date';
+                const aDate = a[dateKey] || '';
+                const bDate = b[dateKey] || '';
+
+                if (sanitizedSort.endsWith('.asc')) {
+                    return aDate.localeCompare(bDate);
+                }
+
+                return bDate.localeCompare(aDate);
+            });
+        }
+
         // Normalize output format to match the rest of the app
-        const results = (data.results ?? []).map(item => ({
+        const results = tmdbResults.map(item => ({
             external_id:   item.id,
             media_type:    mediaType === 'tv' ? 'Series' : 'Movie',
             title:         item.title ?? item.name ?? null,
@@ -302,14 +349,17 @@ exports.advancedSearch = async (req, res) => {
             vote_average:   item.vote_average ?? null,
             vote_count:    item.vote_count ?? null,
             genre_ids:     item.genre_ids ?? [],
+            popularity:    item.popularity ?? null,
         }));
+        const filteredTextSearch = trimmedQuery.length >= 2 &&
+            (sanitizedYear || sanitizedGenre || sanitizedMinRating !== null);
 
         return res.json({
             query:         trimmedQuery || null,
             type:          mediaType === 'tv' ? 'Series' : 'Movie',
             page:          sanitizedPage,
-            total_pages:   Math.min(data.total_pages ?? 1, 500),
-            total_results: data.total_results ?? 0,
+            total_pages:   filteredTextSearch ? (results.length ? 1 : 0) : Math.min(data.total_pages ?? 1, 500),
+            total_results: filteredTextSearch ? results.length : data.total_results ?? 0,
             results,
         });
 
