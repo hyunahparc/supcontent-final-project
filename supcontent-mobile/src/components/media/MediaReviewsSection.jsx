@@ -2,12 +2,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { addComment, getComments, getMyReview, getReviews, toggleLike, upsertReview } from '../../api/reviews';
+import {
+    addComment,
+    deleteComment,
+    deleteReview,
+    getComments,
+    getMyReview,
+    getReviews,
+    toggleLike,
+    upsertReview,
+} from '../../api/reviews';
 import { useAuth } from '../../context/AuthContext';
 import { colors } from '../../theme/colors';
 
 export default function MediaReviewsSection({ mediaId, mediaType }) {
-    const { token } = useAuth();
+    const { token, user } = useAuth();
     const [reviews, setReviews] = useState([]);
     const [myReview, setMyReview] = useState(null);
     const [reviewRating, setReviewRating] = useState(0);
@@ -176,6 +185,51 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
         }
     }
 
+    async function handleDeleteReview(reviewId) {
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        try {
+            await deleteReview(reviewId, token);
+            const nextReviews = await getReviews(mediaId, mediaType, token);
+
+            setReviews(nextReviews ?? []);
+            setMyReview(null);
+            setReviewRating(0);
+            setReviewComment('');
+            setShowReviewForm(false);
+            setReviewError('');
+        } catch (err) {
+            setReviewError(err.message || 'Unable to delete review.');
+        }
+    }
+
+    async function handleDeleteComment(reviewId, commentId) {
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        try {
+            await deleteComment(reviewId, commentId, token);
+
+            setReviewComments((current) => ({
+                ...current,
+                [reviewId]: (current[reviewId] ?? []).filter((comment) => comment.comment_id !== commentId),
+            }));
+            setReviews((current) => current.map((review) => (
+                review.review_id === reviewId
+                    ? { ...review, comments_count: Math.max(0, Number(review.comments_count ?? 0) - 1) }
+                    : review
+            )));
+            setReviewError('');
+        } catch (err) {
+            setReviewError(err.message || 'Unable to delete comment.');
+        }
+    }
+
     return (
         <View style={styles.section}>
             <Text style={styles.sectionTitle}>Community Reviews</Text>
@@ -260,6 +314,15 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
                                         </View>
                                     ) : null}
                                 </View>
+                                {user?.user_id === review.user_id ? (
+                                    <Pressable
+                                        onPress={() => handleDeleteReview(review.review_id)}
+                                        style={({ pressed }) => [styles.deleteButton, pressed && styles.pressed]}
+                                    >
+                                        <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                                        <Text style={styles.deleteButtonText}>Delete</Text>
+                                    </Pressable>
+                                ) : null}
                             </View>
                             {review.comment ? <Text style={styles.reviewText}>{review.comment}</Text> : null}
 
@@ -301,7 +364,17 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
                                                 <Text style={styles.commentAvatarText}>{comment.username?.charAt(0)?.toUpperCase()}</Text>
                                             </View>
                                             <View style={styles.commentContent}>
-                                                <Text style={styles.commentAuthor}>{comment.username}</Text>
+                                                <View style={styles.commentHeader}>
+                                                    <Text style={styles.commentAuthor}>{comment.username}</Text>
+                                                    {user?.user_id === comment.user_id ? (
+                                                        <Pressable
+                                                            onPress={() => handleDeleteComment(review.review_id, comment.comment_id)}
+                                                            hitSlop={8}
+                                                        >
+                                                            <Text style={styles.commentDelete}>Delete</Text>
+                                                        </Pressable>
+                                                    ) : null}
+                                                </View>
                                                 <Text style={styles.commentText}>{comment.content}</Text>
                                             </View>
                                         </View>
@@ -497,6 +570,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         fontWeight: '800',
     },
+    deleteButton: {
+        minHeight: 30,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        paddingHorizontal: 9,
+        borderRadius: 999,
+        backgroundColor: 'rgba(243,114,127,0.12)',
+    },
+    deleteButtonText: {
+        color: colors.danger,
+        fontSize: 11,
+        fontWeight: '900',
+    },
     reviewText: {
         color: colors.textSecondary,
         fontSize: 14,
@@ -552,11 +639,22 @@ const styles = StyleSheet.create({
     commentContent: {
         flex: 1,
     },
+    commentHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
     commentAuthor: {
         color: colors.text,
         fontSize: 12,
         fontWeight: '800',
         marginBottom: 2,
+    },
+    commentDelete: {
+        color: colors.danger,
+        fontSize: 11,
+        fontWeight: '800',
     },
     commentText: {
         color: colors.textSecondary,
