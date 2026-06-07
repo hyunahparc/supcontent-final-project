@@ -17,8 +17,10 @@ import FeedPage from './pages/FeedPage';
 import NotificationsPage from './pages/NotificationsPage';
 import MessagesPage from './pages/MessagesPage';
 import AdvancedSearchPage from './pages/AdvancedSearchPage';
+import NotFoundPage from './pages/NotFoundPage';
 
 import Header from './components/Header';
+import Footer from './components/Footer';
 
 export default function App() {
     return (
@@ -46,7 +48,11 @@ export default function App() {
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />
+
+                <Route path="*" element={<NotFoundPage />} />
             </Routes>
+
+            <Footer />
         </>
     );
 }
