@@ -152,6 +152,10 @@ body {
   color: var(--text-primary) !important;
 }
 
+/* ── Footer links ────────────────────────────────────────────────────────── */
+.footer-link { transition: color 0.15s; }
+.footer-link:hover { color: var(--text-primary) !important; }
+
 /* ── Light mode: inputs need a visible outline ───────────────────────────── */
 [data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
 [data-theme="light"] textarea,

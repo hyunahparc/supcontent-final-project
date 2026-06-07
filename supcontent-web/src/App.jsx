@@ -19,6 +19,7 @@ import MessagesPage from './pages/MessagesPage';
 import AdvancedSearchPage from './pages/AdvancedSearchPage';
 
 import Header from './components/Header';
+import Footer from './components/Footer';
 
 export default function App() {
     return (
@@ -47,6 +48,8 @@ export default function App() {
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />
             </Routes>
+
+            <Footer />
         </>
     );
 }
