@@ -27,11 +27,12 @@ async function parseResponse(response) {
 
 export async function apiRequest(path, options = {}) {
   const { token, headers, ...fetchOptions } = options;
+  const isFormData = fetchOptions.body instanceof FormData;
 
   const response = await fetch(buildUrl(path), {
     ...fetchOptions,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },

@@ -44,3 +44,17 @@ export function addComment(reviewId, content, token) {
     body: JSON.stringify({ content }),
   });
 }
+
+export function deleteReview(reviewId, token) {
+  return apiRequest(`/reviews/${reviewId}`, {
+    method: 'DELETE',
+    token,
+  });
+}
+
+export function deleteComment(reviewId, commentId, token) {
+  return apiRequest(`/reviews/${reviewId}/comments/${commentId}`, {
+    method: 'DELETE',
+    token,
+  });
+}

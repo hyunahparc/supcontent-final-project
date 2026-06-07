@@ -56,6 +56,17 @@ export function AuthProvider({ children }) {
     await clearStoredSession();
   }
 
+  async function updateUser(updates) {
+    if (!user) return null;
+
+    const nextUser = { ...user, ...updates };
+
+    await SecureStore.setItemAsync(USER_KEY, JSON.stringify(nextUser));
+    setUser(nextUser);
+
+    return nextUser;
+  }
+
   const value = useMemo(
     () => ({
       user,
@@ -65,6 +76,7 @@ export function AuthProvider({ children }) {
       signIn,
       signUp,
       signOut,
+      updateUser,
     }),
     [user, token, isAuthReady]
   );
