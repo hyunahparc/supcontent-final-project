@@ -3,6 +3,8 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getLibrary } from '../api/collections';
+import { getUserStats } from '../api/users';
+import CollectionStatusBar from '../components/library/CollectionStatusBar';
 import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
@@ -21,6 +23,7 @@ export default function CollectionPage() {
     const { t } = useLanguage();
     const [activeStatus, setActiveStatus] = useState(null);
     const [items, setItems] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [hoveredId, setHoveredId] = useState(null);
 
@@ -28,8 +31,14 @@ export default function CollectionPage() {
 
     useEffect(() => {
         setLoading(true);
-        getLibrary(id, activeStatus)
-            .then(setItems)
+        Promise.all([
+            getLibrary(id, activeStatus),
+            getUserStats(id).catch(() => null),
+        ])
+            .then(([collectionItems, userStats]) => {
+                setItems(collectionItems);
+                setStats(userStats);
+            })
             .finally(() => setLoading(false));
     }, [id, activeStatus]);
 
@@ -38,6 +47,8 @@ export default function CollectionPage() {
             <h1 style={styles.heading}>
                 {isOwner ? t('col_title') : t('nav_collection')}
             </h1>
+
+            <CollectionStatusBar byStatus={stats?.by_status} total={stats?.total ?? 0} />
 
             <div style={styles.tabs}>
                 <button

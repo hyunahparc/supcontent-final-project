@@ -8,7 +8,7 @@ import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getLibrary } from '../api/collections';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../api/follows';
 import { mediaHref } from '../utils/media';
-import StatsPanel from '../components/StatsPanel';
+import ProfileStatsPanel from '../components/profile/ProfileStatsPanel';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
@@ -181,7 +181,7 @@ export default function DashboardPage() {
 
 
             {/* ── Statistics ── */}
-            {stats && <StatsPanel stats={stats} />}
+            {stats && <ProfileStatsPanel stats={stats} />}
 
             {/* ── Collection preview ── */}
             <section style={s.section}>
