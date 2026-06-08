@@ -54,7 +54,6 @@ const getProfile = async (req, res) => {
 };
 
 // ── GET /api/users/:id/stats  (public) ───────────────────────────────────────
-// Retourne { "Terminé": 12, "À voir": 5, … }
 const getProfileStats = async (req, res) => {
     const { id } = req.params;
 
@@ -63,20 +62,67 @@ const getProfileStats = async (req, res) => {
     }
 
     try {
-        const { rows } = await db.query(
-            `SELECT status, COUNT(*)::int AS count
-             FROM collections
-             WHERE user_id = $1
-             GROUP BY status`,
-            [id]
-        );
+        const [collectionResult, reviewResult, listsResult] = await Promise.all([
+            // Counts by status, by media type, and cumulative runtime for completed movies
+            db.query(
+                `SELECT
+                    COUNT(*) FILTER (WHERE c.status = 'To Watch')::int    AS to_watch,
+                    COUNT(*) FILTER (WHERE c.status = 'Watching')::int    AS watching,
+                    COUNT(*) FILTER (WHERE c.status = 'Completed')::int   AS completed,
+                    COUNT(*) FILTER (WHERE c.status = 'Dropped')::int     AS dropped,
+                    COUNT(*)::int                                           AS total,
+                    COUNT(*) FILTER (WHERE c.media_type = 'Movie')::int   AS movies_count,
+                    COUNT(*) FILTER (WHERE c.media_type = 'Series')::int  AS series_count,
+                    COALESCE(SUM(
+                        CASE WHEN c.status = 'Completed' AND c.media_type = 'Movie'
+                            THEN COALESCE((m.full_data->>'runtime')::int, 0)
+                            ELSE 0
+                        END
+                    ), 0)::int AS total_runtime_minutes
+                 FROM collections c
+                 LEFT JOIN media_cache m
+                   ON m.external_id = c.external_id
+                  AND m.media_type  = c.media_type
+                 WHERE c.user_id = $1`,
+                [id]
+            ),
+            // Average rating and review count
+            db.query(
+                `SELECT
+                    COUNT(*)::int                        AS reviews_count,
+                    ROUND(AVG(rating)::numeric, 1)::float AS avg_rating
+                 FROM reviews
+                 WHERE user_id = $1`,
+                [id]
+            ),
+            // Custom lists count
+            db.query(
+                `SELECT COUNT(*)::int AS lists_count
+                 FROM custom_lists
+                 WHERE user_id = $1`,
+                [id]
+            ),
+        ]);
 
-        const stats = rows.reduce((acc, row) => {
-            acc[row.status] = row.count;
-            return acc;
-        }, {});
+        const c = collectionResult.rows[0];
+        const r = reviewResult.rows[0];
+        const l = listsResult.rows[0];
 
-        return res.json(stats);
+        return res.json({
+            by_status: {
+                'To Watch':  c.to_watch,
+                'Watching':  c.watching,
+                'Completed': c.completed,
+                'Dropped':   c.dropped,
+            },
+            total:                 c.total,
+            movies_count:          c.movies_count,
+            series_count:          c.series_count,
+            total_runtime_minutes: c.total_runtime_minutes,
+            reviews_count:         r.reviews_count,
+            avg_rating:            r.avg_rating ?? null,
+            lists_count:           l.lists_count,
+        });
     } catch (err) {
         console.error('[getProfileStats]', err.message);
         return res.status(500).json({ message: 'Erreur serveur.', error: err.message });

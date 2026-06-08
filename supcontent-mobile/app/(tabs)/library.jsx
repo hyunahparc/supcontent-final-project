@@ -16,6 +16,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLibrary } from '../../src/api/collections';
 import { createList, deleteList, getMyLists, updateList } from '../../src/api/lists';
+import { getUserStats } from '../../src/api/users';
+import StatsPanel from '../../src/components/StatsPanel';
 import { useAuth } from '../../src/context/AuthContext';
 import { colors } from '../../src/theme/colors';
 
@@ -45,6 +47,7 @@ export default function LibraryScreen() {
   const [activeStatus, setActiveStatus] = useState(null);
   const [collection, setCollection] = useState([]);
   const [lists, setLists] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [newName, setNewName] = useState('');
@@ -82,11 +85,13 @@ export default function LibraryScreen() {
       Promise.all([
         getLibrary(user.user_id, token),
         getMyLists(token),
+        getUserStats(user.user_id, token).catch(() => null),
       ])
-        .then(([libraryData, listsData]) => {
+        .then(([libraryData, listsData, statsData]) => {
           if (cancelled) return;
           setCollection(libraryData ?? []);
           setLists(listsData ?? []);
+          setStats(statsData ?? null);
           hasLoadedRef.current = true;
         })
         .catch((err) => {
@@ -205,6 +210,7 @@ export default function LibraryScreen() {
           activeStatus={activeStatus}
           items={filteredCollection}
           totalCount={collection.length}
+          stats={stats}
           onStatusChange={setActiveStatus}
         />
       ) : (
@@ -233,13 +239,15 @@ export default function LibraryScreen() {
   );
 }
 
-function CollectionView({ activeStatus, items, totalCount, onStatusChange }) {
+function CollectionView({ activeStatus, items, totalCount, stats, onStatusChange }) {
   return (
     <View>
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>My Collection</Text>
         <Text style={styles.sectionCount}>{totalCount} items</Text>
       </View>
+
+      <StatsPanel stats={stats} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusTabs}>
         <StatusTab label="All" active={activeStatus === null} onPress={() => onStatusChange(null)} />

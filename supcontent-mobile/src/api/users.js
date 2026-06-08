@@ -4,6 +4,10 @@ export function getUserProfile(userId, token) {
   return apiRequest(`/users/${userId}/profile`, { token });
 }
 
+export function getUserStats(userId, token) {
+  return apiRequest(`/users/${userId}/stats`, { token });
+}
+
 export function updateMyProfile({ username, bio, link }, token) {
   return apiRequest('/users/me/profile', {
     method: 'PUT',
