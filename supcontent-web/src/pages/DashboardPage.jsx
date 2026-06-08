@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUserProfile } from '../api/users';
+import { getUserProfile, getUserStats } from '../api/users';
 import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getLibrary } from '../api/collections';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../api/follows';
 import { mediaHref } from '../utils/media';
+import StatsPanel from '../components/StatsPanel';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
@@ -22,6 +23,7 @@ export default function DashboardPage() {
     const [profile, setProfile] = useState(null);
     const [lists, setLists] = useState([]);
     const [collection, setCollection] = useState([]);
+    const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [followLoading, setFollowLoading] = useState(false);
@@ -41,13 +43,15 @@ export default function DashboardPage() {
         setLoading(true);
         Promise.all([
             getUserProfile(resolvedId),
-            getLibrary(resolvedId),
-            isOwnProfile ? getMyLists() : getUserPublicLists(resolvedId),
+            getLibrary(resolvedId).catch(() => []),
+            (isOwnProfile ? getMyLists() : getUserPublicLists(resolvedId)).catch(() => []),
+            getUserStats(resolvedId).catch(() => null),
         ])
-            .then(([prof, col, userLists]) => {
+            .then(([prof, col, userLists, userStats]) => {
                 setProfile(prof);
                 setCollection(col.slice(0, 6));
                 setLists(userLists ?? []);
+                setStats(userStats);
             })
             .catch(() => setError('Unable to load this profile.'))
             .finally(() => setLoading(false));
@@ -172,6 +176,9 @@ export default function DashboardPage() {
                 )}
             </div>
 
+
+            {/* ── Statistics ── */}
+            {stats && <StatsPanel stats={stats} />}
 
             {/* ── Collection preview ── */}
             <section style={s.section}>
