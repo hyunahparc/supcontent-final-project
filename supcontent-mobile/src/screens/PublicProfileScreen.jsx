@@ -369,13 +369,12 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{isOwnProfile ? t('profile_my_collection') : `${profile.username}'s collection`}</Text>
-            {isOwnProfile ? (
-              <Pressable onPress={() => router.push('/library')} hitSlop={8}>
-                <Text style={styles.sectionLink}>{t('profile_see_all')} ({profile.media_count ?? collection.length})</Text>
-              </Pressable>
-            ) : (
-              <Text style={styles.sectionCount}>{profile.media_count ?? collection.length}</Text>
-            )}
+            <Pressable
+              onPress={() => router.push(isOwnProfile ? '/library' : `/user-collections/${userId}`)}
+              hitSlop={8}
+            >
+              <Text style={styles.sectionLink}>{t('profile_see_all')} ({profile.media_count ?? collection.length})</Text>
+            </Pressable>
           </View>
 
           {collection.length ? (
@@ -390,13 +389,12 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{isOwnProfile ? t('profile_my_lists') : `${profile.username}'s ${t('profile_public_lists')}`}</Text>
-            {isOwnProfile ? (
-              <Pressable onPress={() => router.push('/library?view=lists')} hitSlop={8}>
-                <Text style={styles.sectionLink}>{t('profile_see_all')} ({lists.length})</Text>
-              </Pressable>
-            ) : (
-              <Text style={styles.sectionCount}>{lists.length}</Text>
-            )}
+            <Pressable
+              onPress={() => router.push(isOwnProfile ? '/library?view=lists' : `/user-lists/${userId}`)}
+              hitSlop={8}
+            >
+              <Text style={styles.sectionLink}>{t('profile_see_all')} ({lists.length})</Text>
+            </Pressable>
           </View>
 
           {lists.length ? (
