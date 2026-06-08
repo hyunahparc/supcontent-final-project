@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { advancedSearch, getGenres, searchUsers, searchLists } from '../api/search';
 import { mediaHref } from '../utils/media';
+import { useLanguage } from '../context/LanguageContext';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w300';
@@ -18,24 +19,6 @@ function getResultColumns() {
     return 1;
 }
 
-// Sorting criteria available (values matching TMDB API)
-const SORT_OPTIONS = [
-    { value: 'popularity.desc',           label: 'Popularity'               },
-    { value: 'vote_average.desc',         label: 'Top Rated'                },
-    { value: 'primary_release_date.desc', label: 'Release Date (Newest)'    },
-    { value: 'primary_release_date.asc',  label: 'Release Date (Oldest)'    },
-    { value: 'revenue.desc',              label: 'Box Office'               },
-];
-
-// Minimum rating options (TMDB 0-10)
-const RATING_OPTIONS = [
-    { value: '',  label: 'All ratings' },
-    { value: '5', label: '≥ 5.0 / 10'  },
-    { value: '6', label: '≥ 6.0 / 10'  },
-    { value: '7', label: '≥ 7.0 / 10'  },
-    { value: '8', label: '≥ 8.0 / 10'  },
-    { value: '9', label: '≥ 9.0 / 10'  },
-];
 
 // ── People card ──────────────────────────────────────────────────────────────
 function UserCard({ user }) {
@@ -62,6 +45,7 @@ function UserCard({ user }) {
 
 // ── List card ─────────────────────────────────────────────────────────────────
 function ListCard({ list }) {
+    const { t } = useLanguage();
     const [hovered, setHovered] = useState(false);
     return (
         <Link
@@ -75,7 +59,7 @@ function ListCard({ list }) {
                 <p style={s.listCardName}>{list.name}</p>
                 <p style={s.listCardMeta}>
                     by <span style={s.listCardOwner}>{list.owner_username}</span>
-                    {' · '}{list.media_count} item{list.media_count !== 1 ? 's' : ''}
+                    {' · '}{list.media_count} {list.media_count !== 1 ? t('search_items') : t('search_item')}
                 </p>
             </div>
         </Link>
@@ -84,6 +68,7 @@ function ListCard({ list }) {
 
 // ── Result card ───────────────────────────────────────────────────────────────
 function ResultCard({ item }) {
+    const { t } = useLanguage();
     const [hovered, setHovered] = useState(false);
     const year  = item.release_date?.slice(0, 4) ?? '—';
     const score = item.vote_average ? Number(item.vote_average).toFixed(1) : null;
@@ -109,7 +94,7 @@ function ResultCard({ item }) {
                 )}
                 {score && <div style={s.scoreBadge}>⭐ {score}</div>}
                 <div style={s.mediaBadge}>
-                    {item.media_type === 'Series' ? 'TV Show' : 'Movie'}
+                    {item.media_type === 'Series' ? t('search_tv') : t('search_movie')}
                 </div>
             </div>
             <div style={s.cardInfo}>
@@ -122,6 +107,7 @@ function ResultCard({ item }) {
 
 // ── Pagination ───────────────────────────────────────────────────────────────
 function Pagination({ page, totalPages, onPageChange }) {
+    const { t } = useLanguage();
     if (totalPages <= 1) return null;
 
     const delta = 2;
@@ -137,7 +123,7 @@ function Pagination({ page, totalPages, onPageChange }) {
                 disabled={page <= 1}
                 style={{ ...s.pageBtn, ...(page <= 1 ? s.pageBtnDisabled : {}) }}
             >
-                ← Previous
+                {t('search_prev')}
             </button>
 
             {range[0] > 1 && (
@@ -170,20 +156,16 @@ function Pagination({ page, totalPages, onPageChange }) {
                 disabled={page >= totalPages}
                 style={{ ...s.pageBtn, ...(page >= totalPages ? s.pageBtnDisabled : {}) }}
             >
-                Next →
+                {t('search_next')}
             </button>
         </nav>
     );
 }
 
-const CATEGORIES = [
-    { id: 'films',  label: 'Movies & TV shows'  },
-    { id: 'users',  label: 'People'       },
-    { id: 'lists',  label: 'Lists'        },
-];
 
 // ── Main page ────────────────────────────────────────────────────────────────
 export default function AdvancedSearchPage() {
+    const { t } = useLanguage();
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [category,  setCategory]  = useState(searchParams.get('category') || 'films');
@@ -345,6 +327,27 @@ export default function AdvancedSearchPage() {
         }
     }
 
+    const SORT_OPTIONS = [
+        { value: 'popularity.desc',           label: t('search_sort_popularity') },
+        { value: 'vote_average.desc',         label: t('search_sort_top_rated')  },
+        { value: 'primary_release_date.desc', label: t('search_sort_newest')     },
+        { value: 'primary_release_date.asc',  label: t('search_sort_oldest')     },
+        { value: 'revenue.desc',              label: t('search_sort_box_office')  },
+    ];
+    const RATING_OPTIONS = [
+        { value: '',  label: t('search_all_ratings') },
+        { value: '5', label: '≥ 5.0 / 10' },
+        { value: '6', label: '≥ 6.0 / 10' },
+        { value: '7', label: '≥ 7.0 / 10' },
+        { value: '8', label: '≥ 8.0 / 10' },
+        { value: '9', label: '≥ 9.0 / 10' },
+    ];
+    const CATEGORIES = [
+        { id: 'films',  label: t('search_tab_media')  },
+        { id: 'users',  label: t('search_tab_people') },
+        { id: 'lists',  label: t('search_tab_lists')  },
+    ];
+
     const currentYear = new Date().getFullYear();
     const resultGridStyle = {
         ...s.grid,
@@ -354,10 +357,8 @@ export default function AdvancedSearchPage() {
     return (
         <div style={s.page}>
             <div style={s.pageHeader}>
-                <h1 style={s.heading}>Explore</h1>
-                <p style={s.subtitle}>
-                    Search across movies, TV shows, users, and public lists.
-                </p>
+                <h1 style={s.heading}>{t('search_title')}</h1>
+                <p style={s.subtitle}>{t('search_subtitle')}</p>
             </div>
 
             {/* ── Category tabs ── */}
@@ -387,22 +388,22 @@ export default function AdvancedSearchPage() {
                                 type="text"
                                 value={peopleQuery}
                                 onChange={e => setPeopleQuery(e.target.value)}
-                                placeholder="Search by username…"
+                                placeholder={t('search_user_placeholder')}
                                 style={s.searchInput}
                                 maxLength={50}
                                 autoFocus
                             />
                         </div>
                         <button type="submit" style={s.submitBtn} disabled={peopleLoading || peopleQuery.trim().length < 2}>
-                            {peopleLoading ? 'Searching…' : 'Search'}
+                            {peopleLoading ? t('search_loading') : t('search_btn')}
                         </button>
                     </form>
 
                     {peopleSearched && !peopleLoading && (
                         <p style={s.resultCount}>
                             {peopleResults.length > 0
-                                ? `${peopleResults.length} user${peopleResults.length > 1 ? 's' : ''} found`
-                                : 'No users found for this query.'}
+                                ? `${peopleResults.length} ${t('search_results')}`
+                                : t('search_no_users')}
                         </p>
                     )}
 
@@ -429,8 +430,8 @@ export default function AdvancedSearchPage() {
                     {!peopleLoading && !peopleSearched && (
                         <div style={s.emptyState}>
                             <span style={s.emptyIcon}>👤</span>
-                            <p style={s.emptyTitle}>Find a user</p>
-                            <p style={s.emptyText}>Search by username to discover other members of the community.</p>
+                            <p style={s.emptyTitle}>{t('search_users_title')}</p>
+                            <p style={s.emptyText}>{t('search_users_body')}</p>
                         </div>
                     )}
                 </div>
@@ -449,22 +450,22 @@ export default function AdvancedSearchPage() {
                                 type="text"
                                 value={listsQuery}
                                 onChange={e => setListsQuery(e.target.value)}
-                                placeholder="Search public lists by name…"
+                                placeholder={t('search_list_placeholder')}
                                 style={s.searchInput}
                                 maxLength={100}
                                 autoFocus
                             />
                         </div>
                         <button type="submit" style={s.submitBtn} disabled={listsLoading || listsQuery.trim().length < 2}>
-                            {listsLoading ? 'Searching…' : 'Search'}
+                            {listsLoading ? t('search_loading') : t('search_btn')}
                         </button>
                     </form>
 
                     {listsSearched && !listsLoading && (
                         <p style={s.resultCount}>
                             {listsResults.length > 0
-                                ? `${listsResults.length} list${listsResults.length > 1 ? 's' : ''} found`
-                                : 'No public lists found for this query.'}
+                                ? `${listsResults.length} ${t('search_results')}`
+                                : t('search_no_lists')}
                         </p>
                     )}
 
@@ -491,8 +492,8 @@ export default function AdvancedSearchPage() {
                     {!listsLoading && !listsSearched && (
                         <div style={s.emptyState}>
                             <span style={s.emptyIcon}>📋</span>
-                            <p style={s.emptyTitle}>Find a list</p>
-                            <p style={s.emptyText}>Browse public lists created by the community.</p>
+                            <p style={s.emptyTitle}>{t('search_lists_title')}</p>
+                            <p style={s.emptyText}>{t('search_lists_body')}</p>
                         </div>
                     )}
                 </div>
@@ -511,40 +512,40 @@ export default function AdvancedSearchPage() {
                             type="text"
                             value={query}
                             onChange={e => setQuery(e.target.value)}
-                            placeholder="A movie or TV show title… (optional)"
+                            placeholder={t('search_placeholder')}
                             style={s.searchInput}
                             maxLength={200}
-                            aria-label="Search by title"
+                            aria-label={t('search_btn')}
                         />
                     </div>
                     <button type="submit" style={s.submitBtn} disabled={loading}>
-                        {loading ? 'Searching…' : 'Search'}
+                        {loading ? t('search_loading') : t('search_btn')}
                     </button>
                 </div>
 
                 <div style={s.filtersRow}>
                     <div style={s.filterGroup}>
-                        <span style={s.filterLabel}>Type</span>
+                        <span style={s.filterLabel}>{t('search_type')}</span>
                         <div style={s.typeToggle}>
                             <button
                                 type="button"
                                 onClick={() => handleTypeChange('movie')}
                                 style={{ ...s.typeBtn, ...(type === 'movie' ? s.typeBtnActive : {}) }}
                             >
-                                Movie
+                                {t('search_movie')}
                             </button>
                             <button
                                 type="button"
                                 onClick={() => handleTypeChange('tv')}
                                 style={{ ...s.typeBtn, ...(type === 'tv' ? s.typeBtnActive : {}) }}
                             >
-                                TV Show
+                                {t('search_tv')}
                             </button>
                         </div>
                     </div>
 
                     <div style={s.filterGroup}>
-                        <label style={s.filterLabel} htmlFor="filter-year">Year</label>
+                        <label style={s.filterLabel} htmlFor="filter-year">{t('search_year')}</label>
                         <input
                             id="filter-year"
                             type="number"
@@ -558,14 +559,14 @@ export default function AdvancedSearchPage() {
                     </div>
 
                     <div style={s.filterGroup}>
-                        <label style={s.filterLabel} htmlFor="filter-genre">Genre</label>
+                        <label style={s.filterLabel} htmlFor="filter-genre">{t('search_genre')}</label>
                         <select
                             id="filter-genre"
                             value={genreId}
                             onChange={e => setGenreId(e.target.value)}
                             style={s.select}
                         >
-                            <option value="">All genres</option>
+                            <option value="">{t('search_all_genres')}</option>
                             {genres.map(g => (
                                 <option key={g.id} value={g.id}>{g.name}</option>
                             ))}
@@ -573,7 +574,7 @@ export default function AdvancedSearchPage() {
                     </div>
 
                     <div style={s.filterGroup}>
-                        <label style={s.filterLabel} htmlFor="filter-rating">Min Rating</label>
+                        <label style={s.filterLabel} htmlFor="filter-rating">{t('search_min_rating')}</label>
                         <select
                             id="filter-rating"
                             value={minRating}
@@ -587,7 +588,7 @@ export default function AdvancedSearchPage() {
                     </div>
 
                     <div style={s.filterGroup}>
-                        <label style={s.filterLabel} htmlFor="filter-sort">Sort By</label>
+                        <label style={s.filterLabel} htmlFor="filter-sort">{t('search_sort_by')}</label>
                         <select
                             id="filter-sort"
                             value={sort}
@@ -603,7 +604,7 @@ export default function AdvancedSearchPage() {
                     <div style={{ ...s.filterGroup, justifyContent: 'flex-end' }}>
                         <span style={{ ...s.filterLabel, visibility: 'hidden' }}>—</span>
                         <button type="button" onClick={handleReset} style={s.resetBtn}>
-                            Reset
+                            {t('search_reset')}
                         </button>
                     </div>
                 </div>
@@ -613,8 +614,8 @@ export default function AdvancedSearchPage() {
                 {hasSearched && !loading && !error && (
                     <p style={s.resultCount}>
                         {totalResults > 0
-                            ? `${totalResults.toLocaleString('en-US')} result${totalResults > 1 ? 's' : ''} found`
-                            : 'No results found for these filters. Try adjusting your search.'
+                            ? `${totalResults.toLocaleString()} ${t('search_results')}`
+                            : t('search_no_results')
                         }
                     </p>
                 )}
@@ -628,11 +629,8 @@ export default function AdvancedSearchPage() {
                 {!hasSearched && !loading && (
                     <div style={s.emptyState}>
                         <span style={s.emptyIcon} aria-hidden="true">🎬</span>
-                        <p style={s.emptyTitle}>Start Exploring</p>
-                        <p style={s.emptyText}>
-                            Enter a title or choose filters above,<br />
-                            then click <strong style={{ color: 'var(--accent)' }}>Search</strong>.
-                        </p>
+                        <p style={s.emptyTitle}>{t('search_start_title')}</p>
+                        <p style={s.emptyText}>{t('search_start_body')}</p>
                     </div>
                 )}
 

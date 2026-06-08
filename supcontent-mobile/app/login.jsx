@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
+import { useLanguage } from '../src/context/LanguageContext';
 import { colors } from '../src/theme/colors';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +27,7 @@ export default function LoginScreen() {
     setError('');
 
     if (!email.trim() || !password) {
-      setError('Email and password are required.');
+      setError(t('mob_login_required'));
       return;
     }
 
@@ -35,7 +37,7 @@ export default function LoginScreen() {
       await signIn({ email: email.trim(), password });
       router.replace('/home');
     } catch (err) {
-      setError(err.message || 'Unable to log in.');
+      setError(err.message || t('mob_login_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -55,8 +57,8 @@ export default function LoginScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.eyebrow}>SUPCONTENT</Text>
-          <Text style={styles.title}>Log in</Text>
-          <Text style={styles.body}>Access your library, reviews, feed, and private messages.</Text>
+          <Text style={styles.title}>{t('mob_login_title')}</Text>
+          <Text style={styles.body}>{t('mob_login_subtitle')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -66,7 +68,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="Email"
+            placeholder={t('login_email')}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -77,7 +79,7 @@ export default function LoginScreen() {
             autoCapitalize="none"
             autoComplete="password"
             secureTextEntry
-            placeholder="Password"
+            placeholder={t('login_password')}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -95,15 +97,15 @@ export default function LoginScreen() {
             {isSubmitting ? (
               <ActivityIndicator color={colors.accentText} />
             ) : (
-              <Text style={styles.buttonText}>Log in</Text>
+              <Text style={styles.buttonText}>{t('login_submit')}</Text>
             )}
           </Pressable>
         </View>
 
         <Text style={styles.footerText}>
-          New to SupContent?{' '}
+          {t('mob_login_new')}{' '}
           <Link href="/register" style={styles.footerLink}>
-            Create an account
+            {t('mob_login_create')}
           </Link>
         </Text>
       </View>

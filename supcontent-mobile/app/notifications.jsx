@@ -14,30 +14,31 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getNotifications, markAllRead, markOneRead } from '../src/api/notifications';
 import { useAuth } from '../src/context/AuthContext';
+import { useLanguage } from '../src/context/LanguageContext';
 import { colors } from '../src/theme/colors';
 
-function timeAgo(dateString) {
+function timeAgo(dateString, language) {
     const diff = Date.now() - new Date(dateString).getTime();
     const mins = Math.floor(diff / 60000);
 
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1) return 'now';
+    if (mins < 60) return `${mins}m`;
 
     const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
+    if (hours < 24) return `${hours}h`;
 
     const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
+    if (days < 7) return `${days}j`;
 
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return new Date(dateString).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
-function notificationText(notification) {
-    if (notification.type === 'like') return `${notification.source_username} liked your review`;
-    if (notification.type === 'comment') return `${notification.source_username} commented on your review`;
-    if (notification.type === 'follow') return `${notification.source_username} started following you`;
+function notificationText(notification, t) {
+    if (notification.type === 'like') return `${notification.source_username} ${t('notif_liked')}`;
+    if (notification.type === 'comment') return `${notification.source_username} ${t('notif_commented')}`;
+    if (notification.type === 'follow') return `${notification.source_username} ${t('notif_following')}`;
 
-    return 'New notification';
+    return t('notif_title');
 }
 
 function notificationRoute(notification) {
@@ -56,6 +57,7 @@ function notificationRoute(notification) {
 export default function NotificationsScreen() {
     const insets = useSafeAreaInsets();
     const { token, isAuthenticated } = useAuth();
+    const { t, language } = useLanguage();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -81,7 +83,7 @@ export default function NotificationsScreen() {
                 await markAllRead(token);
             }
         } catch (err) {
-            if (!silent) setError(err.message || 'Unable to load notifications.');
+            if (!silent) setError(err.message || t('notif_error'));
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -132,10 +134,10 @@ export default function NotificationsScreen() {
         return (
             <View style={[styles.statePage, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
                 <Ionicons name="notifications-outline" size={36} color={colors.textMuted} />
-                <Text style={styles.stateTitle}>Notifications</Text>
-                <Text style={styles.stateText}>Log in to see likes, comments, and followers.</Text>
+                <Text style={styles.stateTitle}>{t('notif_title')}</Text>
+                <Text style={styles.stateText}>{t('notif_login_prompt')}</Text>
                 <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-                    <Text style={styles.primaryButtonText}>Log in</Text>
+                    <Text style={styles.primaryButtonText}>{t('notif_login')}</Text>
                 </Pressable>
             </View>
         );
@@ -166,11 +168,11 @@ export default function NotificationsScreen() {
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
                 </Pressable>
 
-                <Text style={styles.heading}>Notifications</Text>
+                <Text style={styles.heading}>{t('notif_title')}</Text>
 
                 {hasUnread ? (
                     <Pressable onPress={handleMarkAllRead} hitSlop={10} style={({ pressed }) => [styles.markAllButton, pressed && styles.pressed]}>
-                        <Text style={styles.markAllText}>Read all</Text>
+                        <Text style={styles.markAllText}>{t('notif_read_all')}</Text>
                     </Pressable>
                 ) : (
                     <View style={styles.headerSpacer} />
@@ -180,11 +182,11 @@ export default function NotificationsScreen() {
             {loading ? (
                 <View style={styles.loadingBlock}>
                     <ActivityIndicator color={colors.accent} />
-                    <Text style={styles.loadingText}>Loading notifications...</Text>
+                    <Text style={styles.loadingText}>{t('notif_loading')}</Text>
                 </View>
             ) : error ? (
                 <View style={styles.emptyBlock}>
-                    <Text style={styles.emptyTitle}>Unable to load notifications</Text>
+                    <Text style={styles.emptyTitle}>{t('notif_error')}</Text>
                     <Text style={styles.emptyText}>{error}</Text>
                 </View>
             ) : notifications.length ? (
@@ -200,10 +202,8 @@ export default function NotificationsScreen() {
             ) : (
                 <View style={styles.emptyBlock}>
                     <Ionicons name="notifications-off-outline" size={34} color={colors.textMuted} />
-                    <Text style={styles.emptyTitle}>No notifications yet</Text>
-                    <Text style={styles.emptyText}>
-                        You will see likes, review comments, and new followers here.
-                    </Text>
+                    <Text style={styles.emptyTitle}>{t('notif_empty_title')}</Text>
+                    <Text style={styles.emptyText}>{t('notif_empty_body')}</Text>
                 </View>
             )}
         </ScrollView>
@@ -211,6 +211,7 @@ export default function NotificationsScreen() {
 }
 
 function NotificationCard({ notification, onPress }) {
+    const { t, language } = useLanguage();
     const initial = notification.source_username?.charAt(0)?.toUpperCase() ?? '?';
 
     return (
@@ -237,11 +238,11 @@ function NotificationCard({ notification, onPress }) {
             </Pressable>
 
             <View style={styles.cardContent}>
-                <Text style={styles.cardText}>{notificationText(notification)}</Text>
+                <Text style={styles.cardText}>{notificationText(notification, t)}</Text>
                 {notification.media_title ? (
                     <Text style={styles.mediaTitle} numberOfLines={1}>{notification.media_title}</Text>
                 ) : null}
-                <Text style={styles.timeText}>{timeAgo(notification.created_at)}</Text>
+                <Text style={styles.timeText}>{timeAgo(notification.created_at, language)}</Text>
             </View>
 
             {!notification.is_read ? <View style={styles.unreadDot} /> : null}

@@ -11,10 +11,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
+import { useLanguage } from '../src/context/LanguageContext';
 import { colors } from '../src/theme/colors';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -26,7 +28,7 @@ export default function RegisterScreen() {
     setError('');
 
     if (!username.trim() || !email.trim() || !password) {
-      setError('Username, email, and password are required.');
+      setError(t('mob_register_required'));
       return;
     }
 
@@ -40,7 +42,7 @@ export default function RegisterScreen() {
       });
       router.replace('/login');
     } catch (err) {
-      setError(err.message || 'Unable to create your account.');
+      setError(err.message || t('mob_register_error'));
     } finally {
       setIsSubmitting(false);
     }
@@ -60,8 +62,8 @@ export default function RegisterScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.eyebrow}>SUPCONTENT</Text>
-          <Text style={styles.title}>Create account</Text>
-          <Text style={styles.body}>Join the community and start building your movie and series library.</Text>
+          <Text style={styles.title}>{t('mob_register_title')}</Text>
+          <Text style={styles.body}>{t('mob_register_subtitle')}</Text>
         </View>
 
         <View style={styles.form}>
@@ -70,7 +72,7 @@ export default function RegisterScreen() {
             onChangeText={setUsername}
             autoCapitalize="none"
             autoComplete="username"
-            placeholder="Username"
+            placeholder={t('register_username')}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -81,7 +83,7 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             autoComplete="email"
             keyboardType="email-address"
-            placeholder="Email"
+            placeholder={t('login_email')}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -92,7 +94,7 @@ export default function RegisterScreen() {
             autoCapitalize="none"
             autoComplete="password-new"
             secureTextEntry
-            placeholder="Password"
+            placeholder={t('login_password')}
             placeholderTextColor={colors.textMuted}
             style={styles.input}
           />
@@ -110,15 +112,15 @@ export default function RegisterScreen() {
             {isSubmitting ? (
               <ActivityIndicator color={colors.accentText} />
             ) : (
-              <Text style={styles.buttonText}>Create account</Text>
+              <Text style={styles.buttonText}>{t('register_submit')}</Text>
             )}
           </Pressable>
         </View>
 
         <Text style={styles.footerText}>
-          Already have an account?{' '}
+          {t('mob_register_already')}{' '}
           <Link href="/login" style={styles.footerLink}>
-            Log in
+            {t('mob_register_sign_in')}
           </Link>
         </Text>
       </View>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getUserProfile, getUserStats } from '../api/users';
 import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getLibrary } from '../api/collections';
@@ -15,6 +16,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 export default function DashboardPage() {
     const { id } = useParams();
     const { user, logout } = useAuth();
+    const { language, t } = useLanguage();
     const navigate = useNavigate();
 
     const resolvedId = Number(id);
@@ -53,7 +55,7 @@ export default function DashboardPage() {
                 setLists(userLists ?? []);
                 setStats(userStats);
             })
-            .catch(() => setError('Unable to load this profile.'))
+            .catch(() => setError(t('profile_unable_load')))
             .finally(() => setLoading(false));
     }, [resolvedId, isOwnProfile]);
 
@@ -94,12 +96,13 @@ export default function DashboardPage() {
 
     const closeModal = () => { setModal(null); setModalUsers([]); };
 
-    if (loading) return <div style={s.state}>Loading...</div>;
+    if (loading) return <div style={s.state}>{t('profile_loading')}</div>;
     if (error)   return <div style={s.state}>{error}</div>;
     if (!profile) return null;
 
+    const dateLocale = language === 'fr' ? 'fr-FR' : 'en-US';
     const memberSince = profile.created_at
-        ? new Date(profile.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })
+        ? new Date(profile.created_at).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long' })
         : null;
 
     return (
@@ -119,12 +122,12 @@ export default function DashboardPage() {
 
                 <div style={s.profileInfo}>
                     <h1 style={s.username}>{profile.username}</h1>
-                    {memberSince && <p style={s.memberSince}>Member since {memberSince}</p>}
+                    {memberSince && <p style={s.memberSince}>{t('profile_member_since')} {memberSince}</p>}
 
                     {profile.bio ? (
                         <p style={s.bio}>{profile.bio}</p>
                     ) : (
-                        <p style={{ ...s.bio, ...s.bioEmpty }}>No bio yet.</p>
+                        <p style={{ ...s.bio, ...s.bioEmpty }}>{t('profile_no_bio')}</p>
                     )}
 
                     {profile.link && (
@@ -141,35 +144,35 @@ export default function DashboardPage() {
                     <div style={s.socialRow}>
                         <button style={s.socialBtn} onClick={() => openModal('followers')}>
                             <span style={s.socialNumber}>{profile.followers_count ?? 0}</span>
-                            <span style={s.socialLabel}>follower{profile.followers_count !== 1 ? 's' : ''}</span>
+                            <span style={s.socialLabel}>{t('profile_followers')}</span>
                         </button>
                         <div style={s.socialDivider} />
                         <button style={s.socialBtn} onClick={() => openModal('following')}>
                             <span style={s.socialNumber}>{profile.following_count ?? 0}</span>
-                            <span style={s.socialLabel}>following</span>
+                            <span style={s.socialLabel}>{t('profile_following')}</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Own profile: edit button — Other profile: follow/unfollow */}
                 {isOwnProfile ? (
-                    <Link to="/settings/profile" style={s.editBtn}>Edit profile</Link>
+                    <Link to="/settings/profile" style={s.editBtn}>{t('profile_edit')}</Link>
                 ) : user && (
                     <div style={s.followWrap}>
                         {profile.is_following ? (
                             <>
                                 <button onClick={() => setShowUnfollowMenu(v => !v)} disabled={followLoading} style={s.followingBtn}>
-                                    Following
+                                    {t('profile_following_btn')}
                                 </button>
                                 {showUnfollowMenu && (
                                     <div style={s.unfollowMenu}>
-                                        <button onClick={handleUnfollow} style={s.unfollowMenuItem}>Unfollow</button>
+                                        <button onClick={handleUnfollow} style={s.unfollowMenuItem}>{t('profile_unfollow')}</button>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <button onClick={handleFollow} disabled={followLoading} style={s.followBtn}>
-                                Follow
+                                {t('profile_follow')}
                             </button>
                         )}
                     </div>
@@ -184,14 +187,14 @@ export default function DashboardPage() {
             <section style={s.section}>
                 <div style={s.sectionHeader}>
                     <h2 style={s.sectionTitle}>
-                        {isOwnProfile ? 'My collection' : `${profile.username}'s collection`}
+                        {isOwnProfile ? t('profile_my_collection') : `${profile.username}`}
                     </h2>
                     <Link to={`/users/${resolvedId}/collection`} style={s.seeAllLink}>
-                        See all ({profile.media_count ?? 0})
+                        {t('profile_see_all')} ({profile.media_count ?? 0})
                     </Link>
                 </div>
                 {collection.length === 0 ? (
-                    <p style={s.emptyText}>No media items yet.</p>
+                    <p style={s.emptyText}>{t('profile_no_media')}</p>
                 ) : (
                     <div style={s.posterGrid}>
                         {collection.map(item => {
@@ -214,15 +217,15 @@ export default function DashboardPage() {
             <section style={s.section}>
                     <div style={s.sectionHeader}>
                         <h2 style={s.sectionTitle}>
-                            {isOwnProfile ? 'My lists' : `${profile.username}'s lists`}
+                            {isOwnProfile ? t('profile_my_lists') : `${profile.username}`}
                         </h2>
                         {isOwnProfile
-                            ? <Link to="/lists" style={s.seeAllLink}>See all ({lists.length})</Link>
-                            : <span style={s.seeAllLink}>{lists.length} lists</span>
+                            ? <Link to="/lists" style={s.seeAllLink}>{t('profile_see_all')} ({lists.length})</Link>
+                            : <span style={s.seeAllLink}>{lists.length} {t('profile_lists')}</span>
                         }
                     </div>
                     {lists.length === 0 ? (
-                        <p style={s.emptyText}>No lists yet.</p>
+                        <p style={s.emptyText}>{t('profile_no_lists')}</p>
                     ) : (
                     <div style={s.listsGrid}>
                         {lists.map(list => (
@@ -253,12 +256,12 @@ export default function DashboardPage() {
                                     })}
                                     <div style={s.listOverlayInner}>
                                         <div style={s.listName}>{list.name}</div>
-                                        <div style={s.listCount}>{list.media_count ?? 0} items</div>
+                                        <div style={s.listCount}>{list.media_count ?? 0} {t('profile_items')}</div>
                                     </div>
                                 </div>
                                 <div style={s.listInfo}>
                                     <div style={s.listName}>{list.name}</div>
-                                    <div style={s.listCount}>{list.media_count ?? 0} items</div>
+                                    <div style={s.listCount}>{list.media_count ?? 0} {t('profile_items')}</div>
                                 </div>
                             </Link>
                         ))}
@@ -271,7 +274,7 @@ export default function DashboardPage() {
             {isOwnProfile && (
                 <div style={s.logoutWrap}>
                     <button onClick={() => { logout(); navigate('/login'); }} style={s.logoutBtn}>
-                        Sign Out
+                        {t('profile_sign_out')}
                     </button>
                 </div>
             )}
@@ -281,13 +284,13 @@ export default function DashboardPage() {
                 <div style={s.overlay} onClick={closeModal}>
                     <div style={s.modalBox} onClick={e => e.stopPropagation()}>
                         <div style={s.modalHeader}>
-                            <h2 style={s.modalTitle}>{modal === 'followers' ? 'Followers' : 'Following'}</h2>
+                            <h2 style={s.modalTitle}>{modal === 'followers' ? t('profile_followers_title') : t('profile_following_title')}</h2>
                             <button style={s.modalClose} onClick={closeModal}>✕</button>
                         </div>
                         {modalLoading ? (
-                            <p style={s.modalEmpty}>Loading...</p>
+                            <p style={s.modalEmpty}>{t('profile_loading')}</p>
                         ) : modalUsers.length === 0 ? (
-                            <p style={s.modalEmpty}>No users yet.</p>
+                            <p style={s.modalEmpty}>{t('profile_no_users')}</p>
                         ) : (
                             <ul style={s.userList}>
                                 {modalUsers.map(u => (

@@ -21,6 +21,7 @@ import { getUnreadCount } from '../api/notifications';
 import { getUserProfile, getUserStats } from '../api/users';
 import ProfileStatsPanel from '../components/profile/ProfileStatsPanel';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { colors } from '../theme/colors';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
@@ -40,6 +41,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
   const routeUserId = Array.isArray(id) ? id[0] : id;
   const insets = useSafeAreaInsets();
   const { user, token, isAuthenticated, signOut } = useAuth();
+  const { t, language } = useLanguage();
   const userId = profileUserId ?? routeUserId;
   const [profile, setProfile] = useState(null);
   const [collection, setCollection] = useState([]);
@@ -81,7 +83,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
       setLists(listsData ?? []);
       setStats(statsData ?? null);
     } catch (err) {
-      setError(err.message || 'Unable to load this profile.');
+      setError(err.message || t('profile_unable_load'));
     } finally {
       setLoading(false);
     }
@@ -209,16 +211,16 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
           </View>
 
           <View style={styles.profileInfo}>
-            <Text style={styles.username}>Guest</Text>
-            <Text style={styles.memberSince}>Browse public content without an account.</Text>
-            <Text style={styles.bio}>Log in to manage your library, reviews, feed, and private messages.</Text>
+            <Text style={styles.username}>{t('profile_guest')}</Text>
+            <Text style={styles.memberSince}>{t('profile_guest_browse')}</Text>
+            <Text style={styles.bio}>{t('profile_guest_login_desc')}</Text>
 
             <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.followButton, pressed && styles.pressed]}>
-              <Text style={styles.followButtonText}>Log in</Text>
+              <Text style={styles.followButtonText}>{t('profile_login')}</Text>
             </Pressable>
 
             <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-              <Text style={styles.secondaryButtonText}>Create account</Text>
+              <Text style={styles.secondaryButtonText}>{t('profile_create_account')}</Text>
             </Pressable>
           </View>
         </View>
@@ -230,7 +232,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
     return (
       <View style={[styles.state, { paddingTop: insets.top }]}>
         <ActivityIndicator color={colors.accent} />
-        <Text style={styles.stateText}>Loading profile...</Text>
+        <Text style={styles.stateText}>{t('profile_loading')}</Text>
       </View>
     );
   }
@@ -240,7 +242,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
       <View style={[styles.state, { paddingTop: insets.top }]}>
         <Text style={styles.stateText}>{error}</Text>
         <Pressable onPress={() => router.back()} style={styles.backAction}>
-          <Text style={styles.backActionText}>Go Back</Text>
+          <Text style={styles.backActionText}>{t('profile_go_back')}</Text>
         </Pressable>
       </View>
     );
@@ -250,7 +252,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
 
   const initial = profile.username?.charAt(0)?.toUpperCase() ?? '?';
   const memberSince = profile.created_at
-    ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    ? new Date(profile.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'long', year: 'numeric' })
     : null;
 
   return (
@@ -277,8 +279,8 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
 
           <View style={styles.profileInfo}>
             <Text style={styles.username}>{profile.username}</Text>
-            {memberSince ? <Text style={styles.memberSince}>Member since {memberSince}</Text> : null}
-            <Text style={styles.bio}>{profile.bio || 'No bio yet.'}</Text>
+            {memberSince ? <Text style={styles.memberSince}>{t('profile_member_since')} {memberSince}</Text> : null}
+            <Text style={styles.bio}>{profile.bio || t('profile_no_bio')}</Text>
 
             {profile.link ? (
               <Pressable onPress={() => Linking.openURL(profile.link)}>
@@ -291,12 +293,12 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
             <View style={styles.socialRow}>
               <Pressable onPress={() => openUserList('followers')} style={styles.socialItem}>
                 <Text style={styles.socialNumber}>{profile.followers_count ?? 0}</Text>
-                <Text style={styles.socialLabel}>followers</Text>
+                <Text style={styles.socialLabel}>{t('profile_followers')}</Text>
               </Pressable>
               <View style={styles.socialDivider} />
               <Pressable onPress={() => openUserList('following')} style={styles.socialItem}>
                 <Text style={styles.socialNumber}>{profile.following_count ?? 0}</Text>
-                <Text style={styles.socialLabel}>following</Text>
+                <Text style={styles.socialLabel}>{t('profile_following')}</Text>
               </Pressable>
             </View>
 
@@ -328,7 +330,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
                   onPress={() => router.push('/settings/profile')}
                   style={({ pressed }) => [styles.secondaryButton, styles.actionSpacing, pressed && styles.pressed]}
                 >
-                  <Text style={styles.secondaryButtonText}>Edit profile</Text>
+                  <Text style={styles.secondaryButtonText}>{t('profile_edit')}</Text>
                 </Pressable>
               </>
             ) : profile.is_following ? (
@@ -337,7 +339,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
                 disabled={followLoading}
                 style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed, followLoading && styles.disabled]}
               >
-                <Text style={styles.secondaryButtonText}>{followLoading ? 'Saving...' : 'Following'}</Text>
+                <Text style={styles.secondaryButtonText}>{followLoading ? t('profile_saving') : t('profile_following_btn')}</Text>
               </Pressable>
             ) : (
               <Pressable
@@ -345,7 +347,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
                 disabled={followLoading}
                 style={({ pressed }) => [styles.followButton, pressed && styles.pressed, followLoading && styles.disabled]}
               >
-                <Text style={styles.followButtonText}>{followLoading ? 'Saving...' : 'Follow'}</Text>
+                <Text style={styles.followButtonText}>{followLoading ? t('profile_saving') : t('profile_follow')}</Text>
               </Pressable>
             )}
 
@@ -355,7 +357,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
                 style={({ pressed }) => [styles.messageButton, pressed && styles.pressed]}
               >
                 <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.text} />
-                <Text style={styles.messageButtonText}>Message</Text>
+                <Text style={styles.messageButtonText}>{t('profile_message')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -366,10 +368,10 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{isOwnProfile ? 'My collection' : `${profile.username}'s collection`}</Text>
+            <Text style={styles.sectionTitle}>{isOwnProfile ? t('profile_my_collection') : `${profile.username}'s collection`}</Text>
             {isOwnProfile ? (
               <Pressable onPress={() => router.push('/library')} hitSlop={8}>
-                <Text style={styles.sectionLink}>See all ({profile.media_count ?? collection.length})</Text>
+                <Text style={styles.sectionLink}>{t('profile_see_all')} ({profile.media_count ?? collection.length})</Text>
               </Pressable>
             ) : (
               <Text style={styles.sectionCount}>{profile.media_count ?? collection.length}</Text>
@@ -381,16 +383,16 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
               {collection.map((item) => <CollectionCard key={item.collection_id} item={item} />)}
             </ScrollView>
           ) : (
-            <Text style={styles.emptyText}>No media items yet.</Text>
+            <Text style={styles.emptyText}>{t('profile_no_media')}</Text>
           )}
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{isOwnProfile ? 'My lists' : `${profile.username}'s public lists`}</Text>
+            <Text style={styles.sectionTitle}>{isOwnProfile ? t('profile_my_lists') : `${profile.username}'s ${t('profile_public_lists')}`}</Text>
             {isOwnProfile ? (
               <Pressable onPress={() => router.push('/library?view=lists')} hitSlop={8}>
-                <Text style={styles.sectionLink}>See all ({lists.length})</Text>
+                <Text style={styles.sectionLink}>{t('profile_see_all')} ({lists.length})</Text>
               </Pressable>
             ) : (
               <Text style={styles.sectionCount}>{lists.length}</Text>
@@ -402,13 +404,13 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
               {lists.map((list) => <ListCard key={list.list_id} list={list} />)}
             </View>
           ) : (
-            <Text style={styles.emptyText}>{isOwnProfile ? 'No lists yet.' : 'No public lists yet.'}</Text>
+            <Text style={styles.emptyText}>{isOwnProfile ? t('profile_no_lists') : t('profile_no_public_lists')}</Text>
           )}
         </View>
 
         {isOwnProfile ? (
           <Pressable onPress={signOut} style={({ pressed }) => [styles.signOutButton, pressed && styles.pressed]}>
-            <Text style={styles.signOutButtonText}>Sign out</Text>
+            <Text style={styles.signOutButtonText}>{t('profile_sign_out')}</Text>
           </Pressable>
         ) : null}
       </ScrollView>
@@ -417,7 +419,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
         <Pressable style={styles.modalBackdrop} onPress={closeModal}>
           <Pressable style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{modalType === 'followers' ? 'Followers' : 'Following'}</Text>
+              <Text style={styles.modalTitle}>{modalType === 'followers' ? t('profile_followers_title') : t('profile_following_title')}</Text>
               <Pressable onPress={closeModal} hitSlop={8}>
                 <Ionicons name="close" size={22} color={colors.text} />
               </Pressable>
@@ -445,7 +447,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
                 </Pressable>
               ))
             ) : (
-              <Text style={styles.emptyText}>No users yet.</Text>
+              <Text style={styles.emptyText}>{t('profile_no_users')}</Text>
             )}
           </Pressable>
         </Pressable>
@@ -474,6 +476,7 @@ function CollectionCard({ item }) {
 }
 
 function ListCard({ list }) {
+  const { t } = useLanguage();
   const posters = list.preview_posters ?? [];
 
   return (
@@ -496,7 +499,7 @@ function ListCard({ list }) {
 
       <View style={styles.listInfo}>
         <Text style={styles.listName} numberOfLines={1}>{list.name}</Text>
-        <Text style={styles.listCount}>{list.media_count ?? 0} items</Text>
+        <Text style={styles.listCount}>{list.media_count ?? 0} {t('profile_items')}</Text>
       </View>
     </Pressable>
   );

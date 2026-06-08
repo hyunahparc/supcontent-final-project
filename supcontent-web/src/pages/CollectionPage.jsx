@@ -1,15 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getLibrary } from '../api/collections';
 import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
 
+const STATUS_LABEL_KEYS = {
+    'To Watch': 'stats_to_watch',
+    'Watching': 'stats_watching',
+    'Completed': 'stats_completed',
+    'Dropped': 'stats_dropped',
+};
+
 export default function CollectionPage() {
     const { id } = useParams();
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [activeStatus, setActiveStatus] = useState(null);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -27,16 +36,15 @@ export default function CollectionPage() {
     return (
         <div style={styles.page}>
             <h1 style={styles.heading}>
-                {isOwner ? 'My Collection' : 'Collection'}
+                {isOwner ? t('col_title') : t('nav_collection')}
             </h1>
 
-            {/* Status filter tabs */}
             <div style={styles.tabs}>
                 <button
                     onClick={() => setActiveStatus(null)}
                     style={{ ...styles.tab, ...(activeStatus === null ? styles.tabActive : {}) }}
                 >
-                    All
+                    {t('col_all')}
                 </button>
                 {STATUSES.map(s => (
                     <button
@@ -44,15 +52,15 @@ export default function CollectionPage() {
                         onClick={() => setActiveStatus(s)}
                         style={{ ...styles.tab, ...(activeStatus === s ? styles.tabActive : {}) }}
                     >
-                        {s}
+                        {t(STATUS_LABEL_KEYS[s])}
                     </button>
                 ))}
             </div>
 
             {loading ? (
-                <div style={styles.state}>Loading...</div>
+                <div style={styles.state}>{t('col_loading')}</div>
             ) : items.length === 0 ? (
-                <div style={styles.state}>No media items in this collection.</div>
+                <div style={styles.state}>{t('col_empty')}</div>
             ) : (
                 <div style={styles.grid}>
                     {items.map(item => (

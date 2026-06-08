@@ -14,24 +14,25 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFeed } from '../../src/api/feed';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w780';
 
-function formatDate(value) {
+function formatDate(value, language) {
   const diff = Date.now() - new Date(value).getTime();
   const mins = Math.floor(diff / 60000);
 
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return 'now';
+  if (mins < 60) return `${mins}m`;
 
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return `${hours}h`;
 
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return `${days}j`;
 
-  return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return new Date(value).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
 function posterUrl(path) {
@@ -45,20 +46,10 @@ function mediaRoute(activity) {
   return `/${type}/${activity.external_id}`;
 }
 
-function activityText(activity) {
-  if (activity.activity_type === 'review') return 'reviewed';
-
-  if (activity.activity_type === 'collection') {
-    const status = activity.metadata?.status;
-    return status ? `added this to ${status}` : 'updated their collection';
-  }
-
-  return 'shared an activity';
-}
-
 export default function FeedScreen() {
   const insets = useSafeAreaInsets();
   const { token, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -82,7 +73,7 @@ export default function FeedScreen() {
       setActivities(data?.results ?? []);
       hasLoadedRef.current = true;
     } catch (err) {
-      setError(err.message || 'Unable to load your feed.');
+      setError(err.message || t('feed_error'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -107,10 +98,10 @@ export default function FeedScreen() {
     return (
       <View style={[styles.guestPage, pagePadding]}>
         <Ionicons name="newspaper-outline" size={44} color={colors.accent} />
-        <Text style={styles.guestTitle}>Feed</Text>
-        <Text style={styles.guestBody}>Log in to see recent activity from people you follow.</Text>
+        <Text style={styles.guestTitle}>{t('feed_title')}</Text>
+        <Text style={styles.guestBody}>{t('feed_login_prompt')}</Text>
         <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-          <Text style={styles.loginButtonText}>Log in</Text>
+          <Text style={styles.loginButtonText}>{t('feed_login')}</Text>
         </Pressable>
       </View>
     );
@@ -133,7 +124,7 @@ export default function FeedScreen() {
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable onPress={() => loadFeed({ showLoading: true })} hitSlop={8}>
-            <Text style={styles.retryText}>Retry</Text>
+            <Text style={styles.retryText}>{t('home_retry')}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -141,7 +132,7 @@ export default function FeedScreen() {
       {loading ? (
         <View style={styles.stateBox}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={styles.stateText}>Loading feed...</Text>
+          <Text style={styles.stateText}>{t('feed_loading')}</Text>
         </View>
       ) : activities.length ? (
         <View style={styles.list}>
@@ -151,8 +142,8 @@ export default function FeedScreen() {
         </View>
       ) : (
         <View style={styles.emptyBox}>
-          <Text style={styles.emptyTitle}>Nothing here yet</Text>
-          <Text style={styles.emptyHint}>Follow users to see their activity here.</Text>
+          <Text style={styles.emptyTitle}>{t('feed_empty_title')}</Text>
+          <Text style={styles.emptyHint}>{t('feed_empty_body')}</Text>
         </View>
       )}
     </ScrollView>
@@ -160,11 +151,21 @@ export default function FeedScreen() {
 }
 
 function ActivityCard({ activity }) {
+  const { t, language } = useLanguage();
   const poster = posterUrl(activity.full_data?.poster_path);
-  const title = activity.full_data?.title ?? activity.full_data?.name ?? 'Unknown title';
+  const title = activity.full_data?.title ?? activity.full_data?.name ?? t('feed_unknown_title');
   const reviewRating = activity.metadata?.rating ?? activity.rating;
   const reviewComment = activity.metadata?.comment ?? activity.comment;
   const actorInitial = activity.actor_username?.charAt(0)?.toUpperCase() ?? '?';
+
+  function getActivityText() {
+    if (activity.activity_type === 'review') return t('feed_reviewed');
+    if (activity.activity_type === 'collection') {
+      const status = activity.metadata?.status;
+      return status ? `${t('feed_added_to')} ${status}` : t('feed_updated');
+    }
+    return '';
+  }
 
   return (
     <View style={styles.card}>
@@ -197,9 +198,9 @@ function ActivityCard({ activity }) {
           <View style={styles.postHeaderText}>
             <Text style={styles.actionLine} numberOfLines={2}>
               <Text style={styles.username}>{activity.actor_username}</Text>
-              <Text style={styles.actionLabel}> {activityText(activity)}</Text>
+              <Text style={styles.actionLabel}> {getActivityText()}</Text>
             </Text>
-            <Text style={styles.date}>{formatDate(activity.created_at)}</Text>
+            <Text style={styles.date}>{formatDate(activity.created_at, language)}</Text>
           </View>
         </View>
 

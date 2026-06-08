@@ -16,6 +16,14 @@ export function updateMyProfile({ username, bio, link }, token) {
   });
 }
 
+export function updateLanguage(language, token) {
+  return apiRequest('/users/me/language', {
+    method: 'PUT',
+    token,
+    body: JSON.stringify({ language }),
+  });
+}
+
 export function uploadAvatar(image, token) {
   const formData = new FormData();
   const extension = image.uri.split('.').pop()?.toLowerCase() || 'jpg';

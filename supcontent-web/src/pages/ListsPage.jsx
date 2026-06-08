@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getMyLists, createList, updateList, deleteList } from '../api/lists';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w200';
@@ -8,6 +9,7 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 export default function ListsPage() {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const navigate = useNavigate();
 
     const [lists, setLists] = useState([]);
@@ -29,7 +31,7 @@ export default function ListsPage() {
         setLoading(true);
         getMyLists()
             .then(setLists)
-            .catch(() => setError('Failed to load lists.'))
+            .catch(() => setError(t('lists_error')))
             .finally(() => setLoading(false));
     }, [user]);
 
@@ -55,23 +57,23 @@ export default function ListsPage() {
     }
 
     async function handleDelete(listId) {
-        if (!window.confirm('Delete this list?')) return;
+        if (!window.confirm(t('lists_delete_confirm'))) return;
         await deleteList(listId);
         setLists(prev => prev.filter(l => l.list_id !== listId));
     }
 
-    if (loading) return <div style={styles.state}>Loading...</div>;
+    if (loading) return <div style={styles.state}>{t('lists_loading')}</div>;
     if (error) return <div style={styles.state}>{error}</div>;
 
     return (
         <div style={styles.page}>
             <div style={styles.inner}>
-                <h1 style={styles.heading}>My Lists</h1>
+                <h1 style={styles.heading}>{t('lists_title')}</h1>
 
                 <form onSubmit={handleCreate} style={styles.createForm}>
                     <input
                         style={styles.input}
-                        placeholder="New list name…"
+                        placeholder={t('lists_new_placeholder')}
                         value={newName}
                         onChange={e => setNewName(e.target.value)}
                     />
@@ -82,15 +84,15 @@ export default function ListsPage() {
                             onChange={e => setNewPublic(e.target.checked)}
                             style={{ marginRight: '6px' }}
                         />
-                        Public
+                        {t('lists_public')}
                     </label>
                     <button type="submit" style={styles.createBtn} disabled={creating || !newName.trim()}>
-                        {creating ? 'Creating…' : '+ Create'}
+                        {creating ? t('lists_creating') : t('lists_create')}
                     </button>
                 </form>
 
                 {lists.length === 0 ? (
-                    <p style={styles.empty}>No lists yet. Create one above!</p>
+                    <p style={styles.empty}>{t('lists_empty')}</p>
                 ) : (
                     <div style={styles.grid}>
                         {lists.map(list => (
@@ -110,10 +112,10 @@ export default function ListsPage() {
                                                 onChange={e => setEditing(prev => ({ ...prev, isPublic: e.target.checked }))}
                                                 style={{ marginRight: '6px' }}
                                             />
-                                            Public
+                                            {t('lists_public')}
                                         </label>
-                                        <button style={styles.saveBtn} onClick={() => handleUpdate(list.list_id)}>Save</button>
-                                        <button style={styles.cancelBtn} onClick={() => setEditing(null)}>Cancel</button>
+                                        <button style={styles.saveBtn} onClick={() => handleUpdate(list.list_id)}>{t('settings_save')}</button>
+                                        <button style={styles.cancelBtn} onClick={() => setEditing(null)}>{t('list_remove_cancel')}</button>
                                     </div>
                                 ) : (
                                     <div
@@ -136,7 +138,7 @@ export default function ListsPage() {
                                                     <div style={styles.listName}>{list.name}</div>
                                                     <span style={styles.badge}>{list.is_public ? '🌐' : '🔒'}</span>
                                                 </div>
-                                                <div style={styles.count}>{list.media_count ?? 0} items</div>
+                                                <div style={styles.count}>{list.media_count ?? 0} {t('list_items')}</div>
                                             </div>
                                         </Link>
 
@@ -154,13 +156,13 @@ export default function ListsPage() {
                                                         style={styles.kebabOption}
                                                         onClick={() => { setEditing({ listId: list.list_id, name: list.name, isPublic: list.is_public }); setOpenMenu(null); }}
                                                     >
-                                                        Edit
+                                                        {t('lists_edit')}
                                                     </button>
                                                     <button
                                                         style={{ ...styles.kebabOption, color: '#e74c3c' }}
                                                         onClick={() => { handleDelete(list.list_id); setOpenMenu(null); }}
                                                     >
-                                                        Delete
+                                                        {t('lists_delete')}
                                                     </button>
                                                 </div>
                                             )}

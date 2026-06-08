@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import {
     getReviews,
     getMyReview,
@@ -75,6 +76,7 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
 
 // --- Single Review Card ---
 function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onCommentAdded, onCommentDeleted }) {
+    const { t, language } = useLanguage();
     const [showComments, setShowComments] = useState(false);
     const [comments, setComments]         = useState([]);
     const [commentInput, setCommentInput] = useState('');
@@ -114,8 +116,8 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
         <div style={{ ...cardStyles.card, position: 'relative' }}>
             {isOwner && (
                 <div style={cardStyles.ownerActions}>
-                    <button onClick={onEdit} style={cardStyles.ownerBtn}>Edit</button>
-                    <button onClick={() => onDelete(review.review_id)} style={{ ...cardStyles.ownerBtn, color: '#f3727f' }}>Delete</button>
+                    <button onClick={onEdit} style={cardStyles.ownerBtn}>{t('review_edit')}</button>
+                    <button onClick={() => onDelete(review.review_id)} style={{ ...cardStyles.ownerBtn, color: '#f3727f' }}>{t('review_delete')}</button>
                 </div>
             )}
             <div style={cardStyles.header}>
@@ -128,7 +130,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
                 <div style={{ flex: 1 }}>
                     <div style={cardStyles.username}>{review.username}</div>
                     <div style={cardStyles.date}>
-                        {new Date(review.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         {review.updated_at !== review.created_at && ' (edited)'}
                     </div>
                 </div>
@@ -163,7 +165,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
 
             {showComments && (
                 <div style={cardStyles.commentsBox}>
-                    {loadingComments && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Loading…</p>}
+                    {loadingComments && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('review_loading_comments')}</p>}
                     {comments.map(c => (
                         <div key={c.comment_id} style={cardStyles.commentRow}>
                             <span style={cardStyles.commentUser}>{c.username}</span>
@@ -178,10 +180,10 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
                             <input
                                 value={commentInput}
                                 onChange={e => setCommentInput(e.target.value)}
-                                placeholder="Add a comment…"
+                                placeholder={t('review_add_comment')}
                                 style={cardStyles.commentInput}
                             />
-                            <button type="submit" style={cardStyles.commentSubmit}>Send</button>
+                            <button type="submit" style={cardStyles.commentSubmit}>{t('review_send')}</button>
                         </form>
                     )}
                 </div>
@@ -193,6 +195,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
 // --- Main ReviewsSection ---
 export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
     const { user } = useAuth();
+    const { t } = useLanguage();
     const [reviews, setReviews]   = useState([]);
     const [myReview, setMyReview] = useState(null);
 
@@ -266,12 +269,12 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
     return (
         <section style={sectionStyles.section}>
             <div style={sectionStyles.header}>
-                <h2 style={sectionStyles.title}>Community Reviews</h2>
+                <h2 style={sectionStyles.title}>{t('review_title')}</h2>
                 {avgRating && (
                     <div style={sectionStyles.avg}>
                         <StarRating value={Math.round(parseFloat(avgRating) * 2) / 2} readOnly size={18} />
                         <span style={sectionStyles.avgText}>{avgRating} / 5</span>
-                        <span style={sectionStyles.dim}>({ratedReviews.length} ratings)</span>
+                        <span style={sectionStyles.dim}>({ratedReviews.length} {t('review_ratings')})</span>
                     </div>
                 )}
             </div>
@@ -281,12 +284,12 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                 <div style={sectionStyles.writeBox}>
                     {!showForm && !myReview && (
                         <button onClick={() => setShowForm(true)} style={sectionStyles.writeBtn}>
-                            + Write a Review
+                            {t('review_write')}
                         </button>
                     )}
                     {!showForm && myReview && (
                         <button onClick={() => setShowForm(true)} style={sectionStyles.writeBtn}>
-                            ✏ Edit My Review
+                            {t('review_edit')}
                         </button>
                     )}
                     {showForm && (
@@ -295,16 +298,16 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                             <textarea
                                 value={formComment}
                                 onChange={e => setFormComment(e.target.value)}
-                                placeholder="Share your thoughts… (optional)"
+                                placeholder={t('review_placeholder')}
                                 rows={4}
                                 style={sectionStyles.textarea}
                             />
                             <div style={{ display: 'flex', gap: '10px' }}>
                                 <button type="submit" disabled={submitting || (!formRating && !formComment)} style={sectionStyles.submitBtn}>
-                                    {submitting ? 'Saving…' : myReview ? 'Update Review' : 'Post Review'}
+                                    {submitting ? t('review_saving') : myReview ? t('review_update') : t('review_post')}
                                 </button>
                                 <button type="button" onClick={() => setShowForm(false)} style={sectionStyles.cancelBtn}>
-                                    Cancel
+                                    {t('review_cancel')}
                                 </button>
                             </div>
                         </form>
@@ -313,13 +316,13 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
             )}
             {!user && (
                 <div style={sectionStyles.loginPrompt}>
-                    Log in to write a review.
+                    {t('review_login')}
                 </div>
             )}
 
             {/* Review list */}
             {user && reviews.length === 0 && (
-                <p style={sectionStyles.dim}>No reviews yet. Be the first!</p>
+                <p style={sectionStyles.dim}>{t('review_empty')}</p>
             )}
             {reviews.map(review => (
                 <ReviewCard

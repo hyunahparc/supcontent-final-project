@@ -1,37 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const BREAKPOINT = 768;
 const YEAR = new Date().getFullYear();
 
-const NAV_SECTIONS = [
-    {
-        title: 'Discover',
-        links: [
-            { label: 'Explore',    to: '/search' },
-            { label: 'Feed',       to: '/feed' },
-            { label: 'Lists',      to: '/lists' },
-        ],
-    },
-    {
-        title: 'Account',
-        links: [
-            { label: 'Sign in',    to: '/login' },
-            { label: 'Sign up',    to: '/register' },
-            { label: 'Settings',   to: '/settings/profile' },
-        ],
-    },
-];
-
-const LEGAL_LINKS = [
-    { label: 'Privacy Policy',   to: '/privacy' },
-    { label: 'Terms of Service', to: '/terms' },
-    { label: 'Legal Notice',     to: '/legal' },
-];
-
 export default function Footer() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINT);
+    const { t } = useLanguage();
+
+    const NAV_SECTIONS = [
+        {
+            title: t('footer_discover'),
+            links: [
+                { label: t('nav_explore'),    to: '/search' },
+                { label: t('nav_feed'),        to: '/feed' },
+                { label: t('nav_lists'),       to: '/lists' },
+            ],
+        },
+        {
+            title: t('footer_account'),
+            links: [
+                { label: t('nav_sign_in'),     to: '/login' },
+                { label: t('nav_sign_up'),     to: '/register' },
+                { label: t('footer_settings'), to: '/settings/profile' },
+            ],
+        },
+    ];
+
+    const LEGAL_LINKS = [
+        { label: t('footer_privacy'), to: '/privacy' },
+        { label: t('footer_terms'),   to: '/terms' },
+        { label: t('footer_legal'),   to: '/legal' },
+    ];
 
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth < BREAKPOINT);
@@ -56,9 +58,7 @@ export default function Footer() {
                 {/* Brand */}
                 <div style={styles.brand}>
                     <Link to="/" style={styles.logo}>SUPCONTENT</Link>
-                    <p style={styles.tagline}>
-                        Track, discover, and share your favourite films and series.
-                    </p>
+                    <p style={styles.tagline}>{t('footer_desc')}</p>
                 </div>
 
                 {/* Nav columns */}
@@ -100,7 +100,7 @@ export default function Footer() {
                 }}
             >
                 <span style={styles.copyright}>
-                    © {YEAR} Supcontent. All rights reserved.
+                    © {YEAR} Supcontent.
                 </span>
                 <div style={styles.legalLinks}>
                     {LEGAL_LINKS.map((link, i) => (

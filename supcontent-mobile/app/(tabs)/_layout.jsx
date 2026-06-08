@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { getUnreadMessageCount } from '../../src/api/messages';
 import { getUnreadCount } from '../../src/api/notifications';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const tabIcons = {
@@ -17,6 +18,7 @@ const tabIcons = {
 
 export default function TabsLayout() {
   const { token } = useAuth();
+  const { t } = useLanguage();
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false);
 
   const loadUnreadCount = useCallback(async () => {
@@ -70,35 +72,35 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: t('tab_home'),
           tabBarIcon: ({ color, size }) => <Ionicons name={tabIcons.home} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="search"
         options={{
-          title: 'Search',
+          title: t('tab_search'),
           tabBarIcon: ({ color, size }) => <Ionicons name={tabIcons.search} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="feed"
         options={{
-          title: 'Feed',
+          title: t('tab_feed'),
           tabBarIcon: ({ color, size }) => <Ionicons name={tabIcons.feed} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="library"
         options={{
-          title: 'Library',
+          title: t('tab_library'),
           tabBarIcon: ({ color, size }) => <Ionicons name={tabIcons.library} size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: t('tab_profile'),
           tabBarIcon: ({ color, size }) => (
             <View style={styles.iconWrap}>
               <Ionicons name={tabIcons.profile} size={size} color={color} />

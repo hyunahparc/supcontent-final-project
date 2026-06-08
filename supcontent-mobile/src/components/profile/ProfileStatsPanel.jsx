@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useLanguage } from '../../context/LanguageContext';
 import { colors } from '../../theme/colors';
 
 function formatRuntime(minutes) {
@@ -11,33 +12,34 @@ function formatRuntime(minutes) {
 }
 
 export default function ProfileStatsPanel({ stats }) {
+  const { t } = useLanguage();
   if (!stats) return null;
 
   const runtime = formatRuntime(stats.total_runtime_minutes);
 
   return (
     <View style={styles.panel}>
-      <Text style={styles.heading}>Statistics</Text>
+      <Text style={styles.heading}>{t('stats_title')}</Text>
 
       <View style={styles.secondaryRow}>
         <View style={styles.secondaryCard}>
-          <Text style={styles.secondaryTitle}>REVIEWS</Text>
+          <Text style={styles.secondaryTitle}>{t('stats_reviews').toUpperCase()}</Text>
           <Text style={styles.statValue}>{stats.reviews_count ?? 0}</Text>
         </View>
 
         {runtime ? (
           <View style={styles.secondaryCard}>
-            <Text style={styles.secondaryTitle}>MOVIE TIME</Text>
+            <Text style={styles.secondaryTitle}>{t('stats_watch_time').toUpperCase()}</Text>
             <Text style={styles.statValue}>{runtime}</Text>
           </View>
         ) : null}
 
         <View style={styles.secondaryCard}>
-          <Text style={styles.secondaryTitle}>AVG RATING</Text>
+          <Text style={styles.secondaryTitle}>{t('stats_avg_rating').toUpperCase()}</Text>
           {stats.avg_rating != null ? (
             <Text style={styles.statValue}>{Number(stats.avg_rating).toFixed(1)} / 5</Text>
           ) : (
-            <Text style={styles.emptyText}>No ratings yet</Text>
+            <Text style={styles.emptyText}>{t('stats_no_ratings')}</Text>
           )}
         </View>
       </View>

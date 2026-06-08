@@ -253,6 +253,30 @@ const uploadAvatar = async (req, res) => {
     }
 };
 
+// ── PUT /api/users/me/language  (authentifié) ────────────────────────────────
+const updateLanguage = async (req, res) => {
+    const user_id = req.user.user_id;
+    const { language } = req.body;
+
+    const SUPPORTED = ['fr', 'en'];
+    if (!SUPPORTED.includes(language)) {
+        return res.status(400).json({ message: 'Unsupported language. Supported: fr, en.' });
+    }
+
+    try {
+        const { rows } = await db.query(
+            `UPDATE users SET preferred_language = $1
+             WHERE user_id = $2
+             RETURNING user_id, preferred_language`,
+            [language, user_id]
+        );
+        return res.json(rows[0]);
+    } catch (err) {
+        console.error('[updateLanguage]', err.message);
+        return res.status(500).json({ message: 'Server error.', error: err.message });
+    }
+};
+
 // ── GET /api/users/me/export?format=csv|json  (authentifié — RGPD) ───────────
 const exportData = async (req, res) => {
     const user_id = req.user.user_id;
@@ -315,6 +339,7 @@ module.exports = {
     getProfile,
     getProfileStats,
     updateProfile,
+    updateLanguage,
     uploadAvatar,
     exportData,
     deleteAccount,

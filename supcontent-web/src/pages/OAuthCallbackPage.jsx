@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 export default function OAuthCallbackPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const { t } = useLanguage();
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -23,5 +25,5 @@ export default function OAuthCallbackPage() {
         navigate('/', { replace: true });
     }, [navigate, login]);
 
-    return <p style={{ textAlign: 'center', marginTop: '40px' }}>Connexion en cours...</p>;
+    return <p style={{ textAlign: 'center', marginTop: '40px' }}>{t('oauth_loading')}</p>;
 }

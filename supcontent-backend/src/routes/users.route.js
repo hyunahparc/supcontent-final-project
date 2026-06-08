@@ -11,6 +11,7 @@ const {
     getProfile,
     getProfileStats,
     updateProfile,
+    updateLanguage,
     uploadAvatar,
     exportData,
     deleteAccount,
@@ -27,10 +28,11 @@ const router = express.Router();
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── Routes authentifiées (/me) ────────────────────────────────────────────
-router.put('/me/profile',  auth, updateProfile);  // Update username/bio/link
-router.post('/me/avatar',  auth, uploadAvatar);   // Upload avatar
-router.get('/me/export',   auth, exportData);     // Export CSV/JSON (RGPD)
-router.delete('/me',       auth, deleteAccount);  // Delete account
+router.put('/me/profile',   auth, updateProfile);  // Update username/bio/link
+router.put('/me/language',  auth, updateLanguage); // Update preferred language
+router.post('/me/avatar',   auth, uploadAvatar);   // Upload avatar
+router.get('/me/export',    auth, exportData);     // Export CSV/JSON (RGPD)
+router.delete('/me',        auth, deleteAccount);  // Delete account
 
 // ── Routes publiques (/:id) ───────────────────────────────────────────────
 router.get('/:id/profile',    optionalAuth, getProfile); // Public profile
