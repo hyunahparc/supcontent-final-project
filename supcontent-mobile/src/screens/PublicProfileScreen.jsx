@@ -18,7 +18,8 @@ import { followUser, getFollowers, getFollowing, unfollowUser } from '../api/fol
 import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getUnreadMessageCount } from '../api/messages';
 import { getUnreadCount } from '../api/notifications';
-import { getUserProfile } from '../api/users';
+import { getUserProfile, getUserStats } from '../api/users';
+import ProfileStatsPanel from '../components/profile/ProfileStatsPanel';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme/colors';
 
@@ -43,6 +44,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
   const [profile, setProfile] = useState(null);
   const [collection, setCollection] = useState([]);
   const [lists, setLists] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [followLoading, setFollowLoading] = useState(false);
@@ -58,6 +60,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
       setProfile(null);
       setCollection([]);
       setLists([]);
+      setStats(null);
       setLoading(false);
       return;
     }
@@ -66,15 +69,17 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
     setError('');
 
     try {
-      const [profileData, libraryData, listsData] = await Promise.all([
+      const [profileData, libraryData, listsData, statsData] = await Promise.all([
         getUserProfile(userId, token),
         getLibrary(userId, token),
         isOwnProfile && token ? getMyLists(token) : getUserPublicLists(userId),
+        getUserStats(userId, token).catch(() => null),
       ]);
 
       setProfile(profileData);
       setCollection((libraryData ?? []).slice(0, 8));
       setLists(listsData ?? []);
+      setStats(statsData ?? null);
     } catch (err) {
       setError(err.message || 'Unable to load this profile.');
     } finally {
@@ -356,6 +361,8 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
           </View>
 
         </View>
+
+        <ProfileStatsPanel stats={stats} />
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>

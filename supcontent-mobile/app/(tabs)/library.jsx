@@ -16,8 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getLibrary } from '../../src/api/collections';
 import { createList, deleteList, getMyLists, updateList } from '../../src/api/lists';
-import { getUserStats } from '../../src/api/users';
-import StatsPanel from '../../src/components/StatsPanel';
+import CollectionStatusBar from '../../src/components/library/CollectionStatusBar';
 import { useAuth } from '../../src/context/AuthContext';
 import { colors } from '../../src/theme/colors';
 
@@ -47,7 +46,6 @@ export default function LibraryScreen() {
   const [activeStatus, setActiveStatus] = useState(null);
   const [collection, setCollection] = useState([]);
   const [lists, setLists] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [newName, setNewName] = useState('');
@@ -85,13 +83,11 @@ export default function LibraryScreen() {
       Promise.all([
         getLibrary(user.user_id, token),
         getMyLists(token),
-        getUserStats(user.user_id, token).catch(() => null),
       ])
-        .then(([libraryData, listsData, statsData]) => {
+        .then(([libraryData, listsData]) => {
           if (cancelled) return;
           setCollection(libraryData ?? []);
           setLists(listsData ?? []);
-          setStats(statsData ?? null);
           hasLoadedRef.current = true;
         })
         .catch((err) => {
@@ -208,9 +204,9 @@ export default function LibraryScreen() {
       ) : activeView === 'collection' ? (
         <CollectionView
           activeStatus={activeStatus}
+          allItems={collection}
           items={filteredCollection}
           totalCount={collection.length}
-          stats={stats}
           onStatusChange={setActiveStatus}
         />
       ) : (
@@ -239,15 +235,19 @@ export default function LibraryScreen() {
   );
 }
 
-function CollectionView({ activeStatus, items, totalCount, stats, onStatusChange }) {
+function CollectionView({ activeStatus, allItems, items, totalCount, onStatusChange }) {
+  const byStatus = useMemo(() => allItems.reduce((counts, item) => {
+    counts[item.status] = (counts[item.status] ?? 0) + 1;
+    return counts;
+  }, {}), [allItems]);
+
   return (
     <View>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Collection</Text>
         <Text style={styles.sectionCount}>{totalCount} items</Text>
       </View>
 
-      <StatsPanel stats={stats} />
+      <CollectionStatusBar byStatus={byStatus} total={totalCount} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusTabs}>
         <StatusTab label="All" active={activeStatus === null} onPress={() => onStatusChange(null)} />
@@ -315,7 +315,6 @@ function ListsView({
   return (
     <View>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Lists</Text>
         <Text style={styles.sectionCount}>{lists.length} lists</Text>
       </View>
 
@@ -543,12 +542,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   sectionHeader: {
+    width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 18,
   },
   sectionTitle: {
+    flex: 1,
     color: colors.text,
     fontSize: 24,
     fontWeight: '900',
@@ -557,6 +559,8 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
     fontWeight: '700',
+    marginLeft: 'auto',
+    textAlign: 'right',
   },
   statusTabs: {
     gap: 8,
