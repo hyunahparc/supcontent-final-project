@@ -18,7 +18,8 @@ import { followUser, getFollowers, getFollowing, unfollowUser } from '../api/fol
 import { getMyLists, getUserPublicLists } from '../api/lists';
 import { getUnreadMessageCount } from '../api/messages';
 import { getUnreadCount } from '../api/notifications';
-import { getUserProfile } from '../api/users';
+import { getUserProfile, getUserStats } from '../api/users';
+import ProfileStatsPanel from '../components/profile/ProfileStatsPanel';
 import { useAuth } from '../context/AuthContext';
 import { colors } from '../theme/colors';
 
@@ -43,6 +44,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
   const [profile, setProfile] = useState(null);
   const [collection, setCollection] = useState([]);
   const [lists, setLists] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [followLoading, setFollowLoading] = useState(false);
@@ -58,6 +60,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
       setProfile(null);
       setCollection([]);
       setLists([]);
+      setStats(null);
       setLoading(false);
       return;
     }
@@ -66,15 +69,17 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
     setError('');
 
     try {
-      const [profileData, libraryData, listsData] = await Promise.all([
+      const [profileData, libraryData, listsData, statsData] = await Promise.all([
         getUserProfile(userId, token),
         getLibrary(userId, token),
         isOwnProfile && token ? getMyLists(token) : getUserPublicLists(userId),
+        getUserStats(userId, token).catch(() => null),
       ]);
 
       setProfile(profileData);
       setCollection((libraryData ?? []).slice(0, 8));
       setLists(listsData ?? []);
+      setStats(statsData ?? null);
     } catch (err) {
       setError(err.message || 'Unable to load this profile.');
     } finally {
@@ -357,6 +362,8 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
 
         </View>
 
+        <ProfileStatsPanel stats={stats} />
+
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{isOwnProfile ? 'My collection' : `${profile.username}'s collection`}</Text>
@@ -532,9 +539,9 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     alignItems: 'center',
-    gap: 18,
-    padding: 28,
-    marginBottom: 34,
+    gap: 12,
+    padding: 20,
+    marginBottom: 26,
     borderRadius: 16,
     backgroundColor: colors.surface,
   },
@@ -542,24 +549,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   avatar: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+    width: 104,
+    height: 104,
+    borderRadius: 52,
     backgroundColor: colors.elevated,
   },
   avatarFallback: {
-    width: 112,
-    height: 112,
+    width: 104,
+    height: 104,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 56,
+    borderRadius: 52,
     backgroundColor: colors.elevated,
     borderWidth: 3,
     borderColor: colors.border,
   },
   avatarInitial: {
     color: colors.text,
-    fontSize: 44,
+    fontSize: 40,
     fontWeight: '800',
   },
   profileInfo: {
@@ -576,14 +583,14 @@ const styles = StyleSheet.create({
   memberSince: {
     color: colors.textSecondary,
     fontSize: 13,
-    marginBottom: 14,
+    marginBottom: 10,
     textAlign: 'center',
   },
   bio: {
     color: colors.textSecondary,
     fontSize: 14,
     lineHeight: 21,
-    marginBottom: 14,
+    marginBottom: 10,
     textAlign: 'center',
   },
   profileLink: {
@@ -596,7 +603,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 20,
-    marginBottom: 22,
+    marginBottom: 16,
   },
   socialItem: {
     alignItems: 'center',
