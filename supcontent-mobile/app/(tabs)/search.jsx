@@ -192,8 +192,8 @@ export default function SearchScreen() {
     }
 
     const title = useMemo(() => {
-        if (!hasSearched) return isMediaSearch ? t('mob_search_discover') : t('mob_search_min_chars');
         if (loading) return t('mob_search_searching');
+        if (!hasSearched) return isMediaSearch ? t('mob_search_discover') : t('mob_search_min_chars');
         if (error) return t('mob_search_error');
         if (!results.length) return t('mob_search_no_results');
         return `${total} result${total === 1 ? '' : 's'}`;
