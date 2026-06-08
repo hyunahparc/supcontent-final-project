@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/LanguageContext';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
@@ -31,6 +32,8 @@ function SearchOffIcon() {
 }
 
 export default function NotFoundPage() {
+    const { t } = useLanguage();
+
     return (
         <main style={s.page}>
             <div style={s.grain} aria-hidden="true" />
@@ -39,20 +42,18 @@ export default function NotFoundPage() {
             <div style={s.content}>
                 <div style={s.badge}>
                     <span style={s.badgeDot} />
-                    Error 404
+                    {t('notfound_error')}
                 </div>
 
                 <SearchOffIcon />
 
                 <p style={s.code}>404</p>
-                <h1 style={s.title}>Page not found</h1>
-                <p style={s.message}>
-                    The page you're looking for doesn't exist or may have been moved.
-                </p>
+                <h1 style={s.title}>{t('notfound_title')}</h1>
+                <p style={s.message}>{t('notfound_body')}</p>
 
                 <div style={s.actions}>
-                    <Link to="/"       style={s.btnPrimary}>Back to home</Link>
-                    <Link to="/search" style={s.btnGhost}>Explore titles</Link>
+                    <Link to="/"       style={s.btnPrimary}>{t('notfound_home')}</Link>
+                    <Link to="/search" style={s.btnGhost}>{t('notfound_explore')}</Link>
                 </div>
             </div>
         </main>

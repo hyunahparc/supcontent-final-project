@@ -1,14 +1,13 @@
-// StatsPanel — collection statistics for a user profile
-// Props: stats (object from GET /api/users/:id/stats), compact (bool)
+import { useLanguage } from '../context/LanguageContext';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
-const STATUS_META = [
-    { key: 'Completed', label: 'Completed', color: '#1ed760' },
-    { key: 'Watching',  label: 'Watching',  color: '#539df5' },
-    { key: 'To Watch',  label: 'To Watch',  color: '#ffa42b' },
-    { key: 'Dropped',   label: 'Dropped',   color: '#f3727f' },
-];
+const STATUS_COLORS = {
+    Completed: '#1ed760',
+    Watching:  '#539df5',
+    'To Watch': '#ffa42b',
+    Dropped:   '#f3727f',
+};
 
 function formatRuntime(minutes) {
     if (!minutes || minutes === 0) return null;
@@ -19,8 +18,8 @@ function formatRuntime(minutes) {
     return `${h}h ${m}m`;
 }
 
-function StarRating({ value }) {
-    if (value == null) return <span style={styles.ratingEmpty}>No ratings yet</span>;
+function StarRating({ value, t }) {
+    if (value == null) return <span style={styles.ratingEmpty}>{t('stats_no_ratings')}</span>;
     const stars = [];
     for (let i = 1; i <= 5; i++) {
         const fill = value >= i ? 'full' : value >= i - 0.5 ? 'half' : 'empty';
@@ -49,12 +48,18 @@ function StarRating({ value }) {
     );
 }
 
-function StatusBar({ byStatus, total }) {
+function StatusBar({ byStatus, total, t }) {
     if (!total) return null;
+    const STATUS_KEYS = [
+        { key: 'Completed', tKey: 'stats_completed' },
+        { key: 'Watching',  tKey: 'stats_watching'  },
+        { key: 'To Watch',  tKey: 'stats_to_watch'  },
+        { key: 'Dropped',   tKey: 'stats_dropped'   },
+    ];
     return (
         <div style={styles.barWrap}>
             <div style={styles.bar}>
-                {STATUS_META.map(({ key, color }) => {
+                {STATUS_KEYS.map(({ key }) => {
                     const count = byStatus?.[key] ?? 0;
                     const pct = total ? (count / total) * 100 : 0;
                     if (pct === 0) return null;
@@ -62,19 +67,19 @@ function StatusBar({ byStatus, total }) {
                         <div
                             key={key}
                             title={`${key}: ${count}`}
-                            style={{ ...styles.barSegment, width: `${pct}%`, backgroundColor: color }}
+                            style={{ ...styles.barSegment, width: `${pct}%`, backgroundColor: STATUS_COLORS[key] }}
                         />
                     );
                 })}
             </div>
             <div style={styles.legend}>
-                {STATUS_META.map(({ key, label, color }) => {
+                {STATUS_KEYS.map(({ key, tKey }) => {
                     const count = byStatus?.[key] ?? 0;
                     if (count === 0) return null;
                     return (
                         <div key={key} style={styles.legendItem}>
-                            <span style={{ ...styles.legendDot, backgroundColor: color }} />
-                            <span style={styles.legendLabel}>{label}</span>
+                            <span style={{ ...styles.legendDot, backgroundColor: STATUS_COLORS[key] }} />
+                            <span style={styles.legendLabel}>{t(tKey)}</span>
                             <span style={styles.legendCount}>{count}</span>
                         </div>
                     );
@@ -85,35 +90,36 @@ function StatusBar({ byStatus, total }) {
 }
 
 export default function StatsPanel({ stats }) {
+    const { t } = useLanguage();
     if (!stats) return null;
 
     const runtime = formatRuntime(stats.total_runtime_minutes);
 
     const highlights = [
-        { label: 'Total',     value: stats.total ?? 0,         sub: 'in collection' },
-        { label: 'Completed', value: stats.by_status?.Completed ?? 0, sub: 'finished' },
-        { label: 'Reviews',   value: stats.reviews_count ?? 0, sub: 'written' },
-        { label: 'Lists',     value: stats.lists_count ?? 0,   sub: 'created' },
+        { labelKey: 'stats_total',    value: stats.total ?? 0,                  subKey: 'stats_in_collection' },
+        { labelKey: 'stats_done',     value: stats.by_status?.Completed ?? 0,   subKey: 'stats_finished'      },
+        { labelKey: 'stats_reviews',  value: stats.reviews_count ?? 0,           subKey: 'stats_written'       },
+        { labelKey: 'stats_lists',    value: stats.lists_count ?? 0,             subKey: 'stats_created'       },
     ];
 
     return (
         <section style={styles.panel}>
-            <h2 style={styles.heading}>Statistics</h2>
+            <h2 style={styles.heading}>{t('stats_title')}</h2>
 
             {/* Highlight cards */}
             <div style={styles.cards}>
-                {highlights.map(({ label, value, sub }) => (
-                    <div key={label} style={styles.card}>
+                {highlights.map(({ labelKey, value, subKey }) => (
+                    <div key={labelKey} style={styles.card}>
                         <span style={styles.cardValue}>{value}</span>
-                        <span style={styles.cardLabel}>{label}</span>
-                        <span style={styles.cardSub}>{sub}</span>
+                        <span style={styles.cardLabel}>{t(labelKey)}</span>
+                        <span style={styles.cardSub}>{t(subKey)}</span>
                     </div>
                 ))}
             </div>
 
             {/* Status distribution bar */}
             {stats.total > 0 && (
-                <StatusBar byStatus={stats.by_status} total={stats.total} />
+                <StatusBar byStatus={stats.by_status} total={stats.total} t={t} />
             )}
 
             {/* Secondary row */}
@@ -121,16 +127,16 @@ export default function StatsPanel({ stats }) {
                 {/* Movies vs Series */}
                 {stats.total > 0 && (
                     <div style={styles.secondaryCard}>
-                        <span style={styles.secondaryTitle}>Content type</span>
+                        <span style={styles.secondaryTitle}>{t('stats_content_type')}</span>
                         <div style={styles.typeRow}>
                             <div style={styles.typeItem}>
                                 <span style={styles.typeValue}>{stats.movies_count ?? 0}</span>
-                                <span style={styles.typeLabel}>Movies</span>
+                                <span style={styles.typeLabel}>{t('stats_movies')}</span>
                             </div>
                             <div style={styles.typeDivider} />
                             <div style={styles.typeItem}>
                                 <span style={styles.typeValue}>{stats.series_count ?? 0}</span>
-                                <span style={styles.typeLabel}>Series</span>
+                                <span style={styles.typeLabel}>{t('stats_series')}</span>
                             </div>
                         </div>
                     </div>
@@ -139,16 +145,16 @@ export default function StatsPanel({ stats }) {
                 {/* Watch time */}
                 {runtime && (
                     <div style={styles.secondaryCard}>
-                        <span style={styles.secondaryTitle}>Watch time</span>
+                        <span style={styles.secondaryTitle}>{t('stats_watch_time')}</span>
                         <span style={styles.runtimeValue}>{runtime}</span>
-                        <span style={styles.runtimeSub}>from completed movies</span>
+                        <span style={styles.runtimeSub}>{t('stats_watch_time_sub')}</span>
                     </div>
                 )}
 
                 {/* Average rating */}
                 <div style={styles.secondaryCard}>
-                    <span style={styles.secondaryTitle}>Avg. rating</span>
-                    <StarRating value={stats.avg_rating} />
+                    <span style={styles.secondaryTitle}>{t('stats_avg_rating')}</span>
+                    <StarRating value={stats.avg_rating} t={t} />
                 </div>
             </div>
         </section>

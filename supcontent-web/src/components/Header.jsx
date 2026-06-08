@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '../api/notifications';
 import { getUnreadMessageCount } from '../api/messages';
 import SearchBar from './SearchBar';
@@ -61,22 +62,22 @@ function MessageIcon() {
     );
 }
 
-function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll }) {
+function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll, t }) {
     return (
         <div style={styles.notifDropdown}>
             <div style={styles.notifHeader}>
-                <span style={styles.notifTitle}>Notifications</span>
+                <span style={styles.notifTitle}>{t('nav_notifications')}</span>
                 {notifications.some(n => !n.is_read) && (
                     <button style={styles.markAllBtn} onClick={onMarkAll}>
-                        Mark all as read
+                        {t('nav_mark_all_read')}
                     </button>
                 )}
             </div>
 
             {loading ? (
-                <p style={styles.notifEmpty}>Loading…</p>
+                <p style={styles.notifEmpty}>{t('nav_loading')}</p>
             ) : notifications.length === 0 ? (
-                <p style={styles.notifEmpty}>No notifications yet</p>
+                <p style={styles.notifEmpty}>{t('nav_no_notifications')}</p>
             ) : (
                 <ul style={styles.notifList}>
                     {notifications.slice(0, 6).map(n => (
@@ -104,7 +105,7 @@ function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll }) {
             )}
 
             <Link to="/notifications" style={styles.notifSeeAll}>
-                See all notifications
+                {t('nav_see_all')}
             </Link>
         </div>
     );
@@ -131,6 +132,7 @@ function MobileMenu({
     unreadMessageCount = 0,
     onMessagesOpen,
     onNotificationsOpen,
+    t,
 }) {
     return (
         <div style={styles.mobileDropdown}>
@@ -143,28 +145,28 @@ function MobileMenu({
                         className={'header-dropdown-link' + (location.pathname === '/search' ? ' active' : '')}
                         style={styles.mobileLink}
                     >
-                        Explore
+                        {t('nav_explore')}
                     </Link>
                     <Link
                         to="/feed"
                         className={'header-dropdown-link' + (location.pathname === '/feed' ? ' active' : '')}
                         style={styles.mobileLink}
                     >
-                        Feed
+                        {t('nav_feed')}
                     </Link>
                     <Link
                         to={`/users/${user.user_id}/collection`}
                         className="header-dropdown-link"
                         style={styles.mobileLink}
                     >
-                        Collection
+                        {t('nav_collection')}
                     </Link>
                     <Link
                         to="/lists"
                         className={'header-dropdown-link' + (location.pathname === '/lists' ? ' active' : '')}
                         style={styles.mobileLink}
                     >
-                        Lists
+                        {t('nav_lists')}
                     </Link>
                     <Link
                         to="/messages"
@@ -172,7 +174,7 @@ function MobileMenu({
                         style={styles.mobileLink}
                         onClick={onMessagesOpen}
                     >
-                        <span>Messages</span>
+                        <span>{t('nav_messages')}</span>
                         {unreadMessageCount > 0 && <span style={styles.menuBadge}>{unreadMessageCount}</span>}
                     </Link>
                     <Link
@@ -181,7 +183,7 @@ function MobileMenu({
                         style={styles.mobileLink}
                         onClick={onNotificationsOpen}
                     >
-                        <span>Notifications</span>
+                        <span>{t('nav_notifications')}</span>
                         {unreadCount > 0 && <span style={styles.menuBadge}>{unreadCount}</span>}
                     </Link>
                 </>
@@ -193,10 +195,10 @@ function MobileMenu({
                         className={'header-dropdown-link' + (location.pathname === '/search' ? ' active' : '')}
                         style={styles.mobileLink}
                     >
-                        Explore
+                        {t('nav_explore')}
                     </Link>
-                    <Link to="/login"    style={styles.mobileLink}>Sign in</Link>
-                    <Link to="/register" style={styles.mobileLink}>Sign up</Link>
+                    <Link to="/login"    style={styles.mobileLink}>{t('nav_sign_in')}</Link>
+                    <Link to="/register" style={styles.mobileLink}>{t('nav_sign_up')}</Link>
                 </>
             )}
         </div>
@@ -206,6 +208,7 @@ function MobileMenu({
 export default function Header() {
     const { user }         = useAuth();
     const { isDark, toggleTheme } = useTheme();
+    const { t }            = useLanguage();
     const navigate  = useNavigate();
     const location  = useLocation();
 
@@ -306,22 +309,22 @@ export default function Header() {
                     {!isMobile && (
                         <nav style={styles.mainNav}>
                             <Link to="/search" className={navLinkClass('/search')} style={styles.navLink}>
-                                Explore
+                                {t('nav_explore')}
                             </Link>
                             {user && (
                                 <>
                                     <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
-                                        Feed
+                                        {t('nav_feed')}
                                     </Link>
                                     <Link
                                         to={`/users/${user.user_id}/collection`}
                                         className={navLinkClass(`/users/${user.user_id}/collection`)}
                                         style={styles.navLink}
                                     >
-                                        Collection
+                                        {t('nav_collection')}
                                     </Link>
                                     <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
-                                        Lists
+                                        {t('nav_lists')}
                                     </Link>
                                 </>
                             )}
@@ -362,6 +365,7 @@ export default function Header() {
                                                 loading={notifLoading}
                                                 onNotifClick={handleNotifClick}
                                                 onMarkAll={handleMarkAll}
+                                                t={t}
                                             />
                                         )}
                                     </div>
@@ -381,6 +385,7 @@ export default function Header() {
                                                 unreadMessageCount={unreadMessageCount}
                                                 onMessagesOpen={() => setUnreadMessageCount(0)}
                                                 onNotificationsOpen={() => setUnreadCount(0)}
+                                                t={t}
                                             />
                                         )}
                                     </div>
@@ -405,12 +410,12 @@ export default function Header() {
                                     <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
                                         <HamburgerIcon />
                                     </button>
-                                    {menuOpen && <MobileMenu user={null} location={location} />}
+                                    {menuOpen && <MobileMenu user={null} location={location} t={t} />}
                                 </div>
                             ) : (
                                 <>
-                                    <Link to="/login"    style={styles.signIn}>Sign in</Link>
-                                    <Link to="/register" style={styles.signUp}>Sign up</Link>
+                                    <Link to="/login"    style={styles.signIn}>{t('nav_sign_in')}</Link>
+                                    <Link to="/register" style={styles.signUp}>{t('nav_sign_up')}</Link>
                                 </>
                             )}
                         </>

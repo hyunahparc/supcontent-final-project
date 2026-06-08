@@ -16,30 +16,10 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { advancedSearch, getGenres, searchLists, searchUsers } from '../../src/api/search';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
-
-const CATEGORIES = [
-    { id: 'movie', label: 'Movies' },
-    { id: 'tv', label: 'Series' },
-    { id: 'users', label: 'Users' },
-    { id: 'lists', label: 'Lists' },
-];
-
-const SORTS = [
-    { id: 'popularity.desc', label: 'Popular' },
-    { id: 'vote_average.desc', label: 'Top Rated' },
-    { id: 'primary_release_date.desc', label: 'Newest' },
-    { id: 'primary_release_date.asc', label: 'Oldest' },
-];
-
-const RATINGS = [
-    { id: '', label: 'Any rating' },
-    { id: '6', label: '6+' },
-    { id: '7', label: '7+' },
-    { id: '8', label: '8+' },
-];
 
 function posterUrl(path) {
     if (!path) return null;
@@ -53,6 +33,7 @@ function mediaRoute(item) {
 
 export default function SearchScreen() {
     const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
     const [category, setCategory] = useState('movie');
     const [query, setQuery] = useState('');
     const [year, setYear] = useState('');
@@ -74,6 +55,27 @@ export default function SearchScreen() {
     const trimmedQuery = query.trim();
     const canGoPrevious = isMediaSearch && hasSearched && !loading && page > 1;
     const canGoNext = isMediaSearch && hasSearched && !loading && page < totalPages;
+
+    const CATEGORIES = [
+        { id: 'movie', label: t('mob_search_movies') },
+        { id: 'tv', label: t('mob_search_series') },
+        { id: 'users', label: t('mob_search_users') },
+        { id: 'lists', label: t('mob_search_lists') },
+    ];
+
+    const SORTS = [
+        { id: 'popularity.desc', label: t('mob_search_sort_popular') },
+        { id: 'vote_average.desc', label: t('mob_search_sort_top') },
+        { id: 'primary_release_date.desc', label: t('mob_search_sort_newest') },
+        { id: 'primary_release_date.asc', label: t('mob_search_sort_oldest') },
+    ];
+
+    const RATINGS = [
+        { id: '', label: t('mob_search_rating_any') },
+        { id: '6', label: '6+' },
+        { id: '7', label: '7+' },
+        { id: '8', label: '8+' },
+    ];
 
     useEffect(() => {
         let cancelled = false;
@@ -106,7 +108,7 @@ export default function SearchScreen() {
             setPage(1);
             setTotalPages(0);
             setHasSearched(false);
-            setError('Enter a 4-digit year.');
+            setError(t('mob_search_year_hint'));
             return;
         }
 
@@ -116,7 +118,7 @@ export default function SearchScreen() {
             setPage(1);
             setTotalPages(0);
             setHasSearched(false);
-            setError('Type at least 2 characters to search.');
+            setError(t('mob_search_chars_hint'));
             return;
         }
 
@@ -151,7 +153,7 @@ export default function SearchScreen() {
             setTotal(0);
             setPage(1);
             setTotalPages(0);
-            setError(err.message || 'Search failed.');
+            setError(err.message || t('mob_search_failed'));
         } finally {
             setLoading(false);
         }
@@ -168,7 +170,7 @@ export default function SearchScreen() {
         const nextPage = parseInt(pageInput, 10);
 
         if (!nextPage || nextPage < 1 || nextPage > totalPages) {
-            setError(`Enter a page between 1 and ${totalPages}.`);
+            setError(`${t('mob_search_page_error')} ${totalPages}.`);
             return;
         }
 
@@ -190,12 +192,12 @@ export default function SearchScreen() {
     }
 
     const title = useMemo(() => {
-        if (!hasSearched) return isMediaSearch ? 'Search or discover by filters' : 'Type at least 2 characters';
-        if (loading) return 'Searching...';
-        if (error) return 'Something went wrong';
-        if (!results.length) return 'No results found';
+        if (!hasSearched) return isMediaSearch ? t('mob_search_discover') : t('mob_search_min_chars');
+        if (loading) return t('mob_search_searching');
+        if (error) return t('mob_search_error');
+        if (!results.length) return t('mob_search_no_results');
         return `${total} result${total === 1 ? '' : 's'}`;
-    }, [error, hasSearched, isMediaSearch, loading, results.length, total]);
+    }, [error, hasSearched, isMediaSearch, loading, results.length, t, total]);
 
     return (
         <KeyboardAvoidingView
@@ -213,7 +215,7 @@ export default function SearchScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.content}>
-                    <Text style={styles.title}>Search</Text>
+                    <Text style={styles.title}>{t('mob_search_title')}</Text>
 
                 <View style={styles.searchRow}>
                     <View style={styles.searchBox}>
@@ -221,7 +223,7 @@ export default function SearchScreen() {
                         <TextInput
                             value={query}
                             onChangeText={setQuery}
-                            placeholder="Search movies, series, users, lists..."
+                            placeholder={t('mob_search_placeholder')}
                             placeholderTextColor={colors.textMuted}
                             autoCapitalize="none"
                             autoCorrect={false}
@@ -266,7 +268,7 @@ export default function SearchScreen() {
                         <Pressable onPress={() => setShowFilters((current) => !current)} style={styles.filterHeader}>
                             <View style={styles.filterHeaderTitle}>
                                 <Ionicons name="options-outline" size={17} color={colors.text} />
-                                <Text style={styles.filterTitle}>Filters</Text>
+                                <Text style={styles.filterTitle}>{t('mob_search_filters')}</Text>
                             </View>
                             <Ionicons name={showFilters ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textSecondary} />
                         </Pressable>
@@ -277,7 +279,7 @@ export default function SearchScreen() {
                                     <TextInput
                                         value={year}
                                         onChangeText={(value) => setYear(value.replace(/[^0-9]/g, '').slice(0, 4))}
-                                        placeholder="Year"
+                                        placeholder={t('mob_search_year')}
                                         placeholderTextColor={colors.textMuted}
                                         keyboardType="number-pad"
                                         style={styles.yearInput}
@@ -292,7 +294,7 @@ export default function SearchScreen() {
                                         }}
                                         style={styles.clearButton}
                                     >
-                                        <Text style={styles.clearText}>Clear</Text>
+                                        <Text style={styles.clearText}>{t('mob_search_clear')}</Text>
                                     </Pressable>
                                 </View>
 
@@ -320,7 +322,7 @@ export default function SearchScreen() {
 
                                 {genres.length ? (
                                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                                        <FilterChip label="All genres" active={!genre} onPress={() => setGenre('')} />
+                                        <FilterChip label={t('mob_search_all_genres')} active={!genre} onPress={() => setGenre('')} />
                                         {genres.map((item) => (
                                             <FilterChip
                                                 key={item.id}
@@ -369,7 +371,7 @@ export default function SearchScreen() {
                                     ]}
                                 >
                                     <Ionicons name="chevron-back" size={18} color={colors.text} />
-                                    <Text style={styles.pageButtonText}>Previous</Text>
+                                    <Text style={styles.pageButtonText}>{t('mob_search_prev')}</Text>
                                 </Pressable>
 
                                 <Pressable
@@ -391,7 +393,7 @@ export default function SearchScreen() {
                                         !canGoNext && styles.pageButtonDisabled,
                                     ]}
                                 >
-                                    <Text style={styles.pageButtonText}>Next</Text>
+                                    <Text style={styles.pageButtonText}>{t('mob_search_next')}</Text>
                                     <Ionicons name="chevron-forward" size={18} color={colors.text} />
                                 </Pressable>
                             </View>
@@ -429,6 +431,7 @@ function FilterChip({ label, active, onPress }) {
 }
 
 function MediaResult({ item }) {
+    const { t } = useLanguage();
     const poster = posterUrl(item.poster_path);
     const year = item.release_date?.slice(0, 4) ?? 'N/A';
     const score = item.vote_average ? Number(item.vote_average).toFixed(1) : null;
@@ -444,7 +447,7 @@ function MediaResult({ item }) {
             )}
             <Text style={styles.mediaTitle} numberOfLines={2}>{item.title}</Text>
             <View style={styles.mediaMeta}>
-                <Text style={styles.metaText}>{item.media_type === 'Series' ? 'Series' : 'Movie'} - {year}</Text>
+                <Text style={styles.metaText}>{item.media_type === 'Series' ? t('mob_search_series') : t('mob_search_movies')} - {year}</Text>
                 {score ? <Text style={styles.metaText}>Rating {score}</Text> : null}
             </View>
         </Pressable>
@@ -452,6 +455,7 @@ function MediaResult({ item }) {
 }
 
 function UserResult({ item }) {
+    const { t } = useLanguage();
     const initial = item.username?.charAt(0)?.toUpperCase() ?? '?';
 
     return (
@@ -465,7 +469,7 @@ function UserResult({ item }) {
             )}
             <View style={styles.userInfo}>
                 <Text style={styles.userName}>{item.username}</Text>
-                <Text style={styles.userBio} numberOfLines={2}>{item.bio || 'Supcontent member'}</Text>
+                <Text style={styles.userBio} numberOfLines={2}>{item.bio || t('mob_search_member')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
         </Pressable>
@@ -473,6 +477,7 @@ function UserResult({ item }) {
 }
 
 function ListResult({ item }) {
+    const { t } = useLanguage();
     return (
         <Pressable onPress={() => router.push(`/lists/${item.list_id}`)} style={({ pressed }) => [styles.listCard, pressed && styles.pressed]}>
             <View style={styles.listIcon}>
@@ -481,7 +486,7 @@ function ListResult({ item }) {
             <View style={styles.listInfo}>
                 <Text style={styles.listName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.listMeta} numberOfLines={1}>
-                    {item.media_count ?? 0} items by {item.owner_username}
+                    {item.media_count ?? 0} items {t('mob_search_by')} {item.owner_username}
                 </Text>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />

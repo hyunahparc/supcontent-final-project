@@ -11,11 +11,13 @@ CREATE TABLE users (
     avatar      VARCHAR(255),
     bio         TEXT,
     link        VARCHAR(255),
-    created_at  TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    preferred_language VARCHAR(5)   NOT NULL DEFAULT 'fr',
     UNIQUE (email, provider)
 );
 -- Migration for existing databases:
 -- ALTER TABLE users ADD COLUMN IF NOT EXISTS link VARCHAR(255);
+-- ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(5) NOT NULL DEFAULT 'fr';
 
 -- 2. FOLLOWS
 CREATE TABLE follows (

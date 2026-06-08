@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { searchMedia } from '../api/search';
+import { useLanguage } from '../context/LanguageContext';
 import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w92';
@@ -11,6 +12,7 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const PAGE_SIZE = 10;
 
 export default function SearchBar() {
+    const { t } = useLanguage();
     const [query,       setQuery]       = useState('');
     const [results,     setResults]     = useState([]);
     const [loading,     setLoading]     = useState(false);
@@ -119,13 +121,13 @@ export default function SearchBar() {
                 </svg>
                 <input
                     type="text"
-                    placeholder="Search for a movie or TV show..."
+                    placeholder={t('search_bar_placeholder')}
                     value={query}
                     onChange={e => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
                     onFocus={() => results.length > 0 && setOpen(true)}
                     style={styles.input}
-                    aria-label="Quick search"
+                    aria-label={t('search_quick')}
                     aria-autocomplete="list"
                     aria-expanded={open}
                 />
@@ -140,7 +142,7 @@ export default function SearchBar() {
                     onScroll={handleDropdownScroll}
                 >
                     {!loading && results.length === 0 && (
-                        <li style={styles.message}>No results for &quot;{query}&quot;</li>
+                        <li style={styles.message}>{t('search_no_results_query')} &quot;{query}&quot;</li>
                     )}
 
                     {results.map(item => (
@@ -172,7 +174,7 @@ export default function SearchBar() {
                     ))}
 
                     {loadingMore && (
-                        <li style={styles.message}>Loading more...</li>
+                        <li style={styles.message}>{t('search_load_more')}</li>
                     )}
 
                     <li style={styles.advancedLinkItem}>
@@ -181,7 +183,7 @@ export default function SearchBar() {
                             style={styles.advancedLink}
                             onClick={() => { setOpen(false); setQuery(''); }}
                         >
-                            <span>Search - See all results</span>
+                            <span>{t('search_see_all')}</span>
                             <span style={styles.advancedLinkArrow}>-&gt;</span>
                         </Link>
                     </li>

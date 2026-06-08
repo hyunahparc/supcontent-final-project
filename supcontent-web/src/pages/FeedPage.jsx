@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { getFeed } from '../api/feed';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { mediaHref } from '../utils/media';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
@@ -9,6 +10,7 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 export default function FeedPage() {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
     const [activities, setActivities] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -26,7 +28,7 @@ export default function FeedPage() {
             const data = await getFeed();
             setActivities(data.results ?? []);
         } catch {
-            setError('Unable to load your feed.');
+            setError(t('feed_error'));
         } finally {
             setLoading(false);
         }
@@ -35,33 +37,33 @@ export default function FeedPage() {
     function formatDate(value) {
         const diff = Date.now() - new Date(value).getTime();
         const mins = Math.floor(diff / 60000);
-        if (mins < 1)  return 'just now';
-        if (mins < 60) return `${mins}m ago`;
+        if (mins < 1)  return t('feed_just_now');
+        if (mins < 60) return `${mins}${t('feed_min_ago')}`;
         const hrs = Math.floor(mins / 60);
-        if (hrs < 24)  return `${hrs}h ago`;
+        if (hrs < 24)  return `${hrs}${t('feed_hour_ago')}`;
         const days = Math.floor(hrs / 24);
-        if (days < 7)  return `${days}d ago`;
-        return new Date(value).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (days < 7)  return `${days}${t('feed_day_ago')}`;
+        return new Date(value).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' });
     }
 
     if (!user) return <Navigate to="/login" replace />;
-    if (loading) return <div style={styles.state}>Loading...</div>;
+    if (loading) return <div style={styles.state}>{t('feed_loading')}</div>;
     if (error) return <div style={styles.state}>{error}</div>;
 
     return (
         <div style={styles.page}>
-            <h1 style={styles.heading}>Feed</h1>
+            <h1 style={styles.heading}>{t('feed_title')}</h1>
 
             {activities.length === 0 ? (
                 <div style={styles.emptyBox}>
-                    <p style={styles.emptyTitle}>Nothing here yet</p>
-                    <p style={styles.emptyHint}>Follow users to see their activity here.</p>
+                    <p style={styles.emptyTitle}>{t('feed_empty_title')}</p>
+                    <p style={styles.emptyHint}>{t('feed_empty_body')}</p>
                 </div>
             ) : (
                 <div style={styles.list}>
                     {activities.map(activity => {
                         const poster = activity.full_data?.poster_path;
-                        const title = activity.full_data?.title ?? activity.full_data?.name ?? 'Unknown title';
+                        const title = activity.full_data?.title ?? activity.full_data?.name ?? t('feed_unknown_title');
                         const isMediaActivity = activity.external_id;
                         const reviewRating = activity.metadata?.rating ?? activity.rating;
                         const reviewComment = activity.metadata?.comment ?? activity.comment;
@@ -91,11 +93,11 @@ export default function FeedPage() {
                                             </Link>
                                             {' '}
                                             <span style={styles.actionLabel}>
-                                                {activity.activity_type === 'review' && 'reviewed'}
+                                                {activity.activity_type === 'review' && t('feed_reviewed')}
                                                 {activity.activity_type === 'collection' && (
                                                     status
-                                                        ? <>marked as <span style={styles.statusBadge}>{status}</span></>
-                                                        : 'updated their collection'
+                                                        ? <>{t('feed_added_to')} <span style={styles.statusBadge}>{status}</span></>
+                                                        : t('feed_updated')
                                                 )}
                                             </span>
                                         </p>

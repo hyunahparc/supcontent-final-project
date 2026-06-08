@@ -18,15 +18,12 @@ import { getLibrary } from '../../src/api/collections';
 import { createList, deleteList, getMyLists, updateList } from '../../src/api/lists';
 import CollectionStatusBar from '../../src/components/library/CollectionStatusBar';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w500';
 const LIST_POSTER_BASE = 'https://image.tmdb.org/t/p/w200';
 const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
-const VIEW_TABS = [
-  { id: 'collection', label: 'My Collection' },
-  { id: 'lists', label: 'My Lists' },
-];
 
 function posterUrl(path, base = POSTER_BASE) {
   if (!path) return null;
@@ -42,6 +39,7 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const { view } = useLocalSearchParams();
   const { user, token, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const [activeView, setActiveView] = useState(view === 'lists' ? 'lists' : 'collection');
   const [activeStatus, setActiveStatus] = useState(null);
   const [collection, setCollection] = useState([]);
@@ -136,10 +134,10 @@ export default function LibraryScreen() {
   }
 
   function confirmDeleteList(listId) {
-    Alert.alert('Delete this list?', 'This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('lib_delete_title'), t('lib_delete_msg'), [
+      { text: t('lib_cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('lib_delete'),
         style: 'destructive',
         onPress: async () => {
           if (!token) return;
@@ -158,10 +156,10 @@ export default function LibraryScreen() {
     return (
       <View style={[styles.guestPage, pagePadding]}>
         <Ionicons name="albums-outline" size={44} color={colors.accent} />
-        <Text style={styles.guestTitle}>Library</Text>
-        <Text style={styles.guestBody}>Log in to manage your collection and custom lists.</Text>
+        <Text style={styles.guestTitle}>{t('lib_guest_title')}</Text>
+        <Text style={styles.guestBody}>{t('lib_guest_body')}</Text>
         <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.loginButton, pressed && styles.pressed]}>
-          <Text style={styles.loginButtonText}>Log in</Text>
+          <Text style={styles.loginButtonText}>{t('profile_login')}</Text>
         </Pressable>
       </View>
     );
@@ -175,7 +173,7 @@ export default function LibraryScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.viewTabs}>
-        {VIEW_TABS.map((tab) => {
+        {[{ id: 'collection', labelKey: 'lib_my_collection' }, { id: 'lists', labelKey: 'lib_my_lists' }].map((tab) => {
           const isActive = activeView === tab.id;
 
           return (
@@ -184,7 +182,7 @@ export default function LibraryScreen() {
               onPress={() => setActiveView(tab.id)}
               style={[styles.viewTab, isActive && styles.viewTabActive]}
             >
-              <Text style={[styles.viewTabText, isActive && styles.viewTabTextActive]}>{tab.label}</Text>
+              <Text style={[styles.viewTabText, isActive && styles.viewTabTextActive]}>{t(tab.labelKey)}</Text>
             </Pressable>
           );
         })}
@@ -199,7 +197,7 @@ export default function LibraryScreen() {
       {loading ? (
         <View style={styles.stateBox}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={styles.stateText}>Loading library...</Text>
+          <Text style={styles.stateText}>{t('lib_loading')}</Text>
         </View>
       ) : activeView === 'collection' ? (
         <CollectionView
@@ -235,7 +233,15 @@ export default function LibraryScreen() {
   );
 }
 
+const STATUS_LABEL_KEYS = {
+  'To Watch': 'stats_to_watch',
+  'Watching': 'stats_watching',
+  'Completed': 'stats_completed',
+  'Dropped': 'stats_dropped',
+};
+
 function CollectionView({ activeStatus, allItems, items, totalCount, onStatusChange }) {
+  const { t } = useLanguage();
   const byStatus = useMemo(() => allItems.reduce((counts, item) => {
     counts[item.status] = (counts[item.status] ?? 0) + 1;
     return counts;
@@ -244,15 +250,16 @@ function CollectionView({ activeStatus, allItems, items, totalCount, onStatusCha
   return (
     <View>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionCount}>{totalCount} items</Text>
+        <Text style={styles.sectionTitle}>{t('lib_my_collection')}</Text>
+        <Text style={styles.sectionCount}>{totalCount} {t('lib_items')}</Text>
       </View>
 
       <CollectionStatusBar byStatus={byStatus} total={totalCount} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusTabs}>
-        <StatusTab label="All" active={activeStatus === null} onPress={() => onStatusChange(null)} />
+        <StatusTab label={t('lib_all')} active={activeStatus === null} onPress={() => onStatusChange(null)} />
         {STATUSES.map((status) => (
-          <StatusTab key={status} label={status} active={activeStatus === status} onPress={() => onStatusChange(status)} />
+          <StatusTab key={status} label={t(STATUS_LABEL_KEYS[status])} active={activeStatus === status} onPress={() => onStatusChange(status)} />
         ))}
       </ScrollView>
 
@@ -263,7 +270,7 @@ function CollectionView({ activeStatus, allItems, items, totalCount, onStatusCha
           ))}
         </View>
       ) : (
-        <Text style={styles.emptyText}>No media items in this collection.</Text>
+        <Text style={styles.emptyText}>{t('lib_no_items')}</Text>
       )}
     </View>
   );
@@ -312,22 +319,25 @@ function ListsView({
   onUpdate,
   onUpdateDraft,
 }) {
+  const { t } = useLanguage();
+
   return (
     <View>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionCount}>{lists.length} lists</Text>
+        <Text style={styles.sectionTitle}>{t('lib_my_lists')}</Text>
+        <Text style={styles.sectionCount}>{lists.length} {t('lib_lists')}</Text>
       </View>
 
       <View style={styles.createForm}>
         <TextInput
           value={newName}
           onChangeText={onNameChange}
-          placeholder="New list name..."
+          placeholder={t('lib_new_list_placeholder')}
           placeholderTextColor={colors.textMuted}
           style={styles.input}
         />
         <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>Public</Text>
+          <Text style={styles.switchLabel}>{t('lib_public')}</Text>
           <Switch
             value={newPublic}
             onValueChange={onPublicChange}
@@ -340,7 +350,7 @@ function ListsView({
           disabled={creating || !newName.trim()}
           style={({ pressed }) => [styles.createButton, (pressed || creating || !newName.trim()) && styles.disabledButton]}
         >
-          <Text style={styles.createButtonText}>{creating ? 'Creating...' : '+ Create'}</Text>
+          <Text style={styles.createButtonText}>{creating ? t('lib_creating') : t('lib_create')}</Text>
         </Pressable>
       </View>
 
@@ -362,13 +372,14 @@ function ListsView({
           ))}
         </View>
       ) : (
-        <Text style={styles.emptyText}>No lists yet. Create one above!</Text>
+        <Text style={styles.emptyText}>{t('lib_no_lists')}</Text>
       )}
     </View>
   );
 }
 
 function ListCard({ editing, list, menuOpen, onCancelEdit, onDelete, onEdit, onMenu, onUpdate, onUpdateDraft }) {
+  const { t } = useLanguage();
   const isEditing = editing?.listId === list.list_id;
   const poster = posterUrl(list.preview_posters?.[0], LIST_POSTER_BASE);
 
@@ -393,10 +404,10 @@ function ListCard({ editing, list, menuOpen, onCancelEdit, onDelete, onEdit, onM
         </View>
         <View style={styles.editActions}>
           <Pressable onPress={onUpdate} style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}>
-            <Text style={styles.saveButtonText}>Save</Text>
+            <Text style={styles.saveButtonText}>{t('settings_save')}</Text>
           </Pressable>
           <Pressable onPress={onCancelEdit} style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('lib_cancel')}</Text>
           </Pressable>
         </View>
       </View>
@@ -416,7 +427,7 @@ function ListCard({ editing, list, menuOpen, onCancelEdit, onDelete, onEdit, onM
             <Text style={styles.listName} numberOfLines={1}>{list.name}</Text>
             <Ionicons name={list.is_public ? 'globe-outline' : 'lock-closed-outline'} size={15} color={colors.textSecondary} />
           </View>
-          <Text style={styles.listCount}>{list.media_count ?? 0} items</Text>
+          <Text style={styles.listCount}>{list.media_count ?? 0} {t('lib_items')}</Text>
         </View>
       </Pressable>
 

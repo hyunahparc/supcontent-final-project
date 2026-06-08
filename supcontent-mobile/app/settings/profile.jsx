@@ -15,8 +15,9 @@ import {
     View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getUserProfile, updateMyProfile, uploadAvatar } from '../../src/api/users';
+import { getUserProfile, updateMyProfile, uploadAvatar, updateLanguage } from '../../src/api/users';
 import { useAuth } from '../../src/context/AuthContext';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const MAX_BIO = 500;
@@ -24,6 +25,7 @@ const MAX_BIO = 500;
 export default function EditProfileScreen() {
     const insets = useSafeAreaInsets();
     const { user, token, isAuthenticated, updateUser } = useAuth();
+    const { language, setLanguage, t } = useLanguage();
     const [username, setUsername] = useState('');
     const [bio, setBio] = useState('');
     const [link, setLink] = useState('');
@@ -32,6 +34,7 @@ export default function EditProfileScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
+    const [savingLang, setSavingLang] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
 
@@ -73,17 +76,17 @@ export default function EditProfileScreen() {
         setSuccess('');
 
         if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
-            setError('Username must be between 3 and 50 characters.');
+            setError(t('settings_username_min'));
             return;
         }
 
         if (bio.length > MAX_BIO) {
-            setError(`Bio cannot exceed ${MAX_BIO} characters.`);
+            setError(`${t('settings_bio_max')} ${MAX_BIO} ${t('settings_bio_max_chars')}`);
             return;
         }
 
         if (trimmedLink && !/^https?:\/\//i.test(trimmedLink)) {
-            setError('Website must start with http:// or https://.');
+            setError(t('settings_website_invalid'));
             return;
         }
 
@@ -101,9 +104,9 @@ export default function EditProfileScreen() {
                 avatar: updated.avatar ?? user.avatar ?? null,
             });
 
-            setSuccess('Profile saved.');
+            setSuccess(t('settings_saved'));
         } catch (err) {
-            setError(err.message || 'Failed to save profile.');
+            setError(err.message || t('settings_failed_save'));
         } finally {
             setSaving(false);
         }
@@ -116,7 +119,7 @@ export default function EditProfileScreen() {
         const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (!permission.granted) {
-            setError('Photo library permission is required to change your avatar.');
+            setError(t('settings_unsupported_format'));
             return;
         }
 
@@ -133,7 +136,7 @@ export default function EditProfileScreen() {
         if (!image) return;
 
         if (image.fileSize && image.fileSize > 5 * 1024 * 1024) {
-            setError('Image must not exceed 5 MB.');
+            setError(t('settings_too_large'));
             return;
         }
 
@@ -153,11 +156,26 @@ export default function EditProfileScreen() {
             setAvatar(updated.avatar ?? '');
             setSelectedAvatar(null);
             await updateUser({ avatar: updated.avatar ?? null });
-            setSuccess('Profile picture updated.');
+            setSuccess(t('settings_avatar_updated'));
         } catch (err) {
-            setError(err.message || 'Upload failed. Please try again.');
+            setError(err.message || t('settings_upload_failed'));
         } finally {
             setUploadingAvatar(false);
+        }
+    }
+
+    async function handleLanguageChange(lang) {
+        if (lang === language || savingLang) return;
+        const prev = language;
+        setLanguage(lang);
+        setSavingLang(true);
+        try {
+            await updateLanguage(lang, token);
+            await updateUser({ preferred_language: lang });
+        } catch {
+            setLanguage(prev);
+        } finally {
+            setSavingLang(false);
         }
     }
 
@@ -165,10 +183,10 @@ export default function EditProfileScreen() {
         return (
             <View style={[styles.statePage, { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }]}>
                 <Ionicons name="person-circle-outline" size={38} color={colors.textMuted} />
-                <Text style={styles.stateTitle}>Edit profile</Text>
-                <Text style={styles.stateText}>Log in to update your profile.</Text>
+                <Text style={styles.stateTitle}>{t('settings_login_required')}</Text>
+                <Text style={styles.stateText}>{t('settings_login_to_edit')}</Text>
                 <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}>
-                    <Text style={styles.primaryButtonText}>Log in</Text>
+                    <Text style={styles.primaryButtonText}>{t('settings_log_in')}</Text>
                 </Pressable>
             </View>
         );
@@ -194,14 +212,14 @@ export default function EditProfileScreen() {
                     <Pressable onPress={() => router.back()} hitSlop={10} style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}>
                         <Ionicons name="chevron-back" size={24} color={colors.text} />
                     </Pressable>
-                    <Text style={styles.heading}>Edit profile</Text>
+                    <Text style={styles.heading}>{t('settings_edit_profile')}</Text>
                     <View style={styles.headerSpacer} />
                 </View>
 
                 {loading ? (
                     <View style={styles.loadingBlock}>
                         <ActivityIndicator color={colors.accent} />
-                        <Text style={styles.loadingText}>Loading profile...</Text>
+                        <Text style={styles.loadingText}>{t('settings_loading_profile')}</Text>
                     </View>
                 ) : (
                     <>
@@ -219,14 +237,14 @@ export default function EditProfileScreen() {
                                 </View>
                             </Pressable>
                             <View style={styles.avatarTextBlock}>
-                                <Text style={styles.avatarTitle}>Profile picture</Text>
-                                <Text style={styles.avatarHint}>JPEG, PNG, WebP or GIF. Max 5 MB.</Text>
+                                <Text style={styles.avatarTitle}>{t('settings_profile_picture')}</Text>
+                                <Text style={styles.avatarHint}>{t('settings_image_hint')}</Text>
                                 <View style={styles.avatarActions}>
                                     <Pressable
                                         onPress={handlePickAvatar}
                                         style={({ pressed }) => [styles.avatarActionButton, pressed && styles.pressed]}
                                     >
-                                        <Text style={styles.avatarActionText}>Choose</Text>
+                                        <Text style={styles.avatarActionText}>{t('settings_choose')}</Text>
                                     </Pressable>
                                     {selectedAvatar ? (
                                         <Pressable
@@ -237,7 +255,7 @@ export default function EditProfileScreen() {
                                             {uploadingAvatar ? (
                                                 <ActivityIndicator size="small" color={colors.accentText} />
                                             ) : (
-                                                <Text style={styles.avatarUploadText}>Upload</Text>
+                                                <Text style={styles.avatarUploadText}>{t('settings_upload')}</Text>
                                             )}
                                         </Pressable>
                                     ) : null}
@@ -249,35 +267,35 @@ export default function EditProfileScreen() {
                         {error ? <Text style={styles.errorBanner}>{error}</Text> : null}
 
                         <View style={styles.card}>
-                            <FieldLabel label="Username" value={`${username.length} / 50`} />
+                            <FieldLabel label={t('settings_username')} value={`${username.length} / 50`} />
                             <TextInput
                                 value={username}
                                 onChangeText={setUsername}
                                 maxLength={50}
                                 autoCapitalize="none"
-                                placeholder="Your username"
+                                placeholder={t('settings_username_placeholder')}
                                 placeholderTextColor={colors.textMuted}
                                 style={styles.input}
                             />
 
-                            <FieldLabel label="Bio" value={`${bio.length} / ${MAX_BIO}`} />
+                            <FieldLabel label={t('settings_bio')} value={`${bio.length} / ${MAX_BIO}`} />
                             <TextInput
                                 value={bio}
                                 onChangeText={setBio}
                                 maxLength={MAX_BIO}
                                 multiline
-                                placeholder="Tell us a little about yourself..."
+                                placeholder={t('settings_bio_placeholder')}
                                 placeholderTextColor={colors.textMuted}
                                 style={[styles.input, styles.bioInput]}
                             />
 
-                            <FieldLabel label="Website" />
+                            <FieldLabel label={t('settings_website')} />
                             <TextInput
                                 value={link}
                                 onChangeText={setLink}
                                 autoCapitalize="none"
                                 keyboardType="url"
-                                placeholder="https://yourwebsite.com"
+                                placeholder={t('settings_website_placeholder')}
                                 placeholderTextColor={colors.textMuted}
                                 style={styles.input}
                             />
@@ -290,9 +308,33 @@ export default function EditProfileScreen() {
                                 {saving ? (
                                     <ActivityIndicator color={colors.accentText} />
                                 ) : (
-                                    <Text style={styles.saveButtonText}>Save changes</Text>
+                                    <Text style={styles.saveButtonText}>{t('settings_save')}</Text>
                                 )}
                             </Pressable>
+                        </View>
+
+                        {/* Language preference */}
+                        <View style={styles.card}>
+                            <View style={styles.prefRow}>
+                                <View>
+                                    <Text style={styles.prefLabel}>{t('settings_language')}</Text>
+                                    {savingLang ? <Text style={styles.prefHint}>{t('settings_language_saving')}</Text> : null}
+                                </View>
+                                <View style={styles.langToggle}>
+                                    <Pressable
+                                        onPress={() => handleLanguageChange('fr')}
+                                        style={({ pressed }) => [styles.langBtn, language === 'fr' && styles.langBtnActive, pressed && styles.pressed]}
+                                    >
+                                        <Text style={[styles.langBtnText, language === 'fr' && styles.langBtnTextActive]}>FR</Text>
+                                    </Pressable>
+                                    <Pressable
+                                        onPress={() => handleLanguageChange('en')}
+                                        style={({ pressed }) => [styles.langBtn, language === 'en' && styles.langBtnActive, pressed && styles.pressed]}
+                                    >
+                                        <Text style={[styles.langBtnText, language === 'en' && styles.langBtnTextActive]}>EN</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
                         </View>
                     </>
                 )}
@@ -500,6 +542,7 @@ const styles = StyleSheet.create({
         padding: 18,
         borderRadius: 12,
         backgroundColor: colors.surface,
+        marginBottom: 14,
     },
     fieldHeader: {
         flexDirection: 'row',
@@ -546,6 +589,45 @@ const styles = StyleSheet.create({
         color: colors.accentText,
         fontSize: 14,
         fontWeight: '900',
+    },
+    prefRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+    },
+    prefLabel: {
+        color: colors.text,
+        fontSize: 14,
+        fontWeight: '900',
+    },
+    prefHint: {
+        color: colors.textMuted,
+        fontSize: 12,
+        marginTop: 2,
+    },
+    langToggle: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    langBtn: {
+        paddingHorizontal: 18,
+        paddingVertical: 7,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: colors.borderVisible,
+    },
+    langBtnActive: {
+        backgroundColor: colors.accent,
+        borderColor: colors.accent,
+    },
+    langBtnText: {
+        color: colors.textSecondary,
+        fontSize: 13,
+        fontWeight: '900',
+    },
+    langBtnTextActive: {
+        color: colors.accentText,
     },
     disabled: {
         opacity: 0.55,

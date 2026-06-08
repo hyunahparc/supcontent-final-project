@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getConversations, getMessagesWithUser, sendMessage } from '../api/messages';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const POLL_INTERVAL_MS = 5000;
 
-function timeLabel(dateStr) {
+function timeLabel(dateStr, language) {
     if (!dateStr) return '';
-    return new Date(dateStr).toLocaleTimeString('en-US', {
+    return new Date(dateStr).toLocaleTimeString(language === 'fr' ? 'fr-FR' : 'en-US', {
         hour: '2-digit',
         minute: '2-digit',
     });
 }
 
-function shortDate(dateStr) {
-    if (!dateStr) return 'No messages yet';
+function shortDate(dateStr, language, noMsgsLabel) {
+    if (!dateStr) return noMsgsLabel;
     const date = new Date(dateStr);
     const now = new Date();
-    if (date.toDateString() === now.toDateString()) return timeLabel(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (date.toDateString() === now.toDateString()) return timeLabel(dateStr, language);
+    return date.toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
 function Avatar({ user, size = 42 }) {
@@ -38,6 +39,7 @@ function Avatar({ user, size = 42 }) {
 
 export default function MessagesPage() {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
     const [conversations, setConversations] = useState([]);
     const [selectedUserId, setSelectedUserId] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -62,7 +64,7 @@ export default function MessagesPage() {
                 setConversations(data);
                 setSelectedUserId(current => current ?? data[0]?.user_id ?? null);
             })
-            .catch(() => setError('Unable to load conversations.'))
+            .catch(() => setError(t('msg_error')))
             .finally(() => setLoadingContacts(false));
     }, [user]);
 
@@ -86,7 +88,7 @@ export default function MessagesPage() {
                     setCanChat(data.can_chat);
                 })
                 .catch(() => {
-                    if (active) setError('Unable to load messages.');
+                    if (active) setError(t('msg_error_msgs'));
                 })
                 .finally(() => {
                     if (active && showLoading) setLoadingMessages(false);
@@ -129,7 +131,7 @@ export default function MessagesPage() {
             refreshConversations();
         } catch (err) {
             setDraft(content);
-            setError(err.response?.data?.message ?? 'Unable to send message.');
+            setError(err.response?.data?.message ?? t('msg_error_send'));
         }
     }
 
@@ -140,16 +142,16 @@ export default function MessagesPage() {
             <section style={{ ...s.shell, ...(isCompact ? s.shellCompact : {}) }}>
                 <aside style={{ ...s.sidebar, ...(isCompact ? s.sidebarCompact : {}) }}>
                     <div style={s.sidebarHeader}>
-                        <h1 style={s.heading}>Messages</h1>
+                        <h1 style={s.heading}>{t('msg_title')}</h1>
                         <span style={s.count}>{conversations.length}</span>
                     </div>
 
                     {loadingContacts ? (
-                        <p style={s.stateText}>Loading conversations...</p>
+                        <p style={s.stateText}>{t('msg_loading')}</p>
                     ) : conversations.length === 0 ? (
                         <div style={s.emptySidebar}>
-                            <p style={s.emptyTitle}>No mutual followers</p>
-                            <p style={s.emptyText}>Follow each other to start a private chat.</p>
+                            <p style={s.emptyTitle}>{t('msg_no_mutual')}</p>
+                            <p style={s.emptyText}>{t('msg_no_mutual_body')}</p>
                         </div>
                     ) : (
                         <div style={s.contactList}>
@@ -167,10 +169,10 @@ export default function MessagesPage() {
                                     <span style={s.contactMeta}>
                                         <span style={s.contactTop}>
                                             <span style={s.contactName}>{contact.username}</span>
-                                            <span style={s.contactTime}>{shortDate(contact.last_message_at)}</span>
+                                            <span style={s.contactTime}>{shortDate(contact.last_message_at, language, t('msg_no_messages'))}</span>
                                         </span>
                                         <span style={s.lastMessage}>
-                                            {contact.last_message || 'Start the conversation'}
+                                            {contact.last_message || t('msg_start')}
                                         </span>
                                     </span>
                                 </button>
@@ -190,7 +192,7 @@ export default function MessagesPage() {
                                             {selectedContact.username}
                                         </Link>
                                         <p style={s.chatSub}>
-                                            {canChat ? 'Mutual follower' : 'Conversation archived'}
+                                            {canChat ? t('msg_mutual_follower') : t('msg_archived')}
                                         </p>
                                     </div>
                                 </div>
@@ -198,11 +200,11 @@ export default function MessagesPage() {
 
                             <div style={s.messagesArea}>
                                 {loadingMessages ? (
-                                    <p style={s.stateText}>Loading messages...</p>
+                                    <p style={s.stateText}>{t('msg_loading_msgs')}</p>
                                 ) : messages.length === 0 ? (
                                     <div style={s.emptyChat}>
-                                        <p style={s.emptyTitle}>Say hello</p>
-                                        <p style={s.emptyText}>Messages refresh automatically every 5 seconds.</p>
+                                        <p style={s.emptyTitle}>{t('msg_say_hello')}</p>
+                                        <p style={s.emptyText}>{t('msg_refresh_note')}</p>
                                     </div>
                                 ) : (
                                     messages.map(message => {
@@ -214,7 +216,7 @@ export default function MessagesPage() {
                                             >
                                                 <div style={{ ...s.bubble, ...(isMine ? s.bubbleMine : s.bubbleTheirs) }}>
                                                     <p style={s.messageText}>{message.content}</p>
-                                                    <span style={s.messageTime}>{timeLabel(message.created_at)}</span>
+                                                    <span style={s.messageTime}>{timeLabel(message.created_at, language)}</span>
                                                 </div>
                                             </div>
                                         );
@@ -231,23 +233,23 @@ export default function MessagesPage() {
                                         value={draft}
                                         onChange={e => setDraft(e.target.value)}
                                         maxLength={1000}
-                                        placeholder="Write a message"
+                                        placeholder={t('msg_write')}
                                         style={s.input}
                                     />
                                     <button type="submit" style={s.sendButton} disabled={!draft.trim()}>
-                                        Send
+                                        {t('msg_send')}
                                     </button>
                                 </form>
                             ) : (
                                 <div style={s.lockedComposer}>
-                                    <p style={s.lockedText}>You can read this conversation, but new messages require mutual follow.</p>
+                                    <p style={s.lockedText}>{t('msg_readonly')}</p>
                                 </div>
                             )}
                         </>
                     ) : (
                         <div style={s.noChat}>
-                            <p style={s.emptyTitle}>Choose someone to chat with</p>
-                            <p style={s.emptyText}>Private messages are available when two users follow each other.</p>
+                            <p style={s.emptyTitle}>{t('msg_choose_title')}</p>
+                            <p style={s.emptyText}>{t('msg_choose_body')}</p>
                         </div>
                     )}
                 </section>

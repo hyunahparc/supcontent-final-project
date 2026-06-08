@@ -1,14 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useLanguage } from '../../context/LanguageContext';
 import { colors } from '../../theme/colors';
 
 const STATUS_META = [
-  { key: 'To Watch', label: 'To Watch', color: '#747f34' },
-  { key: 'Watching', label: 'Watching', color: '#2d788b' },
-  { key: 'Completed', label: 'Completed', color: '#2f8f58' },
-  { key: 'Dropped', label: 'Dropped', color: '#444c58' },
+  { key: 'To Watch', labelKey: 'stats_to_watch', color: '#747f34' },
+  { key: 'Watching', labelKey: 'stats_watching', color: '#2d788b' },
+  { key: 'Completed', labelKey: 'stats_completed', color: '#2f8f58' },
+  { key: 'Dropped', labelKey: 'stats_dropped', color: '#444c58' },
 ];
 
 export default function CollectionStatusBar({ byStatus, total }) {
+  const { t } = useLanguage();
   if (!total) return null;
 
   return (
@@ -29,14 +31,14 @@ export default function CollectionStatusBar({ byStatus, total }) {
       </View>
 
       <View style={styles.legend}>
-        {STATUS_META.map(({ key, label, color }) => {
+        {STATUS_META.map(({ key, labelKey, color }) => {
           const count = byStatus?.[key] ?? 0;
           if (count === 0) return null;
 
           return (
             <View key={key} style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: color }]} />
-              <Text style={styles.legendLabel}>{label}</Text>
+              <Text style={styles.legendLabel}>{t(labelKey)}</Text>
               <Text style={styles.legendCount}>{count}</Text>
             </View>
           );

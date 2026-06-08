@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getTrending } from '../api/media';
 import { mediaHref } from '../utils/media';
 
@@ -11,6 +12,7 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 // Hero Section
 // ═══════════════════════════════════════════════════════════════════════════
 function HeroSection() {
+  const { t } = useLanguage();
   const { user }   = useAuth();
   const navigate   = useNavigate();
   const [query, setQuery] = useState('');
@@ -20,21 +22,21 @@ function HeroSection() {
     if (query.trim().length >= 2) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   }
 
+  const stats = [
+    { value: '1M+',  labelKey: 'hero_stat_titles'    },
+    { value: '150+', labelKey: 'hero_stat_countries'  },
+    { value: '50K+', labelKey: 'hero_stat_reviews'    },
+  ];
+
   return (
     <section style={s.hero}>
       <div style={s.heroGrain} aria-hidden="true" />
       <div style={s.heroGlow}  aria-hidden="true" />
 
       <div style={s.heroContent}>
-        <h1 style={s.heroTitle}>
-          Discover{' '}
-          <span style={s.heroTitleAccent}>thousands</span>
-          {' '}of movies<br />and series in an instant.
-        </h1>
+        <h1 style={s.heroTitle}>{t('hero_title')}</h1>
 
-        <p style={s.heroSubtitle}>
-          Search, discover and track your favorite content powered by rich metadata.
-        </p>
+        <p style={s.heroSubtitle}>{t('hero_subtitle')}</p>
 
         <form onSubmit={handleSearch} style={s.searchForm}>
           <div style={s.searchWrap}>
@@ -46,25 +48,21 @@ function HeroSection() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search for a movie or TV show..."
+              placeholder={t('hero_search_placeholder')}
               style={s.searchInput}
-              aria-label="Search"
+              aria-label={t('search_btn')}
             />
             <button type="submit" style={s.searchBtn} disabled={query.trim().length < 2}>
-              Search
+              {t('search_btn')}
             </button>
           </div>
         </form>
 
         <div style={s.heroStats}>
-          {[
-            { value: '1M+',  label: 'Indexed titles'     },
-            { value: '150+', label: 'Countries'           },
-            { value: '50K+', label: 'Community reviews'   },
-          ].map(({ value, label }) => (
-            <div key={label} style={s.stat}>
+          {stats.map(({ value, labelKey }) => (
+            <div key={labelKey} style={s.stat}>
               <span style={s.statValue}>{value}</span>
-              <span style={s.statLabel}>{label}</span>
+              <span style={s.statLabel}>{t(labelKey)}</span>
             </div>
           ))}
         </div>
@@ -81,6 +79,7 @@ function HeroSection() {
 // Trending Section
 // ═══════════════════════════════════════════════════════════════════════════
 function TrendingSection() {
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('all');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,7 +98,7 @@ function TrendingSection() {
       })
       .catch((err) => {
         if (!cancelled) {
-          setError(err.message ?? 'Error');
+          setError(err.message ?? t('trending_error'));
           setLoading(false);
         }
       });
@@ -107,9 +106,9 @@ function TrendingSection() {
   }, [activeTab]);
 
   const tabs = [
-    { id: 'all',    label: 'All'     },
-    { id: 'Movie',  label: 'Movies'  },
-    { id: 'Series', label: 'Series'  },
+    { id: 'all',    labelKey: 'trending_all'    },
+    { id: 'Movie',  labelKey: 'trending_movies' },
+    { id: 'Series', labelKey: 'trending_series' },
   ];
 
   return (
@@ -117,11 +116,11 @@ function TrendingSection() {
       <div style={s.sectionInner}>
         <div style={s.sectionHeader}>
           <div>
-            <p style={s.sectionEyebrow}>Featured</p>
-            <h2 style={s.sectionTitle}>Trending Now</h2>
+            <p style={s.sectionEyebrow}>{t('trending_eyebrow')}</p>
+            <h2 style={s.sectionTitle}>{t('trending_title')}</h2>
           </div>
           <div style={s.tabs} role="tablist">
-            {tabs.map(({ id, label }) => (
+            {tabs.map(({ id, labelKey }) => (
               <button
                 key={id}
                 role="tab"
@@ -129,7 +128,7 @@ function TrendingSection() {
                 onClick={() => setActiveTab(id)}
                 style={{ ...s.tab, ...(activeTab === id ? s.tabActive : {}) }}
               >
-                {label}
+                {t(labelKey)}
               </button>
             ))}
           </div>
@@ -137,8 +136,8 @@ function TrendingSection() {
 
         {error && (
           <div style={s.errorBox} role="alert">
-            Failed to load trending content.{' '}
-            <button onClick={() => setActiveTab(activeTab)} style={s.retryBtn}>Retry</button>
+            {t('trending_error')}{' '}
+            <button onClick={() => setActiveTab(activeTab)} style={s.retryBtn}>{t('trending_retry')}</button>
           </div>
         )}
 
@@ -146,7 +145,7 @@ function TrendingSection() {
           {loading
             ? Array.from({ length: 12 }, (_, i) => <SkeletonCard key={i} />)
             : (data?.map((item) => <MediaCard key={`${item.external_id}-${item.media_type}`} item={item} />) ?? (
-                <p style={{ color: 'var(--text-secondary)', fontFamily: font }}>No content available.</p>
+                <p style={{ color: 'var(--text-secondary)', fontFamily: font }}>{t('search_no_content')}</p>
               ))
           }
         </div>
@@ -159,6 +158,7 @@ function TrendingSection() {
 // MediaCard
 // ═══════════════════════════════════════════════════════════════════════════
 function MediaCard({ item }) {
+  const { t } = useLanguage();
   const [hovered, setHovered] = useState(false);
   const score = Number(item.vote_average).toFixed(1);
   const year  = item.release_date?.slice(0, 4) ?? '—';
@@ -185,14 +185,14 @@ function MediaCard({ item }) {
           </div>
         )}
         <span style={{ ...s.typeBadge, ...(item.media_type === 'Series' ? s.typeBadgeSeries : {}) }}>
-          {item.media_type === 'Series' ? 'Series' : 'Movie'}
+          {item.media_type === 'Series' ? t('trending_series') : t('trending_movies')}
         </span>
         <div style={s.scoreBadge}>
           ⭐ {score}
         </div>
         <div style={{ ...s.cardOverlay, ...(hovered ? s.cardOverlayVisible : {}) }}>
           <span style={{ ...s.viewBtn, ...(hovered ? { opacity: 1, transform: 'translateY(0)' } : {}) }}>
-            View details →
+            {t('home_view_details')}
           </span>
         </div>
       </div>
@@ -222,39 +222,25 @@ function SkeletonCard() {
 // Features Section
 // ═══════════════════════════════════════════════════════════════════════════
 function FeaturesSection() {
+  const { t } = useLanguage();
+
   const features = [
-    {
-      icon: '🔍',
-      title: 'Smart Search',
-      desc:  'Find any film or series in seconds with our search engine combining local cache and TMDB.',
-    },
-    {
-      icon: '⭐',
-      title: 'Ratings & Reviews',
-      desc:  'Browse community scores and reviews to never miss a masterpiece.',
-    },
-    {
-      icon: '🎬',
-      title: 'Detailed Pages',
-      desc:  'Access synopses, casts, directors, and more for every title.',
-    },
-    {
-      icon: '📱',
-      title: 'Responsive Experience',
-      desc:  'A fluid interface on desktop, tablet, and mobile so you can search anywhere.',
-    },
+    { icon: '🔍', titleKey: 'feature1_title', descKey: 'feature1_desc' },
+    { icon: '⭐', titleKey: 'feature2_title', descKey: 'feature2_desc' },
+    { icon: '🎬', titleKey: 'feature3_title', descKey: 'feature3_desc' },
+    { icon: '📱', titleKey: 'feature4_title', descKey: 'feature4_desc' },
   ];
 
   return (
     <section style={{ ...s.section, ...s.sectionAlt }}>
       <div style={s.sectionInner}>
         <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <p style={s.sectionEyebrow}>Why SupContent?</p>
-          <h2 style={s.sectionTitle}>Everything you need</h2>
+          <p style={s.sectionEyebrow}>{t('features_eyebrow')}</p>
+          <h2 style={s.sectionTitle}>{t('features_title')}</h2>
         </div>
         <div style={s.featuresGrid}>
-          {features.map(({ icon, title, desc }) => (
-            <FeatureCard key={title} icon={icon} title={title} desc={desc} />
+          {features.map(({ icon, titleKey, descKey }) => (
+            <FeatureCard key={titleKey} icon={icon} title={t(titleKey)} desc={t(descKey)} />
           ))}
         </div>
       </div>
@@ -281,6 +267,7 @@ function FeatureCard({ icon, title, desc }) {
 // CTA Section
 // ═══════════════════════════════════════════════════════════════════════════
 function CtaSection() {
+  const { t } = useLanguage();
   const { user } = useAuth();
   if (user) return null;
 
@@ -288,16 +275,14 @@ function CtaSection() {
     <section style={s.ctaSection}>
       <div style={s.ctaInner}>
         <div style={s.ctaGlow} aria-hidden="true" />
-        <h2 style={s.ctaTitle}>Ready to explore?</h2>
-        <p style={s.ctaSubtitle}>
-          Create your free account and get access to the full database.
-        </p>
+        <h2 style={s.ctaTitle}>{t('cta_title')}</h2>
+        <p style={s.ctaSubtitle}>{t('cta_subtitle')}</p>
         <div style={s.ctaActions}>
           <Link to="/register" style={s.ctaBtnPrimary}>
-            Create a free account
+            {t('cta_btn_primary')}
           </Link>
           <Link to="/login" style={s.ctaBtnGhost}>
-            I already have an account
+            {t('cta_btn_ghost')}
           </Link>
         </div>
       </div>
@@ -389,10 +374,6 @@ const s = {
     letterSpacing: '-1.5px',
     margin: '0 0 20px',
     fontFamily: font,
-  },
-  heroTitleAccent: {
-    color: 'var(--accent)',
-    position: 'relative',
   },
   heroSubtitle: {
     fontSize: '17px',

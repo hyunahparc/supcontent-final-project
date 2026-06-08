@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getListById, removeMediaFromList } from '../api/lists';
 import { mediaHref } from '../utils/media';
 
@@ -10,6 +11,7 @@ const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 export default function ListDetailPage() {
     const { id } = useParams();
     const { user } = useAuth();
+    const { t } = useLanguage();
 
     const [list, setList] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -20,12 +22,12 @@ export default function ListDetailPage() {
         setLoading(true);
         getListById(id)
             .then(setList)
-            .catch(err => setError(err.response?.data?.message || 'Failed to load list.'))
+            .catch(err => setError(err.response?.data?.message || t('list_error')))
             .finally(() => setLoading(false));
     }, [id]);
 
     async function handleRemove(externalId, mediaType) {
-        if (!window.confirm('Remove this media item from the list?')) return;
+        if (!window.confirm(t('list_remove_title'))) return;
         await removeMediaFromList(id, externalId, mediaType);
         setList(prev => ({
             ...prev,
@@ -33,7 +35,7 @@ export default function ListDetailPage() {
         }));
     }
 
-    if (loading) return <div style={styles.state}>Loading...</div>;
+    if (loading) return <div style={styles.state}>{t('list_loading')}</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
     if (!list)   return null;
 
@@ -47,18 +49,18 @@ export default function ListDetailPage() {
                         <h1 style={styles.heading}>{list.name}</h1>
                         <div style={styles.meta}>
                             <span style={styles.badge}>
-                                {list.is_public ? '🌐 Public' : '🔒 Private'}
+                                {list.is_public ? `🌐 ${t('list_public')}` : `🔒 ${t('list_private')}`}
                             </span>
-                            <span style={styles.count}>{list.media_items?.length ?? 0} items</span>
+                            <span style={styles.count}>{list.media_items?.length ?? 0} {t('list_items')}</span>
                         </div>
                     </div>
                     {isOwner && (
-                        <Link to="/lists" style={styles.backBtn}>← My Lists</Link>
+                        <Link to="/lists" style={styles.backBtn}>{t('list_back')}</Link>
                     )}
                 </div>
 
                 {!list.media_items || list.media_items.length === 0 ? (
-                    <p style={styles.empty}>No media items in this list yet.</p>
+                    <p style={styles.empty}>{t('list_empty')}</p>
                 ) : (
                     <div style={styles.grid}>
                         {list.media_items.map(item => {

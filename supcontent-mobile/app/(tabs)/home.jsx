@@ -12,23 +12,25 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getTrending } from '../../src/api/media';
+import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 
-const tabs = [
-  { id: 'all', label: 'All' },
-  { id: 'Movie', label: 'Movies' },
-  { id: 'Series', label: 'Series' },
-];
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('all');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+
+  const tabs = [
+    { id: 'all', label: t('home_all') },
+    { id: 'Movie', label: t('home_movies') },
+    { id: 'Series', label: t('home_series') },
+  ];
 
   useEffect(() => {
     let cancelled = false;
@@ -41,7 +43,7 @@ export default function HomeScreen() {
         if (!cancelled) setItems(data ?? []);
       })
       .catch((err) => {
-        if (!cancelled) setError(err.message || 'Failed to load trending content.');
+        if (!cancelled) setError(err.message || t('home_error'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -62,13 +64,9 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.hero}>
-        <Text style={styles.heroTitle}>
-          Discover <Text style={styles.heroTitleAccent}>thousands</Text> of movies and series in an instant.
-        </Text>
+        <Text style={styles.heroTitle}>{t('home_title')}</Text>
 
-        <Text style={styles.heroSubtitle}>
-          Search, discover and track your favorite content powered by rich metadata.
-        </Text>
+        <Text style={styles.heroSubtitle}>{t('home_subtitle')}</Text>
 
         <Pressable
           onPress={() => router.push('/search')}
@@ -76,10 +74,10 @@ export default function HomeScreen() {
         >
           <Ionicons name="search" size={18} color={colors.textMuted} />
           <Text style={styles.searchPlaceholder} numberOfLines={1}>
-            Search for a movie or TV show...
+            {t('home_search_placeholder')}
           </Text>
           <View style={styles.searchButton}>
-            <Text style={styles.searchButtonText}>Search</Text>
+            <Text style={styles.searchButtonText}>{t('home_search_btn')}</Text>
           </View>
         </Pressable>
 
@@ -88,7 +86,7 @@ export default function HomeScreen() {
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
           <View>
-            <Text style={styles.sectionTitle}>Trending Now</Text>
+            <Text style={styles.sectionTitle}>{t('home_trending')}</Text>
           </View>
 
           <View style={styles.tabs}>
@@ -110,9 +108,9 @@ export default function HomeScreen() {
 
         {error ? (
           <View style={styles.errorBox}>
-            <Text style={styles.errorText}>Failed to load trending content.</Text>
+            <Text style={styles.errorText}>{t('home_error')}</Text>
             <Pressable onPress={() => setRetryCount((count) => count + 1)}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={styles.retryText}>{t('home_retry')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -120,7 +118,7 @@ export default function HomeScreen() {
         {loading ? (
           <View style={styles.loadingBox}>
             <ActivityIndicator color={colors.accent} />
-            <Text style={styles.loadingText}>Loading trending content...</Text>
+            <Text style={styles.loadingText}>{t('home_loading')}</Text>
           </View>
         ) : (
           <View style={styles.grid}>
@@ -135,6 +133,7 @@ export default function HomeScreen() {
 }
 
 function MediaCard({ item }) {
+  const { t } = useLanguage();
   const year = item.release_date?.slice(0, 4) || 'N/A';
   const score = Number(item.vote_average || 0).toFixed(1);
   const routeType = item.media_type === 'Series' ? 'tv' : 'movie';
@@ -160,7 +159,7 @@ function MediaCard({ item }) {
 
         <View style={styles.typeBadge}>
           <Text style={[styles.typeBadgeText, item.media_type === 'Series' && styles.seriesBadgeText]}>
-            {item.media_type === 'Series' ? 'Series' : 'Movie'}
+            {item.media_type === 'Series' ? t('home_series_label') : t('home_movie_label')}
           </Text>
         </View>
 
@@ -197,9 +196,6 @@ const styles = StyleSheet.create({
     lineHeight: 41,
     textAlign: 'center',
     marginBottom: 18,
-  },
-  heroTitleAccent: {
-    color: colors.accent,
   },
   heroSubtitle: {
     color: colors.textSecondary,

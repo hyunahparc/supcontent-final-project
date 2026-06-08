@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getNotifications, markAllRead, markOneRead } from '../api/notifications';
 import { mediaIdHref } from '../utils/media';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
-function timeAgo(dateStr) {
+function timeAgo(dateStr, t, language) {
     const diff = Date.now() - new Date(dateStr).getTime();
     const mins = Math.floor(diff / 60000);
-    if (mins < 1)  return 'just now';
-    if (mins < 60) return `${mins}m ago`;
+    if (mins < 1)  return t('feed_just_now');
+    if (mins < 60) return `${mins}${t('feed_min_ago')}`;
     const hrs = Math.floor(mins / 60);
-    if (hrs < 24)  return `${hrs}h ago`;
+    if (hrs < 24)  return `${hrs}${t('feed_hour_ago')}`;
     const days = Math.floor(hrs / 24);
-    if (days < 7)  return `${days}d ago`;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    if (days < 7)  return `${days}${t('feed_day_ago')}`;
+    return new Date(dateStr).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { month: 'short', day: 'numeric' });
 }
 
-function notificationText(n) {
-    if (n.type === 'like')    return `${n.source_username} liked your review`;
-    if (n.type === 'comment') return `${n.source_username} commented on your review`;
-    if (n.type === 'follow')  return `${n.source_username} started following you`;
-    return 'New notification';
+function notificationText(n, t) {
+    if (n.type === 'like')    return `${n.source_username} ${t('notif_liked')}`;
+    if (n.type === 'comment') return `${n.source_username} ${t('notif_commented')}`;
+    if (n.type === 'follow')  return `${n.source_username} ${t('notif_following')}`;
+    return '';
 }
 
 function notificationLink(n) {
@@ -33,6 +34,7 @@ function notificationLink(n) {
 
 export default function NotificationsPage() {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading]             = useState(true);
@@ -42,7 +44,7 @@ export default function NotificationsPage() {
         if (!user) return;
         getNotifications()
             .then(setNotifications)
-            .catch(() => setError('Unable to load notifications.'))
+            .catch(() => setError(t('notif_error')))
             .finally(() => setLoading(false));
     }, [user]);
 
@@ -63,7 +65,7 @@ export default function NotificationsPage() {
     }
 
     if (!user)   return <Navigate to="/login" replace />;
-    if (loading) return <div style={s.state}>Loading...</div>;
+    if (loading) return <div style={s.state}>{t('notif_loading')}</div>;
     if (error)   return <div style={s.state}>{error}</div>;
 
     const hasUnread = notifications.some(n => !n.is_read);
@@ -71,18 +73,18 @@ export default function NotificationsPage() {
     return (
         <div style={s.page}>
             <div style={s.header}>
-                <h1 style={s.heading}>Notifications</h1>
+                <h1 style={s.heading}>{t('notif_title')}</h1>
                 {hasUnread && (
                     <button style={s.markAllBtn} onClick={handleMarkAllRead}>
-                        Mark all as read
+                        {t('notif_mark_all_read')}
                     </button>
                 )}
             </div>
 
             {notifications.length === 0 ? (
                 <div style={s.emptyBox}>
-                    <p style={s.emptyTitle}>No notifications yet</p>
-                    <p style={s.emptyHint}>You'll be notified when someone likes or comments on your review, or follows you.</p>
+                    <p style={s.emptyTitle}>{t('notif_empty_title')}</p>
+                    <p style={s.emptyHint}>{t('notif_empty_body')}</p>
                 </div>
             ) : (
                 <div style={s.list}>
@@ -107,11 +109,11 @@ export default function NotificationsPage() {
                             </Link>
 
                             <div style={s.content}>
-                                <p style={s.text}>{notificationText(n)}</p>
+                                <p style={s.text}>{notificationText(n, t)}</p>
                                 {n.media_title && (
                                     <p style={s.mediaTitle}>{n.media_title}</p>
                                 )}
-                                <p style={s.time}>{timeAgo(n.created_at)}</p>
+                                <p style={s.time}>{timeAgo(n.created_at, t, language)}</p>
                             </div>
 
                             {!n.is_read && <div style={s.dot} />}

@@ -50,6 +50,14 @@ export const uploadAvatar = (file) => {
 };
 
 /**
+ * Met à jour la langue préférée de l'utilisateur connecté.
+ * @param {'fr'|'en'} language
+ */
+export const updateLanguage = (language) =>
+    api.put('/users/me/language', { language }, { headers: authHeader() })
+        .then(res => res.data);
+
+/**
  * Supprime le compte de l'utilisateur connecté (RGPD).
  */
 export const deleteMyAccount = () =>

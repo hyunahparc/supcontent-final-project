@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount, exportUserData } from '../api/users';
+import { useLanguage } from '../context/LanguageContext';
+import { getUserProfile, updateMyProfile, uploadAvatar, deleteMyAccount, exportUserData, updateLanguage } from '../api/users';
 
 const font    = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const MAX_BIO = 500;
@@ -10,6 +11,7 @@ const MAX_BIO = 500;
 export default function ProfileSettingsPage() {
     const { user, updateUser, logout } = useAuth();
     const { isDark, toggleTheme }      = useTheme();
+    const { language, setLanguage, t } = useLanguage();
     const navigate = useNavigate();
 
     const [username, setUsername] = useState('');
@@ -21,6 +23,7 @@ export default function ProfileSettingsPage() {
     const [saving, setSaving]     = useState(false);
     const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [exporting, setExporting] = useState(false);
+    const [savingLang, setSavingLang] = useState(false);
     const [successMsg, setSuccessMsg] = useState('');
     const [errorMsg, setErrorMsg]   = useState('');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -59,11 +62,11 @@ export default function ProfileSettingsPage() {
 
         const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!ALLOWED.includes(file.type)) {
-            setErrorMsg('Unsupported format. Please use JPEG, PNG, WebP or GIF.');
+            setErrorMsg(t('settings_unsupported_format'));
             return;
         }
         if (file.size > 5 * 1024 * 1024) {
-            setErrorMsg('Image must not exceed 5 MB.');
+            setErrorMsg(t('settings_too_large'));
             return;
         }
 
@@ -83,10 +86,10 @@ export default function ProfileSettingsPage() {
             setAvatarUrl(updated.avatar);
             setAvatarFile(null);
             if (preview) { URL.revokeObjectURL(preview); setPreview(null); }
-            setSuccessMsg('Profile picture updated!');
+            setSuccessMsg(t('settings_avatar_updated'));
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch {
-            setErrorMsg('Upload failed. Please try again.');
+            setErrorMsg(t('settings_upload_failed'));
         } finally {
             setUploadingAvatar(false);
         }
@@ -98,11 +101,11 @@ export default function ProfileSettingsPage() {
         setSuccessMsg('');
 
         if (username.trim().length < 3) {
-            setErrorMsg('Username must be at least 3 characters.');
+            setErrorMsg(t('settings_username_min'));
             return;
         }
         if (bio.length > MAX_BIO) {
-            setErrorMsg(`Bio cannot exceed ${MAX_BIO} characters.`);
+            setErrorMsg(`${t('settings_bio_max')} ${MAX_BIO} ${t('settings_bio_max_chars')}`);
             return;
         }
 
@@ -110,12 +113,27 @@ export default function ProfileSettingsPage() {
         try {
             const updated = await updateMyProfile({ username: username.trim(), bio, link: link.trim() || null });
             updateUser({ username: updated.username, bio: updated.bio });
-            setSuccessMsg('Profile saved!');
+            setSuccessMsg(t('settings_saved'));
             setTimeout(() => setSuccessMsg(''), 3000);
         } catch (err) {
-            setErrorMsg(err.response?.data?.message || 'Failed to save profile.');
+            setErrorMsg(err.response?.data?.message || t('settings_failed_save'));
         } finally {
             setSaving(false);
+        }
+    }
+
+    async function handleLanguageChange(lang) {
+        if (lang === language || savingLang) return;
+        const prev = language;
+        setLanguage(lang);
+        setSavingLang(true);
+        try {
+            await updateLanguage(lang);
+            updateUser({ preferred_language: lang });
+        } catch {
+            setLanguage(prev);
+        } finally {
+            setSavingLang(false);
         }
     }
 
@@ -124,7 +142,7 @@ export default function ProfileSettingsPage() {
         try {
             await exportUserData(format);
         } catch {
-            setErrorMsg('Export failed. Please try again.');
+            setErrorMsg(t('settings_failed_export'));
         } finally {
             setExporting(false);
         }
@@ -136,7 +154,7 @@ export default function ProfileSettingsPage() {
             logout();
             navigate('/', { replace: true });
         } catch {
-            setErrorMsg('Failed to delete account.');
+            setErrorMsg(t('settings_failed_delete'));
             setShowDeleteModal(false);
         }
     }
@@ -148,21 +166,21 @@ export default function ProfileSettingsPage() {
     return (
         <div style={s.page}>
             <div style={s.header}>
-                <Link to={`/users/${user.user_id}/profile`} style={s.backLink}>← Back to dashboard</Link>
-                <h1 style={s.pageTitle}>Profile Settings</h1>
+                <Link to={`/users/${user.user_id}/profile`} style={s.backLink}>{t('settings_back')}</Link>
+                <h1 style={s.pageTitle}>{t('settings_title')}</h1>
             </div>
 
             {successMsg && <div style={s.successBanner}>{successMsg}</div>}
             {errorMsg   && <div style={s.errorBanner}>{errorMsg}</div>}
 
             <section style={s.card}>
-                <h2 style={s.cardTitle}>Profile picture</h2>
+                <h2 style={s.cardTitle}>{t('settings_profile_picture')}</h2>
 
                 <div style={s.avatarSection}>
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         style={s.avatarBtn}
-                        title="Change photo"
+                        title={t('settings_choose_image')}
                         type="button"
                     >
                         {displayedAvatar ? (
@@ -188,7 +206,7 @@ export default function ProfileSettingsPage() {
                             onClick={() => fileInputRef.current?.click()}
                             style={s.secondaryBtn}
                         >
-                            Choose an image
+                            {t('settings_choose_image')}
                         </button>
                         {avatarFile && (
                             <button
@@ -197,20 +215,20 @@ export default function ProfileSettingsPage() {
                                 disabled={uploadingAvatar}
                                 style={s.primaryBtn}
                             >
-                                {uploadingAvatar ? 'Uploading…' : '✓ Confirm upload'}
+                                {uploadingAvatar ? t('settings_uploading') : t('settings_confirm_upload')}
                             </button>
                         )}
-                        <p style={s.avatarHint}>JPEG, PNG, WebP or GIF · max 5 MB</p>
+                        <p style={s.avatarHint}>{t('settings_image_hint')}</p>
                     </div>
                 </div>
             </section>
 
             <section style={s.card}>
-                <h2 style={s.cardTitle}>Information</h2>
+                <h2 style={s.cardTitle}>{t('settings_info')}</h2>
 
                 <form onSubmit={handleSaveProfile} style={s.form}>
                     <div style={s.field}>
-                        <label style={s.label}>Username</label>
+                        <label style={s.label}>{t('settings_username')}</label>
                         <input
                             type="text"
                             value={username}
@@ -220,13 +238,13 @@ export default function ProfileSettingsPage() {
                             maxLength={50}
                             required
                             style={inputStyle(focusedField === 'username')}
-                            placeholder="Your username"
+                            placeholder={t('settings_username_placeholder')}
                         />
                         <span style={s.charCount}>{username.length} / 50</span>
                     </div>
 
                     <div style={s.field}>
-                        <label style={s.label}>Bio</label>
+                        <label style={s.label}>{t('settings_bio')}</label>
                         <textarea
                             value={bio}
                             onChange={e => setBio(e.target.value)}
@@ -234,7 +252,7 @@ export default function ProfileSettingsPage() {
                             onBlur={() => setFocusedField('')}
                             rows={4}
                             maxLength={MAX_BIO}
-                            placeholder="Tell us a little about yourself..."
+                            placeholder={t('settings_bio_placeholder')}
                             style={{
                                 ...inputStyle(focusedField === 'bio'),
                                 resize: 'vertical',
@@ -249,16 +267,15 @@ export default function ProfileSettingsPage() {
                         </span>
                     </div>
 
-                    {/* Feature 7 — Website link */}
                     <div style={s.field}>
-                        <label style={s.label}>Website</label>
+                        <label style={s.label}>{t('settings_website')}</label>
                         <input
                             type="url"
                             value={link}
                             onChange={e => setLink(e.target.value)}
                             onFocus={() => setFocusedField('link')}
                             onBlur={() => setFocusedField('')}
-                            placeholder="https://yourwebsite.com"
+                            placeholder={t('settings_website_placeholder')}
                             style={inputStyle(focusedField === 'link')}
                         />
                     </div>
@@ -268,18 +285,18 @@ export default function ProfileSettingsPage() {
                         disabled={saving}
                         style={{ ...s.primaryBtn, alignSelf: 'flex-start' }}
                     >
-                        {saving ? 'Saving...' : 'Save changes'}
+                        {saving ? t('settings_saving') : t('settings_save')}
                     </button>
                 </form>
             </section>
 
-            {/* Feature 10 — Theme toggle */}
             <section style={s.card}>
-                <h2 style={s.cardTitle}>Preferences</h2>
+                <h2 style={s.cardTitle}>{t('settings_preferences')}</h2>
+
                 <div style={s.prefRow}>
                     <div>
-                        <p style={s.prefLabel}>Theme</p>
-                        <p style={s.prefDesc}>{isDark ? 'Dark mode is active' : 'Light mode is active'}</p>
+                        <p style={s.prefLabel}>{t('settings_theme')}</p>
+                        <p style={s.prefDesc}>{isDark ? t('settings_theme_dark') : t('settings_theme_light')}</p>
                     </div>
                     <button
                         type="button"
@@ -290,14 +307,34 @@ export default function ProfileSettingsPage() {
                         <span style={{ ...s.themeToggleKnob, transform: isDark ? 'translateX(0)' : 'translateX(22px)' }} />
                     </button>
                 </div>
+
+                <div style={{ ...s.prefRow, marginTop: '20px' }}>
+                    <div>
+                        <p style={s.prefLabel}>{t('settings_language')}</p>
+                        {savingLang && <p style={s.prefDesc}>{t('settings_language_saving')}</p>}
+                    </div>
+                    <div style={s.langToggle}>
+                        <button
+                            type="button"
+                            onClick={() => handleLanguageChange('fr')}
+                            style={langBtnStyle(language === 'fr')}
+                        >
+                            FR
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => handleLanguageChange('en')}
+                            style={langBtnStyle(language === 'en')}
+                        >
+                            EN
+                        </button>
+                    </div>
+                </div>
             </section>
 
-            {/* Feature 5 — Export RGPD */}
             <section style={s.card}>
-                <h2 style={s.cardTitle}>My data (RGPD)</h2>
-                <p style={s.dangerText}>
-                    Download your collection and reviews in CSV or JSON format.
-                </p>
+                <h2 style={s.cardTitle}>{t('settings_data_title')}</h2>
+                <p style={s.dangerText}>{t('settings_data_desc')}</p>
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                     <button
                         type="button"
@@ -305,7 +342,7 @@ export default function ProfileSettingsPage() {
                         disabled={exporting}
                         style={s.secondaryBtn}
                     >
-                        {exporting ? 'Exporting...' : 'Export CSV'}
+                        {exporting ? t('settings_exporting') : t('settings_export_csv')}
                     </button>
                     <button
                         type="button"
@@ -313,47 +350,42 @@ export default function ProfileSettingsPage() {
                         disabled={exporting}
                         style={s.secondaryBtn}
                     >
-                        {exporting ? 'Exporting...' : 'Export JSON'}
+                        {exporting ? t('settings_exporting') : t('settings_export_json')}
                     </button>
                 </div>
             </section>
 
             <section style={{ ...s.card, borderColor: '#3a1a1a' }}>
-                <h2 style={{ ...s.cardTitle, color: '#f3727f' }}>Danger zone</h2>
-                <p style={s.dangerText}>
-                    Deleting your account is permanent. All your data (collection, reviews, comments) will be erased.
-                </p>
+                <h2 style={{ ...s.cardTitle, color: '#f3727f' }}>{t('settings_danger_zone')}</h2>
+                <p style={s.dangerText}>{t('settings_delete_desc')}</p>
                 <button
                     type="button"
                     onClick={() => setShowDeleteModal(true)}
                     style={s.dangerBtn}
                 >
-                    Delete my account
+                    {t('settings_delete_account')}
                 </button>
             </section>
 
             {showDeleteModal && (
                 <div style={s.modalBackdrop}>
                     <div style={s.modal}>
-                        <h3 style={s.modalTitle}>Confirm deletion</h3>
-                        <p style={s.modalText}>
-                            Are you sure you want to delete your account?
-                            This action is <strong>irreversible</strong>.
-                        </p>
+                        <h3 style={s.modalTitle}>{t('settings_confirm_deletion')}</h3>
+                        <p style={s.modalText}>{t('settings_confirm_deletion_msg')}</p>
                         <div style={s.modalActions}>
                             <button
                                 type="button"
                                 onClick={() => setShowDeleteModal(false)}
                                 style={s.secondaryBtn}
                             >
-                                Cancel
+                                {t('settings_cancel')}
                             </button>
                             <button
                                 type="button"
                                 onClick={handleDeleteAccount}
                                 style={s.dangerBtn}
                             >
-                                Yes, delete
+                                {t('settings_yes_delete')}
                             </button>
                         </div>
                     </div>
@@ -376,6 +408,22 @@ function inputStyle(focused) {
         outline: 'none',
         boxSizing: 'border-box',
         transition: 'border-color 0.15s',
+    };
+}
+
+function langBtnStyle(active) {
+    return {
+        padding: '6px 18px',
+        fontSize: '13px',
+        fontWeight: '700',
+        fontFamily: font,
+        cursor: 'pointer',
+        border: `1px solid ${active ? 'var(--accent)' : 'var(--border-visible)'}`,
+        borderRadius: '9999px',
+        backgroundColor: active ? 'var(--accent)' : 'transparent',
+        color: active ? 'var(--text-inverse)' : 'var(--text-secondary)',
+        transition: 'all 0.15s',
+        letterSpacing: '0.5px',
     };
 }
 
@@ -581,6 +629,11 @@ const s = {
         backgroundColor: '#000',
         transition: 'transform 0.2s ease',
         display: 'block',
+    },
+    langToggle: {
+        display: 'flex',
+        gap: '8px',
+        flexShrink: 0,
     },
     dangerText: {
         margin: '0 0 20px',

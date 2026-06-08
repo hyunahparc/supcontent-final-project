@@ -7,6 +7,7 @@ import { getCollectionStatus, upsertCollection, removeFromCollection } from '../
 import { getMyLists, addMediaToList, createList } from '../api/lists';
 import ReviewsSection from '../components/ReviewsSection';
 import { mediaIdHref } from '../utils/media';
+import { useLanguage } from '../context/LanguageContext';
 
 // ── Hook: sample backdrop luminosity and return the best title color ──────────
 function useBackdropTextColor(backdropPath, isDark) {
@@ -87,6 +88,12 @@ const BACKDROP_BASE = 'https://image.tmdb.org/t/p/w1280';
 const PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 
 const STATUSES = ['To Watch', 'Watching', 'Completed', 'Dropped'];
+const STATUS_LABEL_KEYS = {
+    'To Watch':  'stats_to_watch',
+    'Watching':  'stats_watching',
+    'Completed': 'stats_completed',
+    'Dropped':   'stats_dropped',
+};
 const NARROW_LAYOUT_WIDTH = 768;
 const HERO_OVERLAP = 'clamp(120px, 14vw, 180px)';
 
@@ -101,6 +108,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     const mediaType = routeMediaType ?? (searchParams.get('type') === 'Series' ? 'Series' : 'Movie');
     const { user }   = useAuth();
     const { isDark } = useTheme();
+    const { t } = useLanguage();
     const [media, setMedia] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -155,9 +163,9 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     async function handleAddToList(listId) {
         try {
             await addMediaToList(listId, id, mediaType);
-            setListFeedback('Added!');
+            setListFeedback(t('media_added'));
         } catch (err) {
-            setListFeedback(err.response?.data?.message ?? 'Unable to add.');
+            setListFeedback(err.response?.data?.message ?? t('media_error_add'));
         }
         setShowListMenu(false);
         setTimeout(() => setListFeedback(null), 2000);
@@ -198,7 +206,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
         });
     }
 
-    if (loading) return <div style={styles.state}>Loading...</div>;
+    if (loading) return <div style={styles.state}>{t('media_loading')}</div>;
     if (error)   return <div style={styles.state}>{error}</div>;
     if (!media)   return null;
 
@@ -257,7 +265,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                     onClick={() => setShowTrailer(true)}
                                     style={styles.watchBtn}
                                 >
-                                    ▶ Watch Trailer
+                                    {t('media_watch_trailer')}
                                 </button>
                             )}
 
@@ -273,7 +281,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                         cursor: 'pointer',
                                     }}
                                 >
-                                    {collectionStatus ?? '+ Collection'}
+                                    {collectionStatus ? t(STATUS_LABEL_KEYS[collectionStatus]) : t('media_add_collection')}
                                 </button>
                                 {showStatusMenu && (
                                     <div style={styles.statusMenu}>
@@ -286,7 +294,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                                     backgroundColor: s === collectionStatus ? 'var(--bg-elevated)' : 'transparent',
                                                 }}
                                             >
-                                                {s}
+                                                {t(STATUS_LABEL_KEYS[s])}
                                             </button>
                                         ))}
                                     </div>
@@ -300,12 +308,12 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                         onClick={() => setShowListMenu(m => !m)}
                                         style={styles.collectionBtn}
                                     >
-                                        {listFeedback ?? '+ List'}
+                                        {listFeedback ?? t('media_add_list')}
                                     </button>
                                     {showListMenu && (
                                         <div style={styles.statusMenu}>
                                             {myLists.length === 0 && (
-                                                <div style={styles.emptyMenuText}>No lists yet.</div>
+                                                <div style={styles.emptyMenuText}>{t('media_no_lists')}</div>
                                             )}
                                             {myLists.map(list => {
                                                 const listId = list.list_id ?? list.id;
@@ -323,7 +331,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                                 <input
                                                     value={newListName}
                                                     onChange={(e) => setNewListName(e.target.value)}
-                                                    placeholder="New list"
+                                                    placeholder={t('media_new_list')}
                                                     style={styles.inlineInput}
                                                 />
                                                 <button type="submit" style={styles.inlineBtn}>+</button>
@@ -336,7 +344,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
 
                         {media.director && (
                             <div style={styles.director}>
-                                <span style={styles.directorLabel}>Director</span>
+                                <span style={styles.directorLabel}>{t('media_director')}</span>
                                 {media.director}
                             </div>
                         )}
@@ -350,7 +358,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
 
             {media.cast?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>Cast</h2>
+                    <h2 style={styles.sectionTitle}>{t('media_cast')}</h2>
                     <div style={styles.castGrid}>
                         {media.cast.map(actor => (
                             <div key={actor.id} style={styles.castCard}>
@@ -375,7 +383,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
 
             {media.similar?.length > 0 && (
                 <section style={styles.castSection}>
-                    <h2 style={styles.sectionTitle}>You May Also Like</h2>
+                    <h2 style={styles.sectionTitle}>{t('media_similar')}</h2>
                     <div style={styles.similarSlider}>
                         <button
                             type="button"
