@@ -22,12 +22,6 @@ function HeroSection() {
     if (query.trim().length >= 2) navigate(`/search?q=${encodeURIComponent(query.trim())}`);
   }
 
-  const stats = [
-    { value: '1M+',  labelKey: 'hero_stat_titles'    },
-    { value: '150+', labelKey: 'hero_stat_countries'  },
-    { value: '50K+', labelKey: 'hero_stat_reviews'    },
-  ];
-
   return (
     <section style={s.hero}>
       <div style={s.heroGrain} aria-hidden="true" />
@@ -58,14 +52,6 @@ function HeroSection() {
           </div>
         </form>
 
-        <div style={s.heroStats}>
-          {stats.map(({ value, labelKey }) => (
-            <div key={labelKey} style={s.stat}>
-              <span style={s.statValue}>{value}</span>
-              <span style={s.statLabel}>{t(labelKey)}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       <div style={s.scrollHint} aria-hidden="true">
@@ -311,12 +297,12 @@ const s = {
   // ── Hero ────────────────────────────────────────────────────────────────
   hero: {
     position: 'relative',
-    minHeight: '90vh',
+    minHeight: '78vh',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '80px 24px 60px',
+    padding: '72px 24px 44px',
     background: 'var(--hero-bg)',
     overflow: 'hidden',
   },
@@ -372,7 +358,7 @@ const s = {
     color: 'var(--text-primary)',
     lineHeight: 1.1,
     letterSpacing: '-1.5px',
-    margin: '0 0 20px',
+    margin: '0 0 26px',
     fontFamily: font,
   },
   heroSubtitle: {
@@ -380,12 +366,12 @@ const s = {
     color: 'var(--text-soft)',
     lineHeight: 1.7,
     maxWidth: '520px',
-    margin: '0 auto 36px',
+    margin: '0 auto 44px',
     fontFamily: font,
   },
 
   // Search
-  searchForm: { width: '100%', maxWidth: '560px', margin: '0 auto 40px' },
+  searchForm: { width: '100%', maxWidth: '560px', margin: '0 auto 12px' },
   searchWrap: {
     display: 'flex',
     alignItems: 'center',
@@ -422,17 +408,6 @@ const s = {
     fontFamily: font,
     letterSpacing: '0.3px',
   },
-
-  // Stats
-  heroStats: {
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '40px',
-    flexWrap: 'wrap',
-  },
-  stat: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' },
-  statValue: { fontSize: '24px', fontWeight: '800', color: 'var(--text-primary)', letterSpacing: '-0.5px', fontFamily: font },
-  statLabel: { fontSize: '12px', color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.8px', fontFamily: font },
 
   // Scroll hint
   scrollHint: {
