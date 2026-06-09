@@ -49,6 +49,7 @@ export default function MessagesPage() {
     const [loadingMessages, setLoadingMessages] = useState(false);
     const [error, setError] = useState(null);
     const [isCompact, setIsCompact] = useState(window.innerWidth < 760);
+    const messagesAreaRef = useRef(null);
     const messagesEndRef = useRef(null);
 
     const selectedContact = useMemo(
@@ -105,8 +106,14 @@ export default function MessagesPage() {
     }, [selectedUserId]);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages.length, selectedUserId]);
+        const area = messagesAreaRef.current;
+        if (!area) return;
+
+        requestAnimationFrame(() => {
+            area.scrollTop = area.scrollHeight;
+            messagesEndRef.current?.scrollIntoView({ block: 'end' });
+        });
+    }, [messages.length, selectedUserId, loadingMessages]);
 
     async function refreshConversations() {
         try {
@@ -198,7 +205,7 @@ export default function MessagesPage() {
                                 </div>
                             </div>
 
-                            <div style={s.messagesArea}>
+                            <div ref={messagesAreaRef} style={s.messagesArea}>
                                 {loadingMessages ? (
                                     <p style={s.stateText}>{t('msg_loading_msgs')}</p>
                                 ) : messages.length === 0 ? (

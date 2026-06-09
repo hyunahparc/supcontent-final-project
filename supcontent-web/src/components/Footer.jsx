@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -8,23 +9,29 @@ const YEAR = new Date().getFullYear();
 
 export default function Footer() {
     const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINT);
+    const { user } = useAuth();
     const { t } = useLanguage();
+    const isLoggedIn = Boolean(user);
+    const userId = user?.user_id;
 
     const NAV_SECTIONS = [
         {
             title: t('footer_discover'),
-            links: [
+            links: isLoggedIn ? [
                 { label: t('nav_explore'),    to: '/search' },
                 { label: t('nav_feed'),        to: '/feed' },
+                { label: t('nav_collection'),  to: userId ? `/users/${userId}/collection` : '/search' },
                 { label: t('nav_lists'),       to: '/lists' },
+            ] : [
+                { label: t('nav_explore'),    to: '/search' },
             ],
         },
         {
             title: t('footer_account'),
-            links: [
-                { label: t('nav_sign_in'),     to: '/login' },
+            links: isLoggedIn ? [
+                { label: t('nav_profile'), to: userId ? `/users/${userId}/profile` : '/' },
+            ] : [
                 { label: t('nav_sign_up'),     to: '/register' },
-                { label: t('footer_settings'), to: '/settings/profile' },
             ],
         },
     ];

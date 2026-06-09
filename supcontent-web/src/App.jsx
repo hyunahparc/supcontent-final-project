@@ -1,7 +1,8 @@
 // src/App.jsx
 // Main application routes
 
-import { Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 
 import MediaDetailPage from './pages/MediaDetailPage';
 import LoginPage from './pages/LoginPage';
@@ -21,10 +22,30 @@ import NotFoundPage from './pages/NotFoundPage';
 
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { useAuth } from './context/AuthContext';
+
+function GuestOnlyRoute({ children }) {
+    const { user } = useAuth();
+
+    if (user) return <Navigate to={`/users/${user.user_id}/profile`} replace />;
+
+    return children;
+}
+
+function ScrollToTop() {
+    const { pathname, search } = useLocation();
+
+    useEffect(() => {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }, [pathname, search]);
+
+    return null;
+}
 
 export default function App() {
     return (
         <>
+            <ScrollToTop />
             <Header />
 
             <Routes>
@@ -36,8 +57,8 @@ export default function App() {
                 <Route path="/movie/:id" element={<MediaDetailPage mediaType="Movie" />} />
                 <Route path="/tv/:id" element={<MediaDetailPage mediaType="Series" />} />
                 <Route path="/users/:id/collection" element={<CollectionPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/login" element={<GuestOnlyRoute><LoginPage /></GuestOnlyRoute>} />
+                <Route path="/register" element={<GuestOnlyRoute><RegisterPage /></GuestOnlyRoute>} />
                 <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
 
                 {/* Profile */}
