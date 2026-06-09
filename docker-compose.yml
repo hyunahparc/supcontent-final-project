@@ -1,0 +1,128 @@
+# ============================================================
+# docker-compose.yml — SUPCONTENT
+# Déploiement complet en une commande : docker compose up
+#
+# Services :
+#   - db      : PostgreSQL (base de données)
+#   - backend : API REST Node.js/Express
+#   - web     : Client React/Vite servi par Nginx
+#
+# Prérequis : copier .env.example en .env et remplir les valeurs
+# ============================================================
+env_file:
+  - .env
+services:
+
+  # ----------------------------------------------------------
+  # Service 1 : Base de données PostgreSQL
+  # ----------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: supcontent_db
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB:       ${POSTGRES_DB}
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      # Persistance des données entre les redémarrages
+      - postgres_data:/var/lib/postgresql/data
+      # Initialisation automatique du schéma au premier démarrage
+      - ./supcontent-backend/db/cine.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+
+    networks:
+      - supcontent_network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ----------------------------------------------------------
+  # Service 2 : Backend Node.js/Express
+  # ----------------------------------------------------------
+  backend:
+    build:
+      context: ./supcontent-backend
+      dockerfile: Dockerfile
+    container_name: supcontent_backend
+    restart: unless-stopped
+
+    environment:
+      # Connexion PostgreSQL — le host est "db" (nom du service Docker)
+      DATABASE_URL: ${DATABASE_URL}
+      # Désactiver SSL pour la connexion interne Docker (pas de certificat local)
+      PGSSLMODE:    disable
+
+      PORT:         ${PORT:-3000}
+      JWT_SECRET:   ${JWT_SECRET}
+      CORS_ORIGIN:  ${CORS_ORIGIN}
+
+      # OAuth2 Google
+      GOOGLE_CLIENT_ID:     ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL:  ${GOOGLE_CALLBACK_URL}
+
+      # API TMDB
+      TMDB_API_KEY:  ${TMDB_API_KEY}
+      TMDB_BASE_URL: ${TMDB_BASE_URL:-https://api.themoviedb.org/3}
+
+    # Le backend ne démarre qu'une fois la DB prête (healthcheck)
+    depends_on:
+      db:
+        condition: service_healthy
+
+    networks:
+      - supcontent_network
+
+    # Port exposé sur la machine hôte (utile pour tester l'API directement)
+    ports:
+      - "3000:3000"
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/auth/health 2>/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # ----------------------------------------------------------
+  # Service 3 : Client web React/Vite (servi par Nginx)
+  # ----------------------------------------------------------
+  web:
+    build:
+      context: ./supcontent-web
+      dockerfile: Dockerfile
+      args:
+        # Injecté au moment du build Vite (VITE_ prefix obligatoire)
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    container_name: supcontent_web
+    restart: unless-stopped
+
+    # Le web attend que le backend soit démarré
+    depends_on:
+      - backend
+
+    networks:
+      - supcontent_network
+
+    ports:
+      - "5173:80"
+
+# ----------------------------------------------------------
+# Volumes nommés
+# ----------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+
+# ----------------------------------------------------------
+# Réseau interne dédié à l'application
+# ----------------------------------------------------------
+networks:
+  supcontent_network:
+    driver: bridge
