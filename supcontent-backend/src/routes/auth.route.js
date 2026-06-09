@@ -6,6 +6,9 @@ const { registerSchema, loginSchema } = require('../validations/auth.validation'
 
 const router = express.Router();
 
+// GET /api/auth/health
+router.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
 // POST /api/auth/register
 router.post('/register', validate(registerSchema), register);
 

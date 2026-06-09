@@ -194,6 +194,16 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
     setModalUsers([]);
   }
 
+  async function handleErrorAction() {
+    if (isTabProfile || !isAuthenticated) {
+      if (isAuthenticated) await signOut();
+      router.replace('/login');
+      return;
+    }
+
+    router.back();
+  }
+
   if (isTabProfile && !isAuthenticated) {
     return (
       <View
@@ -241,7 +251,7 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
     return (
       <View style={[styles.state, { paddingTop: insets.top }]}>
         <Text style={styles.stateText}>{error}</Text>
-        <Pressable onPress={() => router.back()} style={styles.backAction}>
+        <Pressable onPress={handleErrorAction} style={styles.backAction}>
           <Text style={styles.backActionText}>{t('profile_go_back')}</Text>
         </Pressable>
       </View>
