@@ -1,7 +1,5 @@
 // API front-end — opérations sur le profil utilisateur
-import axios from 'axios';
-
-const api = axios.create({ baseURL: '/api' });
+import api from './client';
 
 /** Retourne l'en-tête d'autorisation Bearer si un token est présent */
 function authHeader() {

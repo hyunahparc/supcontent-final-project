@@ -1,11 +1,21 @@
 // Contexte d'authentification — gestion de la session utilisateur
 import { createContext, useContext, useState } from 'react';
+import { isTokenExpired } from '../utils/jwt';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(() => {
         try {
+            const token = localStorage.getItem('token');
+            // Drop an already-expired session on boot instead of showing the user
+            // as logged in until the first 401 comes back.
+            if (!token || isTokenExpired(token)) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                return null;
+            }
+
             const stored = localStorage.getItem('user');
             return stored ? JSON.parse(stored) : null;
         } catch {

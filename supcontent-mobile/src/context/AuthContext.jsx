@@ -1,6 +1,9 @@
+import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { login as loginRequest, register as registerRequest } from '../api/auth';
+import { setUnauthorizedHandler } from '../api/client';
+import { isTokenExpired } from '../utils/jwt';
 
 const AuthContext = createContext(null);
 const TOKEN_KEY = 'supcontent.auth.token';
@@ -19,9 +22,12 @@ export function AuthProvider({ children }) {
           SecureStore.getItemAsync(USER_KEY),
         ]);
 
-        if (storedToken && storedUser) {
+        if (storedToken && storedUser && !isTokenExpired(storedToken)) {
           setToken(storedToken);
           setUser(JSON.parse(storedUser));
+        } else if (storedToken || storedUser) {
+          // Stale or expired session left in secure storage → clear it on boot.
+          await clearStoredSession();
         }
       } catch {
         await clearStoredSession();
@@ -31,6 +37,18 @@ export function AuthProvider({ children }) {
     }
 
     restoreSession();
+  }, []);
+
+  // Auto sign-out when any authenticated request comes back 401 (expired/invalid token).
+  useEffect(() => {
+    setUnauthorizedHandler(async () => {
+      setUser(null);
+      setToken(null);
+      await clearStoredSession();
+      router.replace('/login');
+    });
+
+    return () => setUnauthorizedHandler(null);
   }, []);
 
   async function signIn({ email, password }) {

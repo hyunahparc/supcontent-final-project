@@ -1,7 +1,5 @@
 // API client — follow/unfollow between users
-import axios from 'axios';
-
-const api = axios.create({ baseURL: '/api' });
+import api from './client';
 
 function authHeader() {
     const token = localStorage.getItem('token');

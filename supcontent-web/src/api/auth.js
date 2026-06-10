@@ -1,6 +1,5 @@
-import axios from 'axios';
+import api from './client';
 
-const api = axios.create({ baseURL: '/api' });
 const oauthCodeExchanges = new Map();
 
 export const register = (data) => api.post('/auth/register', data).then(res => res.data);
