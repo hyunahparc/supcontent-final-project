@@ -1,7 +1,10 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const passport = require('passport');
 const db = require('../config/db');
 const generateToken = require('../utils/token');
+
+const OAUTH_CODE_TTL_MINUTES = 5;
 
 function toAuthUser(user) {
     return {
@@ -38,6 +41,23 @@ function getMobileRedirectUri(state) {
     }
 
     return null;
+}
+
+function hashOAuthCode(code) {
+    return crypto.createHash('sha256').update(code).digest('hex');
+}
+
+async function createOAuthCode(userId) {
+    const code = crypto.randomBytes(32).toString('base64url');
+    const codeHash = hashOAuthCode(code);
+
+    await db.query(
+        `INSERT INTO oauth_codes (code_hash, user_id, expires_at)
+         VALUES ($1, $2, NOW() + ($3 || ' minutes')::interval)`,
+        [codeHash, userId, OAUTH_CODE_TTL_MINUTES]
+    );
+
+    return code;
 }
 
 // Register
@@ -81,16 +101,14 @@ const login = (req, res, next) => {
 };
 
 // Google OAuth callback
-const googleCallback = (req, res) => {
+const googleCallback = async (req, res) => {
     const user = req.user;
-    const token = generateToken(user);
-    const authUser = toAuthUser(user);
     const mobileRedirectUri = getMobileRedirectUri(req.query.state);
+    const code = await createOAuthCode(user.user_id);
 
     if (mobileRedirectUri) {
         return res.redirect(buildRedirectUrl(mobileRedirectUri, {
-            token,
-            user: JSON.stringify(authUser),
+            code,
         }));
     }
 
@@ -99,9 +117,53 @@ const googleCallback = (req, res) => {
     }
 
     return res.redirect(buildRedirectUrl(`${process.env.CLIENT_URL}/oauth/callback`, {
-        token,
-        user: JSON.stringify(authUser),
+        code,
     }));
 };
 
-module.exports = { register, login, googleCallback };
+// Exchange a short-lived OAuth code for the normal app session payload.
+const exchangeOAuthCode = async (req, res) => {
+    const { code } = req.body;
+
+    if (!code || typeof code !== 'string' || code.length > 256) {
+        return res.status(400).json({ message: 'Missing OAuth code.' });
+    }
+
+    try {
+        const codeHash = hashOAuthCode(code);
+
+        const { rows: consumed } = await db.query(
+            `UPDATE oauth_codes
+             SET consumed_at = NOW()
+             WHERE code_hash = $1
+               AND consumed_at IS NULL
+               AND expires_at > NOW()
+             RETURNING user_id`,
+            [codeHash]
+        );
+
+        if (consumed.length === 0) {
+            return res.status(400).json({ message: 'Invalid or expired OAuth code.' });
+        }
+
+        const { rows: users } = await db.query(
+            'SELECT * FROM users WHERE user_id = $1',
+            [consumed[0].user_id]
+        );
+
+        if (users.length === 0) {
+            return res.status(400).json({ message: 'Invalid OAuth code.' });
+        }
+
+        await db.query('DELETE FROM oauth_codes WHERE expires_at < NOW() - INTERVAL \'1 hour\'');
+
+        return res.json({
+            token: generateToken(users[0]),
+            user: toAuthUser(users[0]),
+        });
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error.', error: err.message });
+    }
+};
+
+module.exports = { register, login, googleCallback, exchangeOAuthCode };

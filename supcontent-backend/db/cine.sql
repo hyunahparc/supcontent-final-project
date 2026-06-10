@@ -12,12 +12,22 @@ CREATE TABLE users (
     bio         TEXT,
     link        VARCHAR(255),
     created_at         TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-    preferred_language VARCHAR(5)   NOT NULL DEFAULT 'fr',
+    preferred_language VARCHAR(5)   NOT NULL DEFAULT 'en',
     UNIQUE (email, provider)
 );
--- Migration for existing databases:
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS link VARCHAR(255);
--- ALTER TABLE users ADD COLUMN IF NOT EXISTS preferred_language VARCHAR(5) NOT NULL DEFAULT 'fr';
+
+-- 1a. OAUTH_CODES
+CREATE TABLE oauth_codes (
+    oauth_code_id SERIAL PRIMARY KEY,
+    code_hash     CHAR(64)    NOT NULL UNIQUE,
+    user_id       INT         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    expires_at    TIMESTAMPTZ NOT NULL,
+    consumed_at   TIMESTAMPTZ,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_oauth_codes_expires_at
+ON oauth_codes(expires_at);
 
 -- 2. FOLLOWS
 CREATE TABLE follows (
