@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { login as loginApi } from '../api/auth';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,8 +7,11 @@ import { authStyles as s, inputStyle } from '../styles/authStyles';
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { login } = useAuth();
     const { t } = useLanguage();
+    // Shown when the user was auto-logged-out by the API client (expired/invalid token).
+    const sessionExpired = searchParams.get('session') === 'expired';
     const [form, setForm] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -41,6 +44,8 @@ export default function LoginPage() {
 
                 <h1 style={s.title}>{t('login_welcome_back')}</h1>
                 <p style={s.subtitle}>{t('login_subtitle')}</p>
+
+                {sessionExpired && <div style={s.errorBox}>{t('login_session_expired')}</div>}
 
                 <form onSubmit={handleSubmit} style={s.form}>
                     <div style={s.field}>

@@ -105,6 +105,7 @@ const TRANSLATIONS = {
         // Login
         login_welcome_back: 'Bienvenue',
         login_subtitle: 'Connectez-vous à votre compte',
+        login_session_expired: 'Votre session a expiré. Veuillez vous reconnecter.',
         login_email: 'Email',
         login_password: 'Mot de passe',
         login_signing_in: 'Connexion...',
@@ -478,6 +479,7 @@ const TRANSLATIONS = {
         // Login
         login_welcome_back: 'Welcome back',
         login_subtitle: 'Sign in to your account',
+        login_session_expired: 'Your session has expired. Please sign in again.',
         login_email: 'Email',
         login_password: 'Password',
         login_signing_in: 'Signing in...',

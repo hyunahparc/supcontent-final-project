@@ -1,7 +1,5 @@
-import axios from 'axios';
 import { mediaPathFromType } from '../utils/media';
-
-const api = axios.create({ baseURL: '/api' });
+import api from './client';
 
 export const getMediaById = (id, type = 'Movie') => (
   api.get(`/media/${mediaPathFromType(type)}/${id}`).then(res => res.data)
