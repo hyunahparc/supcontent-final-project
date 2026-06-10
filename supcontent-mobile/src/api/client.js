@@ -1,4 +1,13 @@
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
+// Centralized API client for the mobile app
+// This module provides functions to construct API URLs and make requests to the backend server.
+// It uses the EXPO_PUBLIC_API_URL environment variable to determine the base URL for API requests.
+// The apiRequest function handles making fetch requests, including setting headers and parsing responses.
+
+export const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+export function getApiUrl(path) {
+  return buildUrl(path);
+}
 
 function buildUrl(path) {
   if (!API_URL) {

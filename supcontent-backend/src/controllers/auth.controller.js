@@ -3,6 +3,42 @@ const passport = require('passport');
 const db = require('../config/db');
 const generateToken = require('../utils/token');
 
+function toAuthUser(user) {
+    return {
+        user_id: user.user_id,
+        email: user.email,
+        username: user.username,
+        avatar: user.avatar ?? null,
+        preferred_language: user.preferred_language ?? 'fr',
+    };
+}
+
+function buildRedirectUrl(baseUrl, params) {
+    const separator = baseUrl.includes('?') ? '&' : '?';
+    const query = new URLSearchParams(params).toString();
+
+    return `${baseUrl}${separator}${query}`;
+}
+
+function getMobileRedirectUri(state) {
+    if (!state) return null;
+
+    try {
+        const parsed = JSON.parse(state);
+        const redirectUri = parsed.client === 'mobile' ? parsed.redirectUri : null;
+
+        if (
+            typeof redirectUri === 'string'
+            && (redirectUri.startsWith('supcontent://') || redirectUri.startsWith('exp://'))
+        ) {
+            return redirectUri;
+        }
+    } catch {
+        return null;
+    }
+
+    return null;
+}
 
 // Register
 const register = async (req, res) => {
@@ -37,21 +73,35 @@ const login = (req, res, next) => {
         if (err) return res.status(500).json({ message: 'Server error.', error: err.message });
         if (!user) return res.status(401).json({ message: info?.message || 'Login failed.' });
 
-        const token = generateToken(user);
-
-        return res.json({ token, user: { user_id: user.user_id, email: user.email, username: user.username, avatar: user.avatar ?? null, preferred_language: user.preferred_language ?? 'fr' } });
+        return res.json({
+            token: generateToken(user),
+            user: toAuthUser(user),
+        });
     })(req, res, next);
 };
 
 // Google OAuth callback
 const googleCallback = (req, res) => {
     const user = req.user;
-
     const token = generateToken(user);
-    const userData = encodeURIComponent(JSON.stringify({ user_id: user.user_id, email: user.email, username: user.username, avatar: user.avatar ?? null, preferred_language: user.preferred_language ?? 'fr' }));
+    const authUser = toAuthUser(user);
+    const mobileRedirectUri = getMobileRedirectUri(req.query.state);
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
-    return res.redirect(`${clientUrl}/oauth/callback?token=${token}&user=${userData}`);
+    if (mobileRedirectUri) {
+        return res.redirect(buildRedirectUrl(mobileRedirectUri, {
+            token,
+            user: JSON.stringify(authUser),
+        }));
+    }
+
+    if (!process.env.CLIENT_URL) {
+        return res.status(500).json({ message: 'Missing CLIENT_URL.' });
+    }
+
+    return res.redirect(buildRedirectUrl(`${process.env.CLIENT_URL}/oauth/callback`, {
+        token,
+        user: JSON.stringify(authUser),
+    }));
 };
 
 module.exports = { register, login, googleCallback };

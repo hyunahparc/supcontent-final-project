@@ -36,14 +36,24 @@ export function AuthProvider({ children }) {
   async function signIn({ email, password }) {
     const data = await loginRequest({ email, password });
 
-    await Promise.all([
-      SecureStore.setItemAsync(TOKEN_KEY, data.token),
-      SecureStore.setItemAsync(USER_KEY, JSON.stringify(data.user)),
-    ]);
-    setUser(data.user);
-    setToken(data.token);
+    await storeSession(data.user, data.token);
 
     return data.user;
+  }
+
+  async function completeOAuth(userData, authToken) {
+    await storeSession(userData, authToken);
+
+    return userData;
+  }
+
+  async function storeSession(userData, authToken) {
+    await Promise.all([
+      SecureStore.setItemAsync(TOKEN_KEY, authToken),
+      SecureStore.setItemAsync(USER_KEY, JSON.stringify(userData)),
+    ]);
+    setUser(userData);
+    setToken(authToken);
   }
 
   async function signUp({ email, username, password }) {
@@ -75,6 +85,7 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(token && user),
       signIn,
       signUp,
+      completeOAuth,
       signOut,
       updateUser,
     }),
