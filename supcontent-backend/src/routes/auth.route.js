@@ -1,6 +1,6 @@
 const express = require('express');
 const passport = require('passport');
-const { register, login, googleCallback } = require('../controllers/auth.controller');
+const { register, login, googleCallback, exchangeOAuthCode } = require('../controllers/auth.controller');
 const validate = require('../middleware/validate');
 const { registerSchema, loginSchema } = require('../validations/auth.validation');
 
@@ -36,6 +36,9 @@ router.post('/register', validate(registerSchema), register);
 
 // POST /api/auth/login
 router.post('/login', validate(loginSchema), login);
+
+// POST /api/auth/oauth/exchange
+router.post('/oauth/exchange', exchangeOAuthCode);
 
 // GET /api/auth/google
 router.get('/google', (req, res, next) => {

@@ -1,12 +1,13 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { exchangeOAuthCode } from '../../src/api/auth';
 import { useAuth } from '../../src/context/AuthContext';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { colors } from '../../src/theme/colors';
 
 export default function OAuthCallbackScreen() {
-  const { token, user } = useLocalSearchParams();
+  const { code } = useLocalSearchParams();
   const { completeOAuth } = useAuth();
   const { t } = useLanguage();
   const [error, setError] = useState('');
@@ -14,11 +15,12 @@ export default function OAuthCallbackScreen() {
   useEffect(() => {
     async function finishOAuth() {
       try {
-        if (!token || !user || Array.isArray(token) || Array.isArray(user)) {
+        if (!code || Array.isArray(code)) {
           throw new Error(t('mob_login_error'));
         }
 
-        await completeOAuth(JSON.parse(user), token);
+        const data = await exchangeOAuthCode(code);
+        await completeOAuth(data.user, data.token);
         router.replace('/home');
       } catch (err) {
         setError(err.message || t('mob_login_error'));
@@ -26,7 +28,7 @@ export default function OAuthCallbackScreen() {
     }
 
     finishOAuth();
-  }, [completeOAuth, t, token, user]);
+  }, [code, completeOAuth, t]);
 
   return (
     <View style={styles.screen}>

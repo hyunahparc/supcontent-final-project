@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
+import { exchangeOAuthCode } from '../src/api/auth';
 import { getApiUrl } from '../src/api/client';
 import { colors } from '../src/theme/colors';
 
@@ -71,15 +72,14 @@ export default function LoginScreen() {
 
   async function completeOAuthFromUrl(url) {
     const parsed = Linking.parse(url);
-    const token = parsed.queryParams?.token;
-    const userParam = parsed.queryParams?.user;
+    const code = parsed.queryParams?.code;
 
-    if (!token || !userParam || Array.isArray(token) || Array.isArray(userParam)) {
+    if (!code || Array.isArray(code)) {
       throw new Error(t('mob_login_error'));
     }
 
-    const userData = JSON.parse(userParam);
-    await completeOAuth(userData, token);
+    const data = await exchangeOAuthCode(code);
+    await completeOAuth(data.user, data.token);
   }
 
   return (
