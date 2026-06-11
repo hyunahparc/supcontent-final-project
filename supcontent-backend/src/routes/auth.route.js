@@ -1,6 +1,6 @@
 const express = require('express');
 const passport = require('passport');
-const { register, login, googleCallback, exchangeOAuthCode } = require('../controllers/auth.controller');
+const { register, login, googleCallback, exchangeOAuthCode, refresh, logout } = require('../controllers/auth.controller');
 const validate = require('../middleware/validate');
 const { registerSchema, loginSchema } = require('../validations/auth.validation');
 
@@ -39,6 +39,13 @@ router.post('/login', validate(loginSchema), login);
 
 // POST /api/auth/oauth/exchange
 router.post('/oauth/exchange', exchangeOAuthCode);
+
+// POST /api/auth/refresh — get a new access token using a refresh token.
+// No auth middleware: the access token may already be expired here.
+router.post('/refresh', refresh);
+
+// POST /api/auth/logout — revoke the refresh token (server-side invalidation).
+router.post('/logout', logout);
 
 // GET /api/auth/google
 router.get('/google', (req, res, next) => {
