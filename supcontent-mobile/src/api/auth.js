@@ -32,3 +32,20 @@ export function exchangeOAuthCode(code) {
   oauthCodeExchanges.set(code, exchangePromise);
   return exchangePromise;
 }
+
+// Exchange a refresh token for a new access token (and a rotated refresh token).
+// No `token` option: identity is proven by the refresh token in the body.
+export function refreshSession(refreshToken) {
+  return apiRequest('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
+}
+
+// Revoke the refresh token server-side (true logout).
+export function logout(refreshToken) {
+  return apiRequest('/auth/logout', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
+}

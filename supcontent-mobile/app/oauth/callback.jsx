@@ -20,7 +20,7 @@ export default function OAuthCallbackScreen() {
         }
 
         const data = await exchangeOAuthCode(code);
-        await completeOAuth(data.user, data.token);
+        await completeOAuth(data.user, data.token, data.refreshToken);
         router.replace('/home');
       } catch (err) {
         setError(err.message || t('mob_login_error'));
