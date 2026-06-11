@@ -57,7 +57,9 @@ export default function LoginScreen() {
     try {
       const redirectUri = Linking.createURL('oauth/callback');
       const authUrl = `${getApiUrl('/auth/google')}?client=mobile&redirect_uri=${encodeURIComponent(redirectUri)}`;
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
+        preferEphemeralSession: false,
+      });
 
       if (result.type !== 'success' || !result.url) return;
 
@@ -79,7 +81,7 @@ export default function LoginScreen() {
     }
 
     const data = await exchangeOAuthCode(code);
-    await completeOAuth(data.user, data.token);
+    await completeOAuth(data.user, data.token, data.refreshToken);
   }
 
   return (

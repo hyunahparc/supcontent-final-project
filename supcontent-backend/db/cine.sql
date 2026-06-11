@@ -29,6 +29,19 @@ CREATE TABLE oauth_codes (
 CREATE INDEX idx_oauth_codes_expires_at
 ON oauth_codes(expires_at);
 
+-- 1b. REFRESH_TOKENS
+CREATE TABLE refresh_tokens (
+    refresh_token_id SERIAL PRIMARY KEY,
+    token_hash       CHAR(64)    NOT NULL UNIQUE,   -- sha256 hex of the refresh token
+    user_id          INT         NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    expires_at       TIMESTAMPTZ NOT NULL,
+    revoked_at       TIMESTAMPTZ,                   -- set on logout or rotation
+    created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_refresh_tokens_expires_at
+ON refresh_tokens(expires_at);
+
 -- 2. FOLLOWS
 CREATE TABLE follows (
     follower_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,

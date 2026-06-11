@@ -188,6 +188,10 @@ paths:
                                 properties:
                                     token:
                                         type: string
+                                        description: Short-lived access token (JWT)
+                                    refreshToken:
+                                        type: string
+                                        description: Long-lived refresh token
                                     user:
                                         $ref: '#/components/schemas/User'
                 '401':
@@ -219,6 +223,61 @@ paths:
                                         type: string
                                     user:
                                         $ref: '#/components/schemas/User'
+
+    /auth/refresh:
+        post:
+            tags:
+                - Auth
+            summary: Get a new access token using a refresh token
+            description: Validates the refresh token, rotates it (the old one is revoked), and returns a new token pair.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - refreshToken
+                            properties:
+                                refreshToken:
+                                    type: string
+            responses:
+                '200':
+                    description: New access token and rotated refresh token
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    token:
+                                        type: string
+                                    refreshToken:
+                                        type: string
+                                    user:
+                                        $ref: '#/components/schemas/User'
+                '401':
+                    description: Invalid or expired refresh token
+
+    /auth/logout:
+        post:
+            tags:
+                - Auth
+            summary: Revoke a refresh token (logout)
+            description: Revokes the given refresh token server-side so it can no longer mint access tokens.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - refreshToken
+                            properties:
+                                refreshToken:
+                                    type: string
+            responses:
+                '200':
+                    description: Logged out
 
     /search:
         get:

@@ -25,7 +25,7 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const data = await loginApi(form);
-            login(data.user, data.token);
+            login(data.user, data.token, data.refreshToken);
             navigate('/');
         } catch (err) {
             setError(err.response?.data?.message || t('login_submit') + ' failed.');

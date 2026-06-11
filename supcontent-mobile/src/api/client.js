@@ -3,15 +3,14 @@
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Callback fired when an authenticated request is rejected with 401.
-// The auth layer registers it to clear the stored session and redirect to login.
-let onUnauthorized = null;
-// Guards against firing the handler repeatedly when several authenticated
-// requests (e.g. the unread-count pollers) all get a 401 at once.
-let isHandlingUnauthorized = false;
+// The auth layer registers this. It refreshes the access token and returns the
+// new one, or throws (after signing out) if refreshing is not possible.
+let refreshHandler = null;
+// Single-flight: concurrent 401s share one refresh call.
+let refreshPromise = null;
 
-export function setUnauthorizedHandler(handler) {
-  onUnauthorized = handler;
+export function setRefreshHandler(handler) {
+  refreshHandler = handler;
 }
 
 export function getApiUrl(path) {
@@ -43,11 +42,11 @@ async function parseResponse(response) {
   }
 }
 
-export async function apiRequest(path, options = {}) {
-  const { token, headers, ...fetchOptions } = options;
+// Build and send one fetch with the given access token.
+function sendRequest(path, token, headers, fetchOptions) {
   const isFormData = fetchOptions.body instanceof FormData;
 
-  const response = await fetch(buildUrl(path), {
+  return fetch(buildUrl(path), {
     ...fetchOptions,
     headers: {
       ...(!isFormData ? { 'Content-Type': 'application/json' } : {}),
@@ -55,19 +54,32 @@ export async function apiRequest(path, options = {}) {
       ...headers,
     },
   });
+}
+
+export async function apiRequest(path, options = {}) {
+  const { token, headers, ...fetchOptions } = options;
+
+  let response = await sendRequest(path, token, headers, fetchOptions);
+
+  // On 401 for an authenticated request: refresh the access token once, then
+  // replay the request with the new token. A retried request that 401s again
+  // simply falls through to the error below (no loop).
+  if (response.status === 401 && token && refreshHandler) {
+    try {
+      if (!refreshPromise) {
+        refreshPromise = Promise.resolve(refreshHandler())
+          .finally(() => { refreshPromise = null; });
+      }
+      const newToken = await refreshPromise;
+      response = await sendRequest(path, newToken, headers, fetchOptions);
+    } catch {
+      // Refresh failed; the handler has already signed the user out.
+    }
+  }
 
   const data = await parseResponse(response);
 
   if (!response.ok) {
-    // An authenticated request rejected with 401 means the token is expired or
-    // invalid. Notify the auth layer once so it can sign the user out.
-    if (response.status === 401 && token && onUnauthorized && !isHandlingUnauthorized) {
-      isHandlingUnauthorized = true;
-      Promise.resolve(onUnauthorized()).finally(() => {
-        isHandlingUnauthorized = false;
-      });
-    }
-
     const message = data?.message || data?.error || 'Request failed.';
     throw new Error(message);
   }

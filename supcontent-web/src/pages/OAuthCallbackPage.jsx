@@ -24,7 +24,7 @@ export default function OAuthCallbackPage() {
             try {
                 const data = await exchangeOAuthCode(code);
                 if (isMounted) {
-                    login(data.user, data.token);
+                    login(data.user, data.token, data.refreshToken);
                 }
             } catch {
                 // Invalid or expired code, redirect anyway.
