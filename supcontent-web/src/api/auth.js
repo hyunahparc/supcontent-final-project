@@ -21,3 +21,7 @@ export const exchangeOAuthCode = (code) => {
     oauthCodeExchanges.set(code, exchangePromise);
     return exchangePromise;
 };
+
+// Revoke the refresh token server-side (true logout).
+export const logout = (refreshToken) =>
+    api.post('/auth/logout', { refreshToken }).then(res => res.data);
