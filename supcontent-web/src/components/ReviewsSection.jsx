@@ -1,4 +1,3 @@
-s|} from '../api/reviews';|    reportReview,\n} from '../api/reviews';|
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -77,12 +76,13 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
 }
 
 // --- Single Review Card ---
-function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onCommentAdded, onCommentDeleted }) {
+function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport, onCommentAdded, onCommentDeleted }) {
     const { t, language } = useLanguage();
     const [showComments, setShowComments] = useState(false);
-    const [comments, setComments]         = useState([]);
+    const [comments, setComments] = useState([]);
     const [commentInput, setCommentInput] = useState('');
     const [loadingComments, setLoadingComments] = useState(false);
+    const [reporting, setReporting] = useState(false);
 
     async function handleToggleComments() {
         if (!showComments && comments.length === 0) {
@@ -110,6 +110,16 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
         await deleteComment(review.review_id, commentId);
         setComments(prev => prev.filter(c => c.comment_id !== commentId));
         onCommentDeleted(review.review_id);
+    }
+
+    async function handleReport() {
+        if (!onReport || reporting) return;
+        setReporting(true);
+        try {
+            await onReport(review.review_id);
+        } finally {
+            setReporting(false);
+        }
     }
 
     const isOwner = currentUserId === review.user_id;
@@ -163,6 +173,15 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
                 <button onClick={handleToggleComments} style={cardStyles.actionBtn}>
                     💬 {review.comments_count} {showComments ? '▲' : '▼'}
                 </button>
+                {currentUserId && !isOwner && (
+                    <button
+                        onClick={handleReport}
+                        disabled={reporting}
+                        style={{ ...cardStyles.actionBtn, color: '#f3727f', opacity: reporting ? 0.65 : 1 }}
+                    >
+                        {reporting ? t('review_reporting') : t('review_report')}
+                    </button>
+                )}
             </div>
 
             {showComments && (
@@ -198,14 +217,14 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onComment
 export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
     const { user } = useAuth();
     const { t } = useLanguage();
-    const [reviews, setReviews]   = useState([]);
+    const [reviews, setReviews] = useState([]);
     const [myReview, setMyReview] = useState(null);
 
     // Write/edit form state
-    const [formRating,  setFormRating]  = useState(0);
+    const [formRating, setFormRating] = useState(0);
     const [formComment, setFormComment] = useState('');
-    const [submitting,  setSubmitting]  = useState(false);
-    const [showForm,    setShowForm]    = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const [showForm, setShowForm] = useState(false);
 
     const fetchReviews = useCallback(() => {
         getReviews(externalId, mediaType).then(setReviews).catch(() => setReviews([]));
@@ -251,6 +270,18 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                 ? { ...r, liked_by_me: liked, likes_count: r.likes_count + (liked ? 1 : -1) }
                 : r
         ));
+    }
+
+    async function handleReportReview(reviewId) {
+        const reason = window.prompt(t('review_report_reason'));
+        if (reason === null) return;
+
+        try {
+            await reportReview(reviewId, reason);
+            window.alert(t('review_report_success'));
+        } catch (err) {
+            window.alert(err.response?.data?.message || t('review_error_report'));
+        }
     }
 
     // Update comment counts in the list after add/delete
@@ -334,6 +365,7 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                     onLike={handleLike}
                     onDelete={handleDeleteReview}
                     onEdit={() => setShowForm(true)}
+                    onReport={handleReportReview}
                     onCommentAdded={(id) => adjustCommentCount(id, +1)}
                     onCommentDeleted={(id) => adjustCommentCount(id, -1)}
                 />

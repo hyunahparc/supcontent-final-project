@@ -26,7 +26,7 @@ export default function LoginPage() {
         try {
             const data = await loginApi(form);
             login(data.user, data.token, data.refreshToken);
-            navigate('/');
+            navigate(data.user.is_admin ? '/admin/moderation' : '/');
         } catch (err) {
             setError(err.response?.data?.message || t('login_submit') + ' failed.');
         } finally {

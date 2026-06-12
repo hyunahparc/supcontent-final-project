@@ -140,6 +140,7 @@ exports.searchUsers = async (req, res) => {
             `SELECT user_id, username, avatar, bio
              FROM users
              WHERE username ILIKE $1
+               AND is_admin = FALSE
              ORDER BY username
              LIMIT $2`,
             [`%${q.trim()}%`, lim]
