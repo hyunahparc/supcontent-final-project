@@ -45,3 +45,8 @@ export const addComment = (reviewId, content) =>
 export const deleteComment = (reviewId, commentId) =>
     api.delete(`/reviews/${reviewId}/comments/${commentId}`, { headers: authHeader() })
         .then(res => res.data);
+
+// Signaler une critique (spoiler, insulte, etc.)
+export const reportReview = (reviewId, reason) =>
+    api.post(`/moderation/reports`, { review_id: reviewId, reason }, { headers: authHeader() })
+        .then(res => res.data);
