@@ -133,12 +133,6 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
 
     return (
         <div style={{ ...cardStyles.card, position: 'relative' }}>
-            {isOwner && (
-                <div style={cardStyles.ownerActions}>
-                    <button onClick={onEdit} style={cardStyles.ownerBtn}>{t('review_edit')}</button>
-                    <button onClick={() => onDelete(review.review_id)} style={{ ...cardStyles.ownerBtn, color: '#f3727f' }}>{t('review_delete')}</button>
-                </div>
-            )}
             <div style={cardStyles.header}>
                 <div style={cardStyles.avatar}>
                     {review.avatar
@@ -153,6 +147,12 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
                         {review.updated_at !== review.created_at && ' (edited)'}
                     </div>
                 </div>
+                {isOwner && (
+                    <div style={cardStyles.ownerActions}>
+                        <button onClick={onEdit} style={cardStyles.ownerBtn}>{t('review_edit')}</button>
+                        <button onClick={() => onDelete(review.review_id)} style={{ ...cardStyles.ownerBtn, color: '#f3727f' }}>{t('review_delete')}</button>
+                    </div>
+                )}
             </div>
 
             {review.rating && (
@@ -499,10 +499,11 @@ const cardStyles = {
     },
     ownerActions: {
         display: 'flex',
+        alignItems: 'center',
         justifyContent: 'flex-end',
         gap: '8px',
-        marginBottom: '10px',
         flexWrap: 'wrap',
+        marginLeft: 'auto',
     },
     ownerBtn: {
         background: 'none',
@@ -518,6 +519,7 @@ const cardStyles = {
         alignItems: 'center',
         gap: '12px',
         marginBottom: '12px',
+        minWidth: 0,
     },
     avatar: {
         width: '40px',

@@ -134,11 +134,10 @@ function TrendingSection() {
 
   return (
     // Halved top padding so "Trending Now" sits closer to the hero search bar
-    <section style={{ ...s.section, paddingTop: 'clamp(26px, 4.5vw, 40px)' }}>
+    <section style={{ ...s.section, paddingTop: 'clamp(12px, 2.5vw, 22px)' }}>
       <div style={s.sectionInner}>
         <div style={s.sectionHeader}>
           <div>
-            <p style={s.sectionEyebrow}>{t('trending_eyebrow')}</p>
             <h2 style={s.sectionTitle}>{t('trending_title')}</h2>
           </div>
           <div style={s.tabs} role="tablist">
@@ -392,7 +391,7 @@ const s = {
     animation: 'pulse 2s ease-in-out infinite',
   },
   heroTitle: {
-    fontSize: '60px',
+    fontSize: '56px',
     fontWeight: '800',
     color: 'var(--text-primary)',
     lineHeight: 1.1,
@@ -401,10 +400,10 @@ const s = {
     fontFamily: font,
   },
   heroTitleCompact: {
-    fontSize: '34px',
+    fontSize: '32px',
   },
   heroSubtitle: {
-    fontSize: '17px',
+    fontSize: '15px',
     color: 'var(--text-soft)',
     lineHeight: 1.7,
     maxWidth: '520px',

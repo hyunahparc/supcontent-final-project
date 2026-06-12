@@ -21,6 +21,13 @@ export default function ListsPage() {
     const [editing, setEditing] = useState(null);
     const [openMenu, setOpenMenu] = useState(null);
     const [hoveredId, setHoveredId] = useState(null);
+    const [isNarrow, setIsNarrow] = useState(() => window.innerWidth < 768);
+
+    useEffect(() => {
+        const onResize = () => setIsNarrow(window.innerWidth < 768);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
 
     useEffect(() => {
         if (!user) navigate('/login');
@@ -94,7 +101,10 @@ export default function ListsPage() {
                 {lists.length === 0 ? (
                     <p style={styles.empty}>{t('lists_empty')}</p>
                 ) : (
-                    <div style={styles.grid}>
+                    <div style={{
+                        ...styles.grid,
+                        ...(isNarrow ? { gridTemplateColumns: 'repeat(2, 1fr)' } : {}),
+                    }}>
                         {lists.map(list => (
                             <div key={list.list_id} style={styles.card}>
                                 {editing?.listId === list.list_id ? (
@@ -182,7 +192,7 @@ const styles = {
     page: {
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '40px 40px 60px',
+        padding: '40px clamp(14px, 4vw, 40px) 60px',
         fontFamily: font,
         backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',

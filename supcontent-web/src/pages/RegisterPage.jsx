@@ -43,7 +43,7 @@ export default function RegisterPage() {
         <div style={s.page}>
             <div style={s.card}>
                 <div style={s.brand}>
-                    <span style={s.brandName}>moviemovie</span>
+                    <img src="/moviemovie_logo_icon_transparent.png" alt="moviemovie" className="brand-logo" style={s.logoMark} />
                 </div>
 
                 <h1 style={s.title}>{t('register_title')}</h1>

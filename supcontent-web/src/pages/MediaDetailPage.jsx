@@ -96,8 +96,9 @@ const STATUS_LABEL_KEYS = {
     'Dropped':   'stats_dropped',
 };
 const NARROW_LAYOUT_WIDTH = 768;
+// Desktop overlap stays at the original value; mobile (narrow) overlaps more.
 const HERO_OVERLAP = 'clamp(120px, 14vw, 180px)';
-const HERO_OVERLAP_NARROW = 'clamp(180px, 34vw, 240px)';
+const HERO_OVERLAP_NARROW = 'clamp(270px, 48vw, 350px)';
 
 function getIsNarrowLayout() {
     return window.innerWidth < NARROW_LAYOUT_WIDTH;
@@ -215,13 +216,24 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
     return (
         <div style={styles.page}>
             <div style={styles.heroStage}>
-                <div style={{
-                    ...styles.backdrop,
-                    backgroundImage: media.backdrop_path
-                        ? `url(${BACKDROP_BASE}${media.backdrop_path})`
-                        : 'none',
-                    backgroundColor: media.backdrop_path ? undefined : 'var(--bg-secondary)',
-                }}>
+                <div style={styles.backdrop}>
+                    {(() => {
+                        // Prefer the wide backdrop; fall back to a blurred poster as the background
+                        const usePoster = !media.backdrop_path && !!media.poster_path;
+                        const bgUrl = media.backdrop_path
+                            ? `${BACKDROP_BASE}${media.backdrop_path}`
+                            : media.poster_path
+                                ? `${POSTER_BASE}${media.poster_path}`
+                                : null;
+                        return (
+                            <div style={{
+                                ...styles.backdropImg,
+                                backgroundImage: bgUrl ? `url(${bgUrl})` : 'none',
+                                backgroundColor: bgUrl ? undefined : 'var(--bg-secondary)',
+                                ...(usePoster ? styles.backdropImgPoster : {}),
+                            }} />
+                        );
+                    })()}
                     <div style={styles.backdropOverlay} />
                 </div>
 
@@ -383,8 +395,10 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                 </section>
             )}
 
+            <ReviewsSection externalId={id} mediaType={mediaType} />
+
             {media.similar?.length > 0 && (
-                <section style={styles.castSection}>
+                <section style={{ ...styles.castSection, paddingTop: '56px' }}>
                     <h2 style={styles.sectionTitle}>{t('media_similar')}</h2>
                     <div style={styles.similarSlider}>
                         <button
@@ -429,8 +443,6 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                     </div>
                 </section>
             )}
-
-            <ReviewsSection externalId={id} mediaType={mediaType} />
 
             {showTrailer && media.trailer && (
                 <div style={styles.trailerOverlay} onClick={() => setShowTrailer(false)}>
@@ -486,8 +498,21 @@ const styles = {
         left: 0,
         width: '100%',
         height: '400px',
+        overflow: 'hidden',
+    },
+    backdropImg: {
+        position: 'absolute',
+        inset: 0,
         backgroundSize: 'cover',
         backgroundPosition: 'center top',
+    },
+    // Poster used as a fallback background — blurred & scaled so the 2:3 crop
+    // reads as ambient color/texture rather than a stretched poster. The parent's
+    // overflow:hidden clips the blur bleed.
+    backdropImgPoster: {
+        filter: 'blur(28px)',
+        transform: 'scale(1.2)',
+        backgroundPosition: 'center',
     },
     backdropOverlay: {
         position: 'absolute',
@@ -651,6 +676,13 @@ const styles = {
         textTransform: 'uppercase',
         transition: 'border-color 0.15s',
         maxWidth: '100%',
+        // Explicit color/bg so the button never falls back to the UA default
+        // (which renders sky-blue on mobile WebKit). The collection button
+        // overrides these inline for its active state.
+        color: 'var(--text-primary)',
+        backgroundColor: 'transparent',
+        cursor: 'pointer',
+        fontFamily: font,
     },
     statusMenu: {
         position: 'absolute',
@@ -722,7 +754,7 @@ const styles = {
         marginRight: '8px',
     },
     overview: {
-        fontSize: '17px',
+        fontSize: '15px',
         color: 'var(--text-secondary)',
         lineHeight: 1.6,
         margin: 0,

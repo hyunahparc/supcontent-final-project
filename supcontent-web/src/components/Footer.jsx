@@ -46,7 +46,7 @@ export default function Footer() {
         <footer
             style={{
                 ...styles.footer,
-                padding: isMobile ? '24px 16px 18px' : '28px 32px 20px',
+                padding: isMobile ? '24px 0 18px' : '28px 0 20px',
             }}
         >
             <div
@@ -58,7 +58,10 @@ export default function Footer() {
             >
                 {/* Brand */}
                 <div style={styles.brand}>
-                    <Link to="/" style={styles.logo}>moviemovie</Link>
+                    <Link to="/" style={styles.logo}>
+                        <img src="/moviemovie_logo_icon_transparent.png" alt="" className="brand-logo" style={styles.logoMark} />
+                        <span>moviemovie</span>
+                    </Link>
                     <p style={styles.tagline}>{t('footer_desc')}</p>
                 </div>
 
@@ -121,13 +124,16 @@ const styles = {
         maxWidth: '1200px',
         margin: '0 auto',
         marginBottom: '16px',
+        padding: '0 clamp(16px, 5vw, 24px)',
     },
     brand: {
         flexShrink: 0,
         maxWidth: '260px',
     },
     logo: {
-        display: 'inline-block',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
         fontFamily: "'Fraunces', Georgia, serif",
         fontSize: '22px',
         fontWeight: '500',
@@ -135,6 +141,13 @@ const styles = {
         textDecoration: 'none',
         letterSpacing: '0',
         marginBottom: '10px',
+        transform: 'translateY(-1px)',
+    },
+    logoMark: {
+        width: '28px',
+        height: '28px',
+        objectFit: 'contain',
+        flexShrink: 0,
     },
     tagline: {
         margin: 0,
@@ -179,7 +192,7 @@ const styles = {
         justifyContent: 'space-between',
         maxWidth: '1200px',
         margin: '0 auto',
-        paddingTop: '4px',
+        padding: '4px clamp(16px, 5vw, 24px) 0',
     },
     copyright: {
         fontSize: '12px',
