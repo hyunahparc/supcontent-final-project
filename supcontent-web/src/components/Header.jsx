@@ -63,9 +63,9 @@ function MessageIcon() {
     );
 }
 
-function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll, t }) {
+function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll, t, isMobile }) {
     return (
-        <div style={styles.notifDropdown}>
+        <div style={{ ...styles.notifDropdown, ...(isMobile ? styles.notifDropdownMobile : {}) }}>
             <div style={styles.notifHeader}>
                 <span style={styles.notifTitle}>{t('nav_notifications')}</span>
                 {notifications.some(n => !n.is_read) && (
@@ -131,10 +131,8 @@ function UserAvatar({ user }) {
 function MobileMenu({
     user,
     location,
-    unreadCount = 0,
     unreadMessageCount = 0,
     onMessagesOpen,
-    onNotificationsOpen,
     t,
 }) {
     return (
@@ -158,20 +156,6 @@ function MobileMenu({
                         {t('nav_feed')}
                     </Link>
                     <Link
-                        to={`/users/${user.user_id}/collection`}
-                        className="header-dropdown-link"
-                        style={styles.mobileLink}
-                    >
-                        {t('nav_collection')}
-                    </Link>
-                    <Link
-                        to="/lists"
-                        className={'header-dropdown-link' + (location.pathname === '/lists' ? ' active' : '')}
-                        style={styles.mobileLink}
-                    >
-                        {t('nav_lists')}
-                    </Link>
-                    <Link
                         to="/messages"
                         className={'header-dropdown-link' + (location.pathname === '/messages' ? ' active' : '')}
                         style={styles.mobileLink}
@@ -179,15 +163,6 @@ function MobileMenu({
                     >
                         <span>{t('nav_messages')}</span>
                         {unreadMessageCount > 0 && <span style={styles.menuBadge}>{unreadMessageCount}</span>}
-                    </Link>
-                    <Link
-                        to="/notifications"
-                        className={'header-dropdown-link' + (location.pathname === '/notifications' ? ' active' : '')}
-                        style={styles.mobileLink}
-                        onClick={onNotificationsOpen}
-                    >
-                        <span>{t('nav_notifications')}</span>
-                        {unreadCount > 0 && <span style={styles.menuBadge}>{unreadCount}</span>}
                     </Link>
                 </>
             ) : (
@@ -301,13 +276,48 @@ export default function Header() {
 
     const navLinkClass = (path) =>
         'header-nav-link' + (location.pathname === path ? ' active' : '');
-    const mobileUnreadCount = unreadCount + unreadMessageCount;
+    // Notifications now have their own bell in the mobile header; the hamburger
+    // only summarizes what remains inside the menu (messages).
+    const mobileUnreadCount = unreadMessageCount;
 
     return (
-        <header style={{ ...styles.header, padding: isMobile ? '0 16px' : '0 32px' }}>
-            <div style={styles.headerInner}>
-                <div style={styles.left}>
-                    <Link to="/" style={styles.logo}>moviemovie</Link>
+        <header style={styles.header}>
+            <div style={{ ...styles.headerInner, ...(isMobile ? styles.headerInnerMobile : {}) }}>
+                <div style={{ ...styles.left, ...(isMobile ? styles.leftMobile : {}) }}>
+                    {isMobile ? (
+                        <>
+                            <div ref={menuRef} style={styles.menuWrap}>
+                                <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
+                                    <HamburgerIcon />
+                                    {user && !menuOpen && mobileUnreadCount > 0 && <span style={styles.badge}>{mobileUnreadCount}</span>}
+                                </button>
+                                {menuOpen && (
+                                    <MobileMenu
+                                        user={user}
+                                        location={location}
+                                        unreadMessageCount={unreadMessageCount}
+                                        onMessagesOpen={() => setUnreadMessageCount(0)}
+                                        t={t}
+                                    />
+                                )}
+                            </div>
+                            <button
+                                onClick={toggleTheme}
+                                style={styles.themeBtn}
+                                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                                title={isDark ? 'Light mode' : 'Dark mode'}
+                            >
+                                {isDark ? <SunIcon /> : <MoonIcon />}
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/" style={styles.logo}>
+                                <img src="/moviemovie_logo_icon_transparent.png" alt="" className="brand-logo" style={styles.logoMark} />
+                                <span>moviemovie</span>
+                            </Link>
+                        </>
+                    )}
 
                     {!isMobile && (
                         <nav style={styles.mainNav}>
@@ -315,27 +325,21 @@ export default function Header() {
                                 {t('nav_explore')}
                             </Link>
                             {user && (
-                                <>
-                                    <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
-                                        {t('nav_feed')}
-                                    </Link>
-                                    <Link
-                                        to={`/users/${user.user_id}/collection`}
-                                        className={navLinkClass(`/users/${user.user_id}/collection`)}
-                                        style={styles.navLink}
-                                    >
-                                        {t('nav_collection')}
-                                    </Link>
-                                    <Link to="/lists" className={navLinkClass('/lists')} style={styles.navLink}>
-                                        {t('nav_lists')}
-                                    </Link>
-                                </>
+                                <Link to="/feed" className={navLinkClass('/feed')} style={styles.navLink}>
+                                    {t('nav_feed')}
+                                </Link>
                             )}
                         </nav>
                     )}
                 </div>
 
-                <div style={styles.right}>
+                {isMobile && (
+                    <Link to="/" style={{ ...styles.logo, ...styles.logoMobile }}>
+                        <span>moviemovie</span>
+                    </Link>
+                )}
+
+                <div style={{ ...styles.right, ...(isMobile ? styles.rightMobile : {}) }}>
                     {!isMobile && (
                         <div style={styles.searchWrap}>
                             <SearchBar />
@@ -374,48 +378,42 @@ export default function Header() {
                                     </div>
                                 )}
 
+                                {!isMobile && (
+                                    <button
+                                        onClick={toggleTheme}
+                                        style={styles.themeBtn}
+                                        aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                                        title={isDark ? 'Light mode' : 'Dark mode'}
+                                    >
+                                        {isDark ? <SunIcon /> : <MoonIcon />}
+                                    </button>
+                                )}
+
                                 {isMobile && (
-                                    <div ref={menuRef} style={styles.menuWrap}>
-                                        <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
-                                            <HamburgerIcon />
-                                            {!menuOpen && mobileUnreadCount > 0 && <span style={styles.badge}>{mobileUnreadCount}</span>}
+                                    <div style={styles.notifWrap} ref={notifRef}>
+                                        <button style={styles.iconBtn} onClick={toggleNotif} aria-label={t('nav_notifications')}>
+                                            <BellIcon />
+                                            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
                                         </button>
-                                        {menuOpen && (
-                                            <MobileMenu
-                                                user={user}
-                                                location={location}
-                                                unreadCount={unreadCount}
-                                                unreadMessageCount={unreadMessageCount}
-                                                onMessagesOpen={() => setUnreadMessageCount(0)}
-                                                onNotificationsOpen={() => setUnreadCount(0)}
+                                        {notifOpen && (
+                                            <NotifDropdown
+                                                notifications={notifications}
+                                                loading={notifLoading}
+                                                onNotifClick={handleNotifClick}
+                                                onMarkAll={handleMarkAll}
                                                 t={t}
+                                                isMobile
                                             />
                                         )}
                                     </div>
                                 )}
-
-                                <button
-                                    onClick={toggleTheme}
-                                    style={styles.themeBtn}
-                                    aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                                    title={isDark ? 'Light mode' : 'Dark mode'}
-                                >
-                                    {isDark ? <SunIcon /> : <MoonIcon />}
-                                </button>
 
                                 <UserAvatar user={user} />
                             </div>
                         </>
                     ) : (
                         <>
-                            {isMobile ? (
-                                <div ref={menuRef} style={styles.menuWrap}>
-                                    <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
-                                        <HamburgerIcon />
-                                    </button>
-                                    {menuOpen && <MobileMenu user={null} location={location} t={t} />}
-                                </div>
-                            ) : (
+                            {!isMobile && (
                                 <>
                                     <Link to="/login"    style={styles.signIn}>{t('nav_sign_in')}</Link>
                                     <Link to="/register" style={styles.signUp}>{t('nav_sign_up')}</Link>
@@ -447,10 +445,19 @@ const styles = {
         height: '100%',
         maxWidth: '1200px',
         margin: '0 auto',
+        padding: '0 clamp(16px, 5vw, 24px)',
         display: 'flex',
         alignItems: 'center',
         gap: 'clamp(8px, 1.4vw, 16px)',
         minWidth: 0,
+        position: 'relative',
+    },
+    headerInnerMobile: {
+        justifyContent: 'space-between',
+        gap: 0,
+        // Match the hamburger glyph's left gap to the avatar's right gap:
+        // right padding minus the icon button's own 6px padding.
+        paddingLeft: 'calc(clamp(16px, 5vw, 24px) - 6px)',
     },
     left: {
         display: 'flex',
@@ -458,9 +465,17 @@ const styles = {
         gap: 'clamp(12px, 2vw, 24px)',
         flexShrink: 0,
     },
+    leftMobile: {
+        flex: '0 0 76px',
+        gap: '4px',
+        zIndex: 2,
+    },
     logo: {
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
         fontFamily: "'Fraunces', Georgia, serif",
-        fontSize: '24px',
+        fontSize: '21px',
         fontWeight: '500',
         color: 'var(--text-primary)',
         textDecoration: 'none',
@@ -468,7 +483,23 @@ const styles = {
         flexShrink: 0,
         // Serif baseline sits a touch low — nudge up to align with the nav links
         lineHeight: 1,
-        transform: 'translateY(-4px)',
+        transform: 'translateY(-2px)',
+    },
+    logoMark: {
+        width: '30px',
+        height: '30px',
+        objectFit: 'contain',
+        flexShrink: 0,
+        transform: 'translateY(1px)',
+    },
+    logoMobile: {
+        position: 'absolute',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        gap: '6px',
+        fontSize: '18px',
+        zIndex: 1,
     },
     mainNav: {
         display: 'flex',
@@ -496,6 +527,11 @@ const styles = {
         flex: 1,
         justifyContent: 'flex-end',
         minWidth: 0,
+    },
+    rightMobile: {
+        flex: '0 0 auto',
+        justifyContent: 'flex-end',
+        zIndex: 2,
     },
     iconBtn: {
         background: 'none',
@@ -551,6 +587,15 @@ const styles = {
         boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
         zIndex: 300,
         overflow: 'hidden',
+    },
+    // Mobile: anchor to the viewport (not the bell) so it never gets clipped —
+    // a full-width sheet just below the 64px header.
+    notifDropdownMobile: {
+        position: 'fixed',
+        top: '72px',
+        left: '12px',
+        right: '12px',
+        width: 'auto',
     },
     notifHeader: {
         display: 'flex',

@@ -129,7 +129,7 @@ const s = {
     page: {
         maxWidth: '900px',
         margin: '0 auto',
-        padding: '40px 40px 60px',
+        padding: '40px clamp(14px, 4vw, 40px) 60px',
         fontFamily: font,
         color: 'var(--text-primary)',
         minHeight: '100vh',

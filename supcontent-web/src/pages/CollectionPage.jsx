@@ -112,7 +112,7 @@ const styles = {
     page: {
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '40px 40px 60px',
+        padding: '40px clamp(14px, 4vw, 40px) 60px',
         fontFamily: font,
         backgroundColor: 'var(--bg-primary)',
         minHeight: '100vh',

@@ -20,12 +20,19 @@ export const authStyles = {
     brand: {
         display: 'flex',
         alignItems: 'center',
-        gap: '10px',
-        marginBottom: '36px',
+        justifyContent: 'center',
+        gap: '12px',
+        marginBottom: '28px',
+    },
+    logoMark: {
+        width: '72px',
+        height: '72px',
+        objectFit: 'contain',
+        flexShrink: 0,
     },
     brandName: {
         fontFamily: "'Fraunces', Georgia, serif",
-        fontSize: '24px',
+        fontSize: '34px',
         fontWeight: '500',
         color: 'var(--text-primary)',
         letterSpacing: '0',
@@ -33,15 +40,17 @@ export const authStyles = {
     },
     title: {
         margin: '0 0 6px',
-        fontSize: '26px',
+        fontSize: '20px',
         fontWeight: '700',
         color: 'var(--text-primary)',
-        letterSpacing: '-0.5px',
+        letterSpacing: '-0.3px',
+        textAlign: 'center',
     },
     subtitle: {
         margin: '0 0 28px',
-        fontSize: '14px',
+        fontSize: '13px',
         color: 'var(--text-secondary)',
+        textAlign: 'center',
     },
     form: {
         display: 'flex',

@@ -18,6 +18,13 @@ export default function ListDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [hoveredId, setHoveredId] = useState(null);
+    const [isNarrow, setIsNarrow] = useState(() => window.innerWidth < 768);
+
+    useEffect(() => {
+        const onResize = () => setIsNarrow(window.innerWidth < 768);
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -76,6 +83,7 @@ export default function ListDetailPage() {
                                     key={`${item.external_id}-${item.media_type}`}
                                     style={{
                                         ...styles.card,
+                                        ...(isNarrow ? styles.cardNarrow : {}),
                                         opacity: hoveredId === `${item.external_id}-${item.media_type}` ? 0.8 : 1,
                                         transform: hoveredId === `${item.external_id}-${item.media_type}` ? 'scale(1.03)' : 'scale(1)',
                                         transition: 'opacity 0.15s, transform 0.15s',
@@ -140,7 +148,7 @@ const styles = {
     inner: {
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: '48px 40px',
+        padding: '48px clamp(14px, 4vw, 40px)',
     },
     header: {
         display: 'flex',
@@ -189,6 +197,10 @@ const styles = {
         backgroundColor: 'var(--bg-elevated)',
         borderRadius: '8px',
         overflow: 'hidden',
+    },
+    // Narrow (mobile) layout: 2 cards per row (grid gap is 20px)
+    cardNarrow: {
+        flex: '0 0 calc((100% - 20px) / 2)',
     },
     cardLink: {
         display: 'block',

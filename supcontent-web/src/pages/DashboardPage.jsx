@@ -218,11 +218,11 @@ export default function DashboardPage() {
                 {collection.length === 0 ? (
                     <p style={s.emptyText}>{t('profile_no_media')}</p>
                 ) : (
-                    <div style={s.posterGrid}>
+                    <div style={{ ...s.posterGrid, ...(isNarrow ? s.posterGridNarrow : {}) }}>
                         {collection.map(item => {
                             const poster = item.full_data?.poster_path;
                             return (
-                                <Link key={item.collection_id} to={mediaHref(item)} style={s.posterWrap}>
+                                <Link key={item.collection_id} to={mediaHref(item)} style={{ ...s.posterWrap, ...(isNarrow ? s.posterWrapNarrow : {}) }}>
                                     {poster ? (
                                         <img src={`${TMDB_IMG}${poster}`} alt={item.full_data?.title ?? ''} style={s.poster} />
                                     ) : (
@@ -507,12 +507,18 @@ const s = {
     emptyText: { color: 'var(--text-muted)', fontSize: '14px', fontStyle: 'italic', margin: 0 },
 
     // Collection preview
+    // Wide: 6 posters fill the row. Narrow: horizontal scroll with fixed-width cards.
     posterGrid: {
-        display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none',
+        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+    },
+    posterGridNarrow: {
+        display: 'flex', gridTemplateColumns: 'none', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none',
     },
     posterWrap: {
         borderRadius: '8px', overflow: 'hidden', display: 'block',
         aspectRatio: '2 / 3', backgroundColor: 'var(--bg-elevated)',
+    },
+    posterWrapNarrow: {
         flex: '0 0 118px',
     },
     poster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },

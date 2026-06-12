@@ -183,6 +183,24 @@ canvas {
   outline-color: var(--accent);
 }
 
+/* Brand logo is a pure-white silhouette PNG (reads on the dark theme).
+   In light mode, invert it to a black silhouette so it stays visible. */
+[data-theme="light"] .brand-logo {
+  filter: invert(1);
+}
+
+/* iOS Safari auto-zooms the viewport when a focused input/textarea/select has a
+   font-size < 16px. Force 16px on small screens so tapping a field never zooms.
+   !important is required to beat the inline font-sizes set on these controls.
+   (Pinch-to-zoom stays enabled — we don't touch the viewport meta.) */
+@media (max-width: 768px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* ── Selection color ─────────────────────────────────────────────────────── */
 ::selection {
   background-color: var(--accent);
