@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getLibrary } from '../api/collections';
-import { getUserStats } from '../api/users';
+import { getUserStats, getUserProfile } from '../api/users';
 import CollectionStatusBar from '../components/library/CollectionStatusBar';
 import { mediaHref } from '../utils/media';
 
@@ -26,8 +26,15 @@ export default function CollectionPage() {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
     const [hoveredId, setHoveredId] = useState(null);
+    const [username, setUsername] = useState('');
 
     const isOwner = user?.user_id === parseInt(id);
+
+    // Fetch the owner's username (for the "X's collection" title) on other profiles
+    useEffect(() => {
+        if (isOwner) { setUsername(''); return; }
+        getUserProfile(id).then(p => setUsername(p.username)).catch(() => {});
+    }, [id, isOwner]);
 
     useEffect(() => {
         setLoading(true);
@@ -45,7 +52,7 @@ export default function CollectionPage() {
     return (
         <div style={styles.page}>
             <h1 style={styles.heading}>
-                {isOwner ? t('col_title') : t('nav_collection')}
+                {isOwner ? t('col_title') : (username ? t('profile_user_collection').replace('{name}', username) : t('nav_collection'))}
             </h1>
 
             <CollectionStatusBar byStatus={stats?.by_status} total={stats?.total ?? 0} />
