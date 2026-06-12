@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import {
@@ -16,39 +17,27 @@ import { ChevronIcon, MessageCircleIcon, StarIcon } from './AppIcons';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
-// --- Star Rating Component (supports 0.5 increments) ---
+// --- Star Rating Component (whole stars, 1–5) ---
 function StarRating({ value, onChange, readOnly = false, size = 20 }) {
     const [hovered, setHovered] = useState(0);
 
-    const display = hovered || value || 0;
-
-    function getType(n) {
-        if (display >= n)       return 'full';
-        if (display >= n - 0.5) return 'half';
-        return 'empty';
-    }
-
-    function pickValue(e, n) {
-        const rect = e.currentTarget.getBoundingClientRect();
-        return e.clientX - rect.left < rect.width / 2 ? n - 0.5 : n;
-    }
+    // Round any legacy half values to the nearest whole star for display.
+    const display = hovered || Math.round(value || 0);
 
     return (
         <div style={{ display: 'flex', gap: '2px' }}>
             {[1, 2, 3, 4, 5].map(n => {
-                const type = getType(n);
+                const filled = display >= n;
                 return (
                     <div
                         key={n}
-                        onMouseMove={e => !readOnly && setHovered(pickValue(e, n))}
+                        onMouseEnter={() => !readOnly && setHovered(n)}
                         onMouseLeave={() => !readOnly && setHovered(0)}
-                        onClick={e => !readOnly && onChange && onChange(pickValue(e, n))}
+                        onClick={() => !readOnly && onChange && onChange(n)}
                         style={{
-                            position: 'relative',
                             width: size,
                             height: size,
-                            fontSize: size,
-                            lineHeight: 1,
+                            lineHeight: 0,
                             cursor: readOnly ? 'default' : 'pointer',
                             userSelect: 'none',
                             flexShrink: 0,
@@ -56,25 +45,9 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
                     >
                         <StarIcon
                             size={size}
-                            filled={false}
-                            style={{ color: 'var(--text-muted)', position: 'absolute', left: 0, top: 0 }}
+                            filled={filled}
+                            style={{ display: 'block', color: filled ? '#f5c518' : 'var(--text-muted)' }}
                         />
-                        {type !== 'empty' && (
-                            <span
-                                style={{
-                                color: '#f5c518',
-                                position: 'absolute',
-                                left: 0,
-                                top: 0,
-                                overflow: 'hidden',
-                                width: type === 'half' ? '50%' : '100%',
-                                display: 'block',
-                                whiteSpace: 'nowrap',
-                            }}
-                            >
-                                <StarIcon size={size} />
-                            </span>
-                        )}
                     </div>
                 );
             })}
@@ -134,14 +107,14 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
     return (
         <div style={{ ...cardStyles.card, position: 'relative' }}>
             <div style={cardStyles.header}>
-                <div style={cardStyles.avatar}>
+                <Link to={`/users/${review.user_id}/profile`} style={{ ...cardStyles.avatar, textDecoration: 'none' }} aria-label={review.username}>
                     {review.avatar
                         ? <img src={review.avatar} alt={review.username} style={cardStyles.avatarImg} />
                         : <span style={cardStyles.avatarFallback}>{review.username?.charAt(0).toUpperCase()}</span>
                     }
-                </div>
+                </Link>
                 <div style={{ flex: 1 }}>
-                    <div style={cardStyles.username}>{review.username}</div>
+                    <Link to={`/users/${review.user_id}/profile`} style={{ ...cardStyles.username, textDecoration: 'none' }}>{review.username}</Link>
                     <div style={cardStyles.date}>
                         {new Date(review.created_at).toLocaleDateString(language === 'fr' ? 'fr-FR' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                         {review.updated_at !== review.created_at && ' (edited)'}
@@ -314,7 +287,7 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                 <h2 style={sectionStyles.title}>{t('review_title')}</h2>
                 {avgRating && (
                     <div style={sectionStyles.avg}>
-                        <StarRating value={Math.round(parseFloat(avgRating) * 2) / 2} readOnly size={18} />
+                        <StarRating value={Math.round(parseFloat(avgRating))} readOnly size={18} />
                         <span style={sectionStyles.avgText}>{avgRating} / 5</span>
                         <span style={sectionStyles.dim}>({ratedReviews.length} {t('review_ratings')})</span>
                     </div>

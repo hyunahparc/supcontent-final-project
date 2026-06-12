@@ -180,22 +180,35 @@ export default function DashboardPage() {
                 {isOwnProfile ? (
                     !isNarrow && <Link to="/settings/profile" style={s.editBtn}>{t('profile_edit')}</Link>
                 ) : user && (
-                    <div style={{ ...s.followWrap, ...(isNarrow ? s.followWrapNarrow : {}) }}>
-                        {profile.is_following ? (
-                            <>
-                                <button onClick={() => setShowUnfollowMenu(v => !v)} disabled={followLoading} style={s.followingBtn}>
-                                    {t('profile_following_btn')}
+                    <div style={{ ...s.followCol, ...(isNarrow ? s.followColNarrow : {}) }}>
+                        <div style={s.followWrap}>
+                            {profile.is_following ? (
+                                <>
+                                    <button onClick={() => setShowUnfollowMenu(v => !v)} disabled={followLoading} style={s.followingBtn}>
+                                        {t('profile_following_btn')}
+                                    </button>
+                                    {showUnfollowMenu && (
+                                        <div style={s.unfollowMenu}>
+                                            <button onClick={handleUnfollow} style={s.unfollowMenuItem}>{t('profile_unfollow')}</button>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <button onClick={handleFollow} disabled={followLoading} style={s.followBtn}>
+                                    {t('profile_follow')}
                                 </button>
-                                {showUnfollowMenu && (
-                                    <div style={s.unfollowMenu}>
-                                        <button onClick={handleUnfollow} style={s.unfollowMenuItem}>{t('profile_unfollow')}</button>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <button onClick={handleFollow} disabled={followLoading} style={s.followBtn}>
-                                {t('profile_follow')}
-                            </button>
+                            )}
+                        </div>
+
+                        {/* Message button — only when both users follow each other (mutual) */}
+                        {profile.is_following && profile.is_followed_by && (
+                            <Link
+                                to="/messages"
+                                state={{ startUser: { user_id: resolvedId, username: profile.username, avatar: profile.avatar } }}
+                                style={s.messageBtn}
+                            >
+                                {t('profile_message')}
+                            </Link>
                         )}
                     </div>
                 )}
@@ -209,7 +222,7 @@ export default function DashboardPage() {
             <section style={s.section}>
                 <div style={s.sectionHeader}>
                     <h2 style={s.sectionTitle}>
-                        {isOwnProfile ? t('profile_my_collection') : `${profile.username}`}
+                        {isOwnProfile ? t('profile_my_collection') : t('profile_user_collection').replace('{name}', profile.username)}
                     </h2>
                     <Link to={`/users/${resolvedId}/collection`} style={s.seeAllLink}>
                         {t('profile_see_all')} ({profile.media_count ?? 0})
@@ -239,7 +252,7 @@ export default function DashboardPage() {
             <section style={s.section}>
                     <div style={s.sectionHeader}>
                         <h2 style={s.sectionTitle}>
-                            {isOwnProfile ? t('profile_my_lists') : `${profile.username}`}
+                            {isOwnProfile ? t('profile_my_lists') : t('profile_user_lists').replace('{name}', profile.username)}
                         </h2>
                         {isOwnProfile
                             ? <Link to="/lists" style={s.seeAllLink}>{t('profile_see_all')} ({lists.length})</Link>
@@ -400,6 +413,9 @@ const s = {
         minWidth: 0,
     },
     profileInfoNarrow: {
+        // Override the base flex: '1 1 240px' — in the narrow column layout that
+        // 240px basis becomes a min-height, leaving a big gap above the follow button.
+        flex: 'initial',
         width: '100%',
         maxWidth: '560px',
         display: 'flex',
@@ -473,8 +489,19 @@ const s = {
         fontFamily: font,
         letterSpacing: '0.3px',
     },
-    followWrap: { position: 'relative', alignSelf: 'flex-start', flexShrink: 0 },
-    followWrapNarrow: { alignSelf: 'center' },
+    // Column wrapping the follow button and (when mutual) the message button
+    followCol: {
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+        alignSelf: 'flex-start', flexShrink: 0,
+    },
+    followColNarrow: { alignSelf: 'center', marginTop: '10px' },
+    followWrap: { position: 'relative' },
+    messageBtn: {
+        padding: '10px 28px', border: '1px solid var(--border-visible)', borderRadius: '9999px',
+        backgroundColor: 'transparent', color: 'var(--text-primary)', fontSize: '13px', fontWeight: '700',
+        cursor: 'pointer', fontFamily: font, letterSpacing: '0.5px', textDecoration: 'none',
+        textAlign: 'center', whiteSpace: 'nowrap',
+    },
     followBtn: {
         padding: '10px 28px', border: 'none', borderRadius: '9999px',
         backgroundColor: 'var(--accent)', color: 'var(--text-inverse)', fontSize: '13px', fontWeight: '700',

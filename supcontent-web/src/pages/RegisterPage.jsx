@@ -76,7 +76,7 @@ export default function RegisterPage() {
                             onBlur={() => setFocused('')}
                             required
                             style={inputStyle(focused, 'username')}
-                            placeholder="Votre nom"
+                            placeholder={t('register_username_placeholder')}
                         />
                     </div>
 
