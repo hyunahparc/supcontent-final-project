@@ -1,3 +1,4 @@
+s|} from '../api/reviews';|    reportReview,\n} from '../api/reviews';|
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,6 +11,7 @@ import {
     getComments,
     addComment,
     deleteComment,
+    reportReview,
 } from '../api/reviews';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";

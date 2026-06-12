@@ -194,3 +194,13 @@ CREATE TABLE highlighted_reviews (
     review_id    INT NOT NULL REFERENCES reviews(review_id) ON DELETE CASCADE,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- Migration 2.2.5 : rôles et modération
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin  BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_banned BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- Contrainte unique : un utilisateur ne peut signaler qu'une fois la même critique
+ALTER TABLE moderation_reports ADD CONSTRAINT moderation_reports_unique UNIQUE (review_id, reporter_id);
+
+-- Contrainte unique : une critique ne peut être mise en avant qu'une seule fois
+ALTER TABLE highlighted_reviews ADD CONSTRAINT highlighted_reviews_unique UNIQUE (review_id);

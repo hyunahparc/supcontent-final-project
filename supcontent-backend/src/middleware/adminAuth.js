@@ -1,10 +1,11 @@
-// Middleware d'authentification — vérifie le JWT et bloque les comptes bannis.
-// Un utilisateur banni reçoit une 403 même avec un token valide.
+// Middleware admin — vérifie JWT valide + is_admin = true en base
+// Le double contrôle (token + BDD) empêche l'escalade de privilège
+// si is_admin est modifié après émission du token.
 
 const jwt = require('jsonwebtoken');
 const db  = require('../config/db');
 
-async function auth(req, res, next) {
+async function adminAuth(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader)
         return res.status(401).json({ message: 'Aucun token fourni.' });
@@ -18,22 +19,19 @@ async function auth(req, res, next) {
     }
 
     try {
-        // Vérification du bannissement en base à chaque requête authentifiée
         const { rows } = await db.query(
-            'SELECT is_banned FROM users WHERE user_id = $1',
+            'SELECT user_id, is_admin FROM users WHERE user_id = $1',
             [payload.user_id]
         );
-        if (!rows[0])
-            return res.status(401).json({ message: 'Utilisateur introuvable.' });
-        if (rows[0].is_banned)
-            return res.status(403).json({ message: 'Votre compte a été banni.' });
+        if (!rows[0] || !rows[0].is_admin)
+            return res.status(403).json({ message: 'Accès réservé aux administrateurs.' });
 
         req.user = payload;
         next();
     } catch (err) {
-        console.error('[auth]', err.message);
+        console.error('[adminAuth]', err.message);
         return res.status(500).json({ message: 'Erreur serveur.' });
     }
 }
 
-module.exports = auth;
+module.exports = adminAuth;
