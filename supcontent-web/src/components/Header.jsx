@@ -284,40 +284,11 @@ export default function Header() {
         <header style={styles.header}>
             <div style={{ ...styles.headerInner, ...(isMobile ? styles.headerInnerMobile : {}) }}>
                 <div style={{ ...styles.left, ...(isMobile ? styles.leftMobile : {}) }}>
-                    {isMobile ? (
-                        <>
-                            <div ref={menuRef} style={styles.menuWrap}>
-                                <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
-                                    <HamburgerIcon />
-                                    {user && !menuOpen && mobileUnreadCount > 0 && <span style={styles.badge}>{mobileUnreadCount}</span>}
-                                </button>
-                                {menuOpen && (
-                                    <MobileMenu
-                                        user={user}
-                                        location={location}
-                                        unreadMessageCount={unreadMessageCount}
-                                        onMessagesOpen={() => setUnreadMessageCount(0)}
-                                        t={t}
-                                    />
-                                )}
-                            </div>
-                            <button
-                                onClick={toggleTheme}
-                                style={styles.themeBtn}
-                                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                                title={isDark ? 'Light mode' : 'Dark mode'}
-                            >
-                                {isDark ? <SunIcon /> : <MoonIcon />}
-                            </button>
-                        </>
-                    ) : (
-                        <>
-                            <Link to="/" style={styles.logo}>
-                                <img src="/moviemovie_logo_icon_transparent.png" alt="" className="brand-logo" style={styles.logoMark} />
-                                <span>moviemovie</span>
-                            </Link>
-                        </>
-                    )}
+                    {/* Logo — desktop: image + wordmark; mobile (narrow): wordmark only, larger */}
+                    <Link to="/" style={isMobile ? { ...styles.logo, ...styles.logoMobileLeft } : styles.logo} aria-label="moviemovie">
+                        <img src="/moviemovie_logo_icon_transparent.png" alt="" className="brand-logo" style={isMobile ? styles.logoMarkMobile : styles.logoMark} />
+                        {!isMobile && <span>moviemovie</span>}
+                    </Link>
 
                     {!isMobile && (
                         <nav style={styles.mainNav}>
@@ -333,12 +304,6 @@ export default function Header() {
                     )}
                 </div>
 
-                {isMobile && (
-                    <Link to="/" style={{ ...styles.logo, ...styles.logoMobile }}>
-                        <span>moviemovie</span>
-                    </Link>
-                )}
-
                 <div style={{ ...styles.right, ...(isMobile ? styles.rightMobile : {}) }}>
                     {!isMobile && (
                         <div style={styles.searchWrap}>
@@ -346,79 +311,99 @@ export default function Header() {
                         </div>
                     )}
 
-                    {user ? (
-                        <>
-                            <div style={styles.userActions}>
-                                {!isMobile && (
-                                    <div style={styles.notifWrap} ref={notifRef}>
-                                        <Link
-                                            style={styles.iconBtn}
-                                            to="/messages"
-                                            aria-label="Messages"
-                                            onClick={() => setUnreadMessageCount(0)}
-                                        >
-                                            <MessageIcon />
-                                            {unreadMessageCount > 0 && <span style={styles.badge}>{unreadMessageCount}</span>}
-                                        </Link>
+                    {isMobile ? (
+                        /* Mobile order: dark mode → notification → menu → profile */
+                        <div style={styles.userActions}>
+                            <button
+                                onClick={toggleTheme}
+                                style={styles.themeBtn}
+                                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                                title={isDark ? 'Light mode' : 'Dark mode'}
+                            >
+                                {isDark ? <SunIcon /> : <MoonIcon />}
+                            </button>
 
-                                        <button style={styles.iconBtn} onClick={toggleNotif} aria-label="Notifications">
-                                            <BellIcon />
-                                            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
-                                        </button>
-
-                                        {notifOpen && (
-                                            <NotifDropdown
-                                                notifications={notifications}
-                                                loading={notifLoading}
-                                                onNotifClick={handleNotifClick}
-                                                onMarkAll={handleMarkAll}
-                                                t={t}
-                                            />
-                                        )}
-                                    </div>
-                                )}
-
-                                {!isMobile && (
-                                    <button
-                                        onClick={toggleTheme}
-                                        style={styles.themeBtn}
-                                        aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-                                        title={isDark ? 'Light mode' : 'Dark mode'}
-                                    >
-                                        {isDark ? <SunIcon /> : <MoonIcon />}
+                            {user && (
+                                <div style={styles.notifWrap} ref={notifRef}>
+                                    <button style={styles.iconBtn} onClick={toggleNotif} aria-label={t('nav_notifications')}>
+                                        <BellIcon />
+                                        {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
                                     </button>
-                                )}
+                                    {notifOpen && (
+                                        <NotifDropdown
+                                            notifications={notifications}
+                                            loading={notifLoading}
+                                            onNotifClick={handleNotifClick}
+                                            onMarkAll={handleMarkAll}
+                                            t={t}
+                                            isMobile
+                                        />
+                                    )}
+                                </div>
+                            )}
 
-                                {isMobile && (
-                                    <div style={styles.notifWrap} ref={notifRef}>
-                                        <button style={styles.iconBtn} onClick={toggleNotif} aria-label={t('nav_notifications')}>
-                                            <BellIcon />
-                                            {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
-                                        </button>
-                                        {notifOpen && (
-                                            <NotifDropdown
-                                                notifications={notifications}
-                                                loading={notifLoading}
-                                                onNotifClick={handleNotifClick}
-                                                onMarkAll={handleMarkAll}
-                                                t={t}
-                                                isMobile
-                                            />
-                                        )}
-                                    </div>
+                            <div ref={menuRef} style={styles.menuWrap}>
+                                <button style={styles.iconBtn} onClick={() => setMenuOpen(v => !v)} aria-label="Open menu">
+                                    <HamburgerIcon />
+                                    {user && !menuOpen && mobileUnreadCount > 0 && <span style={styles.badge}>{mobileUnreadCount}</span>}
+                                </button>
+                                {menuOpen && (
+                                    <MobileMenu
+                                        user={user}
+                                        location={location}
+                                        unreadMessageCount={unreadMessageCount}
+                                        onMessagesOpen={() => setUnreadMessageCount(0)}
+                                        t={t}
+                                    />
                                 )}
-
-                                <UserAvatar user={user} />
                             </div>
-                        </>
+
+                            {user && <UserAvatar user={user} />}
+                        </div>
+                    ) : user ? (
+                        <div style={styles.userActions}>
+                            <div style={styles.notifWrap} ref={notifRef}>
+                                <Link
+                                    style={styles.iconBtn}
+                                    to="/messages"
+                                    aria-label="Messages"
+                                    onClick={() => setUnreadMessageCount(0)}
+                                >
+                                    <MessageIcon />
+                                    {unreadMessageCount > 0 && <span style={styles.badge}>{unreadMessageCount}</span>}
+                                </Link>
+
+                                <button style={styles.iconBtn} onClick={toggleNotif} aria-label="Notifications">
+                                    <BellIcon />
+                                    {unreadCount > 0 && <span style={styles.badge}>{unreadCount}</span>}
+                                </button>
+
+                                {notifOpen && (
+                                    <NotifDropdown
+                                        notifications={notifications}
+                                        loading={notifLoading}
+                                        onNotifClick={handleNotifClick}
+                                        onMarkAll={handleMarkAll}
+                                        t={t}
+                                    />
+                                )}
+                            </div>
+
+                            <button
+                                onClick={toggleTheme}
+                                style={styles.themeBtn}
+                                aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+                                title={isDark ? 'Light mode' : 'Dark mode'}
+                            >
+                                {isDark ? <SunIcon /> : <MoonIcon />}
+                            </button>
+
+                            <UserAvatar user={user} />
+                        </div>
                     ) : (
                         <>
-                            {!isMobile && (
-                                <>
-                                    <Link to="/login"    style={styles.signIn}>{t('nav_sign_in')}</Link>
-                                    <Link to="/register" style={styles.signUp}>{t('nav_sign_up')}</Link>
-                                </>
-                            )}
+                            <Link to="/login"    style={styles.signIn}>{t('nav_sign_in')}</Link>
+                            <Link to="/register" style={styles.signUp}>{t('nav_sign_up')}</Link>
                         </>
                     )}
                 </div>
@@ -455,9 +440,6 @@ const styles = {
     headerInnerMobile: {
         justifyContent: 'space-between',
         gap: 0,
-        // Match the hamburger glyph's left gap to the avatar's right gap:
-        // right padding minus the icon button's own 6px padding.
-        paddingLeft: 'calc(clamp(16px, 5vw, 24px) - 6px)',
     },
     left: {
         display: 'flex',
@@ -466,7 +448,7 @@ const styles = {
         flexShrink: 0,
     },
     leftMobile: {
-        flex: '0 0 76px',
+        flex: '0 0 auto',
         gap: '4px',
         zIndex: 2,
     },
@@ -492,14 +474,17 @@ const styles = {
         flexShrink: 0,
         transform: 'translateY(1px)',
     },
-    logoMobile: {
-        position: 'absolute',
-        left: '50%',
-        top: '50%',
-        transform: 'translate(-50%, -50%)',
-        gap: '6px',
-        fontSize: '18px',
-        zIndex: 1,
+    // Narrow header: image-only logo, a bit larger than the desktop mark.
+    logoMarkMobile: {
+        width: '38px',
+        height: '38px',
+        objectFit: 'contain',
+        flexShrink: 0,
+    },
+    // Narrow header: wordmark logo on the left.
+    logoMobileLeft: {
+        fontSize: '22px',
+        transform: 'none',
     },
     mainNav: {
         display: 'flex',
