@@ -61,7 +61,7 @@ export default function RegisterScreen() {
     >
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.eyebrow}>SUPCONTENT</Text>
+          <Text style={styles.eyebrow}>moviemovie</Text>
           <Text style={styles.title}>{t('mob_register_title')}</Text>
           <Text style={styles.body}>{t('mob_register_subtitle')}</Text>
         </View>

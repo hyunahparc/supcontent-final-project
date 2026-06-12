@@ -4,6 +4,7 @@ import { getFeed } from '../api/feed';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { mediaHref } from '../utils/media';
+import { StarIcon } from '../components/AppIcons';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w185';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -126,9 +127,11 @@ export default function FeedPage() {
                                                             const type = val >= i ? 'full' : val >= i - 0.5 ? 'half' : 'empty';
                                                             return (
                                                                 <div key={i} style={{ position: 'relative', width: 15, height: 15, fontSize: 15, lineHeight: 1, flexShrink: 0 }}>
-                                                                    <span style={{ color: 'var(--bg-elevated)', position: 'absolute', left: 0, top: 0 }}>★</span>
+                                                                    <StarIcon size={15} filled={false} style={{ color: 'var(--bg-elevated)', position: 'absolute', left: 0, top: 0 }} />
                                                                     {type !== 'empty' && (
-                                                                        <span style={{ color: '#f5c518', position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: type === 'half' ? '50%' : '100%', display: 'block', whiteSpace: 'nowrap' }}>★</span>
+                                                                        <span style={{ color: '#f5c518', position: 'absolute', left: 0, top: 0, overflow: 'hidden', width: type === 'half' ? '50%' : '100%', display: 'block', whiteSpace: 'nowrap' }}>
+                                                                            <StarIcon size={15} />
+                                                                        </span>
                                                                     )}
                                                                 </div>
                                                             );

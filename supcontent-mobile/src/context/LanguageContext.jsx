@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 const LanguageContext = createContext(null);
 
 const SUPPORTED = ['fr', 'en'];
+const DEFAULT_LANGUAGE = 'en';
 
 const TRANSLATIONS = {
     fr: {
@@ -81,7 +82,7 @@ const TRANSLATIONS = {
 
         // Register
         register_title: 'Créer un compte',
-        register_subtitle: 'Rejoignez SupContent',
+        register_subtitle: 'Rejoignez moviemovie',
         register_username: "Nom d'utilisateur",
         register_creating: 'Création en cours...',
         register_submit: "S'inscrire",
@@ -165,7 +166,7 @@ const TRANSLATIONS = {
         mob_login_subtitle: 'Accédez à votre bibliothèque, critiques, fil et messages.',
         mob_login_required: 'Email et mot de passe requis.',
         mob_login_error: 'Impossible de se connecter.',
-        mob_login_new: 'Nouveau sur SupContent ?',
+        mob_login_new: 'Nouveau sur moviemovie ?',
         mob_login_create: 'Créer un compte',
 
         // Mobile register
@@ -199,7 +200,7 @@ const TRANSLATIONS = {
         mob_search_prev: 'Précédent',
         mob_search_next: 'Suivant',
         mob_search_by: 'par',
-        mob_search_member: 'Membre Supcontent',
+        mob_search_member: 'Membre moviemovie',
         mob_search_year_hint: 'Saisissez une année à 4 chiffres.',
         mob_search_chars_hint: 'Saisissez au moins 2 caractères.',
         mob_search_failed: 'Recherche échouée.',
@@ -383,7 +384,7 @@ const TRANSLATIONS = {
 
         // Register
         register_title: 'Create an account',
-        register_subtitle: 'Join SupContent today',
+        register_subtitle: 'Join moviemovie today',
         register_username: 'Username',
         register_creating: 'Creating account...',
         register_submit: 'Sign Up',
@@ -467,7 +468,7 @@ const TRANSLATIONS = {
         mob_login_subtitle: 'Access your library, reviews, feed, and private messages.',
         mob_login_required: 'Email and password are required.',
         mob_login_error: 'Unable to log in.',
-        mob_login_new: 'New to SupContent?',
+        mob_login_new: 'New to moviemovie?',
         mob_login_create: 'Create an account',
 
         // Mobile register
@@ -501,7 +502,7 @@ const TRANSLATIONS = {
         mob_search_prev: 'Previous',
         mob_search_next: 'Next',
         mob_search_by: 'by',
-        mob_search_member: 'Supcontent member',
+        mob_search_member: 'moviemovie member',
         mob_search_year_hint: 'Enter a 4-digit year.',
         mob_search_chars_hint: 'Type at least 2 characters to search.',
         mob_search_failed: 'Search failed.',
@@ -616,7 +617,7 @@ export function LanguageProvider({ children }) {
     const { user } = useAuth();
     const [language, setLanguageState] = useState(() => {
         const lang = user?.preferred_language;
-        return SUPPORTED.includes(lang) ? lang : 'fr';
+        return SUPPORTED.includes(lang) ? lang : DEFAULT_LANGUAGE;
     });
 
     useEffect(() => {
@@ -630,7 +631,7 @@ export function LanguageProvider({ children }) {
     }
 
     function t(key) {
-        return TRANSLATIONS[language]?.[key] ?? TRANSLATIONS['fr']?.[key] ?? key;
+        return TRANSLATIONS[language]?.[key] ?? TRANSLATIONS[DEFAULT_LANGUAGE]?.[key] ?? key;
     }
 
     return (

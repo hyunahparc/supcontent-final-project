@@ -431,7 +431,7 @@ const s = {
     page: {
         maxWidth: '680px',
         margin: '0 auto',
-        padding: '48px 32px 80px',
+        padding: 'clamp(28px, 6vw, 48px) clamp(16px, 5vw, 32px) 80px',
         fontFamily: font,
         color: 'var(--text-primary)',
         minHeight: '100vh',
@@ -451,7 +451,7 @@ const s = {
         margin: 0,
         fontSize: '28px',
         fontWeight: '700',
-        letterSpacing: '-0.3px',
+        letterSpacing: '0',
     },
     successBanner: {
         padding: '12px 16px',
@@ -474,7 +474,7 @@ const s = {
     card: {
         backgroundColor: 'var(--bg-secondary)',
         borderRadius: '12px',
-        padding: '28px 32px',
+        padding: 'clamp(20px, 5vw, 28px) clamp(18px, 5vw, 32px)',
         marginBottom: '24px',
         border: '1px solid var(--border)',
     },
@@ -538,6 +538,8 @@ const s = {
         flexDirection: 'column',
         gap: '10px',
         alignItems: 'flex-start',
+        minWidth: 0,
+        flex: '1 1 220px',
     },
     avatarHint: {
         margin: 0,
@@ -594,6 +596,7 @@ const s = {
         alignItems: 'center',
         justifyContent: 'space-between',
         gap: '16px',
+        flexWrap: 'wrap',
     },
     prefLabel: {
         margin: '0 0 4px',
@@ -660,12 +663,13 @@ const s = {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
+        padding: '16px',
     },
     modal: {
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
         borderRadius: '16px',
-        padding: '36px',
+        padding: 'clamp(24px, 6vw, 36px)',
         maxWidth: '420px',
         width: '90%',
     },
@@ -685,5 +689,6 @@ const s = {
         display: 'flex',
         gap: '12px',
         justifyContent: 'flex-end',
+        flexWrap: 'wrap',
     },
 };

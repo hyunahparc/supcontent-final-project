@@ -4,6 +4,9 @@
    and light themes work everywhere, including React inline-styles via var().
 ───────────────────────────────────────────────────────────────────────────── */
 
+/* Brand wordmark font — "moviemovie" logo (Fraunces, light serif) */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&display=swap');
+
 /* ── Dark theme (default) ────────────────────────────────────────────────── */
 :root {
   /* Backgrounds */
@@ -123,6 +126,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -130,6 +137,14 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
 }
 
 #root {

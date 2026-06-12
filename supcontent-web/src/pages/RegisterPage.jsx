@@ -43,8 +43,7 @@ export default function RegisterPage() {
         <div style={s.page}>
             <div style={s.card}>
                 <div style={s.brand}>
-                    <div style={s.logo}>S</div>
-                    <span style={s.brandName}>SupContent</span>
+                    <span style={s.brandName}>moviemovie</span>
                 </div>
 
                 <h1 style={s.title}>{t('register_title')}</h1>

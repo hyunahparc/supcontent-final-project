@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 const LanguageContext = createContext(null);
 
 const SUPPORTED = ['fr', 'en'];
+const DEFAULT_LANGUAGE = 'en';
 
 const TRANSLATIONS = {
     fr: {
@@ -117,7 +118,7 @@ const TRANSLATIONS = {
 
         // Register
         register_title: 'Créer un compte',
-        register_subtitle: 'Rejoignez SupContent',
+        register_subtitle: 'Rejoignez Moviemovie',
         register_username: "Nom d'utilisateur",
         register_creating: 'Création en cours...',
         register_submit: "S'inscrire",
@@ -298,6 +299,12 @@ const TRANSLATIONS = {
         search_tab_media: 'Films & Séries',
         search_tab_people: 'Personnes',
         search_tab_lists: 'Listes',
+        search_cat_movies: 'Films',
+        search_cat_series: 'Séries',
+        search_cat_users: 'Utilisateurs',
+        search_cat_lists: 'Listes',
+        search_filters: 'Filtres',
+        search_clear: 'Effacer',
         search_placeholder: 'Un titre de film ou de série... (optionnel)',
         search_loading: 'Recherche...',
         search_btn: 'Rechercher',
@@ -367,7 +374,7 @@ const TRANSLATIONS = {
         trending_error: 'Impossible de charger les tendances.',
         trending_retry: 'Réessayer',
         home_view_details: 'Voir les détails →',
-        features_eyebrow: 'Pourquoi SupContent ?',
+        features_eyebrow: 'Pourquoi moviemovie ?',
         features_title: 'Tout ce dont vous avez besoin',
         feature1_title: 'Recherche intelligente',
         feature1_desc: 'Trouvez n\'importe quel film ou série en quelques secondes grâce à notre moteur combinant cache local et TMDB.',
@@ -496,7 +503,7 @@ const TRANSLATIONS = {
 
         // Register
         register_title: 'Create an account',
-        register_subtitle: 'Join SupContent today',
+        register_subtitle: 'Join Moviemovie today',
         register_username: 'Username',
         register_creating: 'Creating account...',
         register_submit: 'Sign Up',
@@ -677,6 +684,12 @@ const TRANSLATIONS = {
         search_tab_media: 'Movies & TV shows',
         search_tab_people: 'People',
         search_tab_lists: 'Lists',
+        search_cat_movies: 'Movies',
+        search_cat_series: 'Series',
+        search_cat_users: 'Users',
+        search_cat_lists: 'Lists',
+        search_filters: 'Filters',
+        search_clear: 'Clear',
         search_placeholder: 'A movie or TV show title… (optional)',
         search_loading: 'Searching…',
         search_btn: 'Search',
@@ -746,7 +759,7 @@ const TRANSLATIONS = {
         trending_error: 'Failed to load trending content.',
         trending_retry: 'Retry',
         home_view_details: 'View details →',
-        features_eyebrow: 'Why SupContent?',
+        features_eyebrow: 'Why moviemovie?',
         features_title: 'Everything you need',
         feature1_title: 'Smart Search',
         feature1_desc: 'Find any film or series in seconds with our search engine combining local cache and TMDB.',
@@ -768,7 +781,7 @@ const TRANSLATIONS = {
 
 function resolveInitialLanguage(user) {
     const lang = user?.preferred_language;
-    return SUPPORTED.includes(lang) ? lang : 'fr';
+    return SUPPORTED.includes(lang) ? lang : DEFAULT_LANGUAGE;
 }
 
 export function LanguageProvider({ children }) {
@@ -786,7 +799,7 @@ export function LanguageProvider({ children }) {
     }
 
     function t(key) {
-        return TRANSLATIONS[language]?.[key] ?? TRANSLATIONS['fr']?.[key] ?? key;
+        return TRANSLATIONS[language]?.[key] ?? TRANSLATIONS[DEFAULT_LANGUAGE]?.[key] ?? key;
     }
 
     return (

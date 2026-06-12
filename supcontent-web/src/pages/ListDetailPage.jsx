@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getListById, removeMediaFromList } from '../api/lists';
 import { mediaHref } from '../utils/media';
+import { FilmIcon, StarIcon } from '../components/AppIcons';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w300';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
@@ -90,13 +91,13 @@ export default function ListDetailPage() {
                                                 style={styles.poster}
                                             />
                                         ) : (
-                                            <div style={styles.posterFallback}>🎬</div>
+                                            <div style={styles.posterFallback}><FilmIcon size={32} /></div>
                                         )}
                                         <div style={styles.cardInfo}>
                                             <div style={styles.mediaTitle}>{title}</div>
                                             {year && <div style={styles.mediaYear}>{year}</div>}
                                             {rating && (
-                                                <div style={styles.mediaRating}>⭐ {Number(rating).toFixed(1)}</div>
+                                                <div style={styles.mediaRating}><StarIcon size={12} />{Number(rating).toFixed(1)}</div>
                                             )}
                                         </div>
                                     </Link>
@@ -229,6 +230,9 @@ const styles = {
     mediaRating: {
         fontSize: '11px',
         color: '#f5c518',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
     },
     removeBtn: {
         position: 'absolute',

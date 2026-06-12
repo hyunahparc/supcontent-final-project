@@ -121,7 +121,7 @@ const s = {
     page: {
         maxWidth: '980px',
         margin: '0 auto',
-        padding: '48px 32px 80px',
+        padding: 'clamp(28px, 6vw, 48px) clamp(16px, 5vw, 32px) 80px',
         minHeight: '100vh',
         fontFamily: font,
         color: 'var(--text-primary)',
@@ -182,7 +182,7 @@ const s = {
         backgroundColor: 'var(--bg-secondary)',
         border: '1px solid var(--border-subtle)',
         borderRadius: '8px',
-        padding: '18px',
+        padding: 'clamp(16px, 4vw, 18px)',
     },
     cardTop: {
         display: 'flex',
@@ -235,6 +235,8 @@ const s = {
         fontFamily: font,
         fontSize: '13px',
         fontWeight: 700,
+        flex: '1 1 150px',
+        minHeight: '40px',
     },
     dangerBtn: {
         border: '1px solid rgba(243,114,127,0.5)',
@@ -246,5 +248,7 @@ const s = {
         fontFamily: font,
         fontSize: '13px',
         fontWeight: 700,
+        flex: '1 1 150px',
+        minHeight: '40px',
     },
 };

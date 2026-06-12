@@ -12,6 +12,7 @@ import {
     deleteComment,
     reportReview,
 } from '../api/reviews';
+import { ChevronIcon, MessageCircleIcon, StarIcon } from './AppIcons';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
@@ -53,11 +54,14 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
                             flexShrink: 0,
                         }}
                     >
-                        {/* Base layer: empty star */}
-                        <span style={{ color: 'var(--text-muted)', position: 'absolute', left: 0, top: 0 }}>★</span>
-                        {/* Fill layer: full or half width */}
+                        <StarIcon
+                            size={size}
+                            filled={false}
+                            style={{ color: 'var(--text-muted)', position: 'absolute', left: 0, top: 0 }}
+                        />
                         {type !== 'empty' && (
-                            <span style={{
+                            <span
+                                style={{
                                 color: '#f5c518',
                                 position: 'absolute',
                                 left: 0,
@@ -66,7 +70,10 @@ function StarRating({ value, onChange, readOnly = false, size = 20 }) {
                                 width: type === 'half' ? '50%' : '100%',
                                 display: 'block',
                                 whiteSpace: 'nowrap',
-                            }}>★</span>
+                            }}
+                            >
+                                <StarIcon size={size} />
+                            </span>
                         )}
                     </div>
                 );
@@ -171,7 +178,9 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
                     </span>
                 )}
                 <button onClick={handleToggleComments} style={cardStyles.actionBtn}>
-                    💬 {review.comments_count} {showComments ? '▲' : '▼'}
+                    <MessageCircleIcon size={15} />
+                    {review.comments_count}
+                    <ChevronIcon direction={showComments ? 'up' : 'down'} size={13} />
                 </button>
                 {currentUserId && !isOwner && (
                     <button
@@ -335,7 +344,7 @@ export default function ReviewsSection({ externalId, mediaType = 'Movie' }) {
                                 rows={4}
                                 style={sectionStyles.textarea}
                             />
-                            <div style={{ display: 'flex', gap: '10px' }}>
+                            <div style={sectionStyles.formActions}>
                                 <button type="submit" disabled={submitting || (!formRating && !formComment)} style={sectionStyles.submitBtn}>
                                     {submitting ? t('review_saving') : myReview ? t('review_update') : t('review_post')}
                                 </button>
@@ -378,7 +387,7 @@ const sectionStyles = {
     section: {
         maxWidth: '1200px',
         margin: '48px auto 0',
-        padding: '0 40px',
+        padding: '0 clamp(20px, 5vw, 40px)',
         fontFamily: font,
     },
     header: {
@@ -398,6 +407,7 @@ const sectionStyles = {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
+        flexWrap: 'wrap',
     },
     avgText: {
         fontSize: '16px',
@@ -436,6 +446,12 @@ const sectionStyles = {
         padding: '20px',
         borderRadius: '8px',
         maxWidth: '600px',
+        width: '100%',
+    },
+    formActions: {
+        display: 'flex',
+        gap: '10px',
+        flexWrap: 'wrap',
     },
     textarea: {
         padding: '12px 14px',
@@ -458,6 +474,7 @@ const sectionStyles = {
         fontWeight: '700',
         cursor: 'pointer',
         fontFamily: font,
+        minHeight: '40px',
     },
     cancelBtn: {
         padding: '10px 22px',
@@ -468,6 +485,7 @@ const sectionStyles = {
         fontSize: '13px',
         cursor: 'pointer',
         fontFamily: font,
+        minHeight: '40px',
     },
 };
 
@@ -480,11 +498,11 @@ const cardStyles = {
         fontFamily: font,
     },
     ownerActions: {
-        position: 'absolute',
-        top: '16px',
-        right: '16px',
         display: 'flex',
+        justifyContent: 'flex-end',
         gap: '8px',
+        marginBottom: '10px',
+        flexWrap: 'wrap',
     },
     ownerBtn: {
         background: 'none',
@@ -542,6 +560,7 @@ const cardStyles = {
         display: 'flex',
         alignItems: 'center',
         gap: '16px',
+        flexWrap: 'wrap',
     },
     actionBtn: {
         background: 'none',
@@ -568,6 +587,7 @@ const cardStyles = {
         alignItems: 'flex-start',
         gap: '8px',
         fontSize: '13px',
+        minWidth: 0,
     },
     commentUser: {
         fontWeight: '700',
@@ -578,6 +598,7 @@ const cardStyles = {
         color: 'var(--text-secondary)',
         flex: 1,
         lineHeight: 1.5,
+        overflowWrap: 'anywhere',
     },
     commentDelete: {
         background: 'none',
@@ -593,9 +614,11 @@ const cardStyles = {
         display: 'flex',
         gap: '8px',
         marginTop: '4px',
+        flexWrap: 'wrap',
     },
     commentInput: {
         flex: 1,
+        minWidth: 'min(220px, 100%)',
         padding: '8px 12px',
         backgroundColor: 'var(--bg-input)',
         border: '1px solid var(--border-visible)',
@@ -615,5 +638,6 @@ const cardStyles = {
         fontWeight: '700',
         cursor: 'pointer',
         fontFamily: font,
+        minHeight: '38px',
     },
 };
