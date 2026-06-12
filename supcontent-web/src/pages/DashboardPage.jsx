@@ -1,6 +1,6 @@
 // Profile page — /users/:id/profile (own profile and public profiles)
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { Navigate, useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getUserProfile, getUserStats } from '../api/users';
@@ -31,8 +31,8 @@ export default function DashboardPage() {
     const [followLoading, setFollowLoading] = useState(false);
     const [showUnfollowMenu, setShowUnfollowMenu] = useState(false);
 
-    // Modal: null | 'followers' | 'following'
-    const [modal, setModal]           = useState(null);
+    // Modal state: null, followers, or following.
+    const [modal, setModal] = useState(null);
     const [modalUsers, setModalUsers] = useState([]);
     const [modalLoading, setModalLoading] = useState(false);
 
@@ -99,6 +99,7 @@ export default function DashboardPage() {
     if (loading) return <div style={s.state}>{t('profile_loading')}</div>;
     if (error)   return <div style={s.state}>{error}</div>;
     if (!profile) return null;
+    if (isOwnProfile && user?.is_admin) return <Navigate to="/admin/moderation" replace />;
 
     const dateLocale = language === 'fr' ? 'fr-FR' : 'en-US';
     const memberSince = profile.created_at
@@ -108,7 +109,7 @@ export default function DashboardPage() {
     return (
         <div style={s.page}>
 
-            {/* ── Profile card ── */}
+            {/* Profile card */}
             <div style={s.profileCard}>
                 <div style={s.avatarWrap}>
                     {profile.avatar ? (
@@ -180,10 +181,10 @@ export default function DashboardPage() {
             </div>
 
 
-            {/* ── Statistics ── */}
+            {/* Statistics */}
             {stats && <ProfileStatsPanel stats={stats} />}
 
-            {/* ── Collection preview ── */}
+            {/* Collection preview */}
             <section style={s.section}>
                 <div style={s.sectionHeader}>
                     <h2 style={s.sectionTitle}>
@@ -213,7 +214,7 @@ export default function DashboardPage() {
                 )}
             </section>
 
-            {/* ── Lists ── */}
+            {/* Lists */}
             <section style={s.section}>
                     <div style={s.sectionHeader}>
                         <h2 style={s.sectionTitle}>
@@ -270,7 +271,7 @@ export default function DashboardPage() {
                 </section>
 
 
-            {/* ── Logout ── */}
+            {/* Logout */}
             {isOwnProfile && (
                 <div style={s.logoutWrap}>
                     <button onClick={() => { logout(); navigate('/login'); }} style={s.logoutBtn}>
@@ -279,7 +280,7 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* ── Followers / Following modal ── */}
+            {/* Followers / following modal */}
             {modal && (
                 <div style={s.overlay} onClick={closeModal}>
                     <div style={s.modalBox} onClick={e => e.stopPropagation()}>

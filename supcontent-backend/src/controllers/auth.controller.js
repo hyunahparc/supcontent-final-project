@@ -22,6 +22,7 @@ function toAuthUser(user) {
         username: user.username,
         avatar: user.avatar ?? null,
         preferred_language: user.preferred_language ?? 'en',
+        is_admin: Boolean(user.is_admin),
     };
 }
 

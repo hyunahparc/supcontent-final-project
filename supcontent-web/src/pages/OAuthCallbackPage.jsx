@@ -25,10 +25,10 @@ export default function OAuthCallbackPage() {
                 const data = await exchangeOAuthCode(code);
                 if (isMounted) {
                     login(data.user, data.token, data.refreshToken);
+                    navigate(data.user.is_admin ? '/admin/moderation' : '/', { replace: true });
                 }
             } catch {
                 // Invalid or expired code, redirect anyway.
-            } finally {
                 if (isMounted) {
                     navigate('/', { replace: true });
                 }

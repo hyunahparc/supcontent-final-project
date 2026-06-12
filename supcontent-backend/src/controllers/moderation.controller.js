@@ -1,10 +1,9 @@
-// Contrôleur modération — 2.2.5 du cahier des charges
-// Utilisateurs : signaler une critique
-// Admins : lister signalements, supprimer critique, bannir user, gérer coups de cœur
+﻿// Moderation controller.
+// Users can report reviews; admins can review reports and remove reported content.
+
 
 const db = require('../config/db');
 
-// ── Utilisateurs ──────────────────────────────────────────────────────────────
 
 // POST /api/moderation/reports  { review_id, reason }
 const reportReview = async (req, res) => {
@@ -12,7 +11,7 @@ const reportReview = async (req, res) => {
     const { review_id, reason } = req.body;
 
     if (!review_id)
-        return res.status(400).json({ message: 'review_id est requis.' });
+        return res.status(400).json({ message: 'review_id is required.' });
 
     try {
         const { rows: reviewRows } = await db.query(
@@ -20,31 +19,35 @@ const reportReview = async (req, res) => {
             [review_id]
         );
         if (!reviewRows[0])
-            return res.status(404).json({ message: 'Critique introuvable.' });
+            return res.status(404).json({ message: 'Review not found.' });
         if (reviewRows[0].user_id === reporter_id)
-            return res.status(400).json({ message: 'Vous ne pouvez pas signaler votre propre critique.' });
+            return res.status(400).json({ message: 'You cannot report your own review.' });
 
-        // ON CONFLICT DO NOTHING : un utilisateur ne signale qu'une fois la même critique
-        await db.query(
+        // The unique constraint allows each user to report the same review only once.
+        const { rowCount } = await db.query(
             `INSERT INTO moderation_reports (review_id, reporter_id, reason)
              VALUES ($1, $2, $3)
              ON CONFLICT DO NOTHING`,
             [review_id, reporter_id, reason?.trim() || null]
         );
-        return res.status(201).json({ message: 'Signalement enregistré.' });
+
+        if (rowCount === 0) {
+            return res.status(409).json({ message: 'You can only report a review once.' });
+        }
+
+        return res.status(201).json({ message: 'Report saved.' });
     } catch (err) {
         console.error('[reportReview]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
-// ── Admins ────────────────────────────────────────────────────────────────────
 
 // GET /api/moderation/reports?status=pending|resolved|rejected
 const getReports = async (req, res) => {
     const { status = 'pending' } = req.query;
     if (!['pending', 'resolved', 'rejected'].includes(status))
-        return res.status(400).json({ message: 'Statut invalide.' });
+        return res.status(400).json({ message: 'Invalid status.' });
 
     try {
         const { rows } = await db.query(
@@ -67,7 +70,7 @@ const getReports = async (req, res) => {
         return res.json(rows);
     } catch (err) {
         console.error('[getReports]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -76,7 +79,7 @@ const updateReportStatus = async (req, res) => {
     const { report_id } = req.params;
     const { status } = req.body;
     if (!['resolved', 'rejected'].includes(status))
-        return res.status(400).json({ message: 'Statut invalide.' });
+        return res.status(400).json({ message: 'Invalid status.' });
 
     try {
         const { rowCount } = await db.query(
@@ -84,11 +87,11 @@ const updateReportStatus = async (req, res) => {
             [status, report_id]
         );
         if (rowCount === 0)
-            return res.status(404).json({ message: 'Signalement introuvable.' });
-        return res.json({ message: `Signalement marqué "${status}".` });
+            return res.status(404).json({ message: 'Report not found.' });
+        return res.json({ message: `Report marked "${status}".` });
     } catch (err) {
         console.error('[updateReportStatus]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -96,7 +99,7 @@ const updateReportStatus = async (req, res) => {
 const deleteReportedReview = async (req, res) => {
     const { review_id } = req.params;
     try {
-        // Résoudre les signalements avant suppression (intégrité référentielle)
+        // Resolve reports before deleting the review.
         await db.query(
             `UPDATE moderation_reports SET status = 'resolved' WHERE review_id = $1`,
             [review_id]
@@ -106,11 +109,11 @@ const deleteReportedReview = async (req, res) => {
             [review_id]
         );
         if (rowCount === 0)
-            return res.status(404).json({ message: 'Critique introuvable.' });
-        return res.json({ message: 'Critique supprimée, signalements résolus.' });
+            return res.status(404).json({ message: 'Review not found.' });
+        return res.json({ message: 'Review deleted and reports resolved.' });
     } catch (err) {
         console.error('[deleteReportedReview]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -119,9 +122,9 @@ const banUser = async (req, res) => {
     const { user_id } = req.params;
     const { banned } = req.body;
     if (typeof banned !== 'boolean')
-        return res.status(400).json({ message: '"banned" doit être un booléen.' });
+        return res.status(400).json({ message: '"banned" must be a boolean.' });
     if (Number(user_id) === req.user.user_id)
-        return res.status(400).json({ message: 'Un administrateur ne peut pas se bannir lui-même.' });
+        return res.status(400).json({ message: 'An administrator cannot ban themselves.' });
 
     try {
         const { rowCount } = await db.query(
@@ -129,11 +132,11 @@ const banUser = async (req, res) => {
             [banned, user_id]
         );
         if (rowCount === 0)
-            return res.status(404).json({ message: 'Utilisateur introuvable.' });
-        return res.json({ message: banned ? `Utilisateur ${user_id} banni.` : `Utilisateur ${user_id} débanni.` });
+            return res.status(404).json({ message: 'User not found.' });
+        return res.json({ message: banned ? `User ${user_id} banned.` : `User ${user_id} unbanned.` });
     } catch (err) {
         console.error('[banUser]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -141,7 +144,7 @@ const banUser = async (req, res) => {
 const highlightReview = async (req, res) => {
     const { review_id } = req.body;
     if (!review_id)
-        return res.status(400).json({ message: 'review_id est requis.' });
+        return res.status(400).json({ message: 'review_id is required.' });
 
     try {
         const { rows } = await db.query(
@@ -150,11 +153,11 @@ const highlightReview = async (req, res) => {
             [review_id]
         );
         if (!rows[0])
-            return res.json({ message: 'Cette critique est déjà mise en avant.' });
-        return res.status(201).json({ message: 'Critique mise en avant.', highlight: rows[0] });
+            return res.json({ message: 'This review is already highlighted.' });
+        return res.status(201).json({ message: 'Review highlighted.', highlight: rows[0] });
     } catch (err) {
         console.error('[highlightReview]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -167,11 +170,11 @@ const removeHighlight = async (req, res) => {
             [review_id]
         );
         if (rowCount === 0)
-            return res.status(404).json({ message: 'Mise en avant introuvable.' });
-        return res.json({ message: 'Mise en avant retirée.' });
+            return res.status(404).json({ message: 'Highlight not found.' });
+        return res.json({ message: 'Highlight removed.' });
     } catch (err) {
         console.error('[removeHighlight]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 
@@ -190,7 +193,7 @@ const getHighlights = async (req, res) => {
         return res.json(rows);
     } catch (err) {
         console.error('[getHighlights]', err.message);
-        return res.status(500).json({ message: 'Erreur serveur.', error: err.message });
+        return res.status(500).json({ message: 'Server error.', error: err.message });
     }
 };
 

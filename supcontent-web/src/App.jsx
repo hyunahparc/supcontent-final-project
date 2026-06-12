@@ -18,6 +18,7 @@ import FeedPage from './pages/FeedPage';
 import NotificationsPage from './pages/NotificationsPage';
 import MessagesPage from './pages/MessagesPage';
 import AdvancedSearchPage from './pages/AdvancedSearchPage';
+import AdminModerationPage from './pages/AdminModerationPage';
 import NotFoundPage from './pages/NotFoundPage';
 
 import Header from './components/Header';
@@ -27,7 +28,9 @@ import { useAuth } from './context/AuthContext';
 function GuestOnlyRoute({ children }) {
     const { user } = useAuth();
 
-    if (user) return <Navigate to={`/users/${user.user_id}/profile`} replace />;
+    if (user) {
+        return <Navigate to={user.is_admin ? '/admin/moderation' : `/users/${user.user_id}/profile`} replace />;
+    }
 
     return children;
 }
@@ -69,6 +72,7 @@ export default function App() {
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/lists" element={<ListsPage />} />
                 <Route path="/lists/:id" element={<ListDetailPage />} />
+                <Route path="/admin/moderation" element={<AdminModerationPage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>

@@ -28,11 +28,11 @@ function notifText(n) {
 
 function notifLink(n) {
     if (n.type === 'follow') return `/users/${n.source_user_id}/profile`;
-    if (n.media_id)          return mediaIdHref(n.media_id, n.media_type ?? 'Movie');
+    if (n.media_id) return mediaIdHref(n.media_id, n.media_type ?? 'Movie');
     return null;
 }
 
-const font       = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const BREAKPOINT = 768;
 
 function HamburgerIcon() {
@@ -112,8 +112,10 @@ function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll, t }) {
 }
 
 function UserAvatar({ user }) {
+    const destination = user.is_admin ? '/admin/moderation' : `/users/${user.user_id}/profile`;
+
     return (
-        <Link to={`/users/${user.user_id}/profile`} className="header-avatar-link" style={styles.avatarLink}>
+        <Link to={destination} className="header-avatar-link" style={styles.avatarLink}>
             {user.avatar ? (
                 <img src={user.avatar} alt={user.username} style={styles.avatar} />
             ) : (
@@ -206,21 +208,21 @@ function MobileMenu({
 }
 
 export default function Header() {
-    const { user }         = useAuth();
+    const { user } = useAuth();
     const { isDark, toggleTheme } = useTheme();
-    const { t }            = useLanguage();
-    const navigate  = useNavigate();
-    const location  = useLocation();
+    const { t } = useLanguage();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const [unreadCount,        setUnreadCount]        = useState(0);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-    const [isMobile,           setIsMobile]           = useState(window.innerWidth < BREAKPOINT);
-    const [menuOpen,           setMenuOpen]           = useState(false);
-    const [notifOpen,          setNotifOpen]          = useState(false);
-    const [notifications,      setNotifications]      = useState([]);
-    const [notifLoading,       setNotifLoading]       = useState(false);
+    const [isMobile, setIsMobile] = useState(window.innerWidth < BREAKPOINT);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [notifOpen, setNotifOpen] = useState(false);
+    const [notifications, setNotifications] = useState([]);
+    const [notifLoading, setNotifLoading] = useState(false);
 
-    const menuRef  = useRef(null);
+    const menuRef = useRef(null);
     const notifRef = useRef(null);
 
     useEffect(() => {
@@ -678,20 +680,20 @@ const styles = {
         fontFamily: font,
     },
     themeBtn: {
-        background:  'none',
-        border:      'none',
-        cursor:      'pointer',
-        padding:     '6px',
-        fontSize:    '16px',
-        lineHeight:  1,
-        borderRadius:'6px',
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '6px',
+        fontSize: '16px',
+        lineHeight: 1,
+        borderRadius: '6px',
         color: 'var(--text-secondary)',
-        display:     'inline-flex',
-        alignItems:  'center',
+        display: 'inline-flex',
+        alignItems: 'center',
         justifyContent: 'center',
-        width:       '32px',
-        height:      '32px',
-        flexShrink:  0,
+        width: '32px',
+        height: '32px',
+        flexShrink: 0,
     },
     signIn: {
         fontSize: '13px',
