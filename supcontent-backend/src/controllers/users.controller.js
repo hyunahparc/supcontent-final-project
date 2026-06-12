@@ -32,7 +32,11 @@ const getProfile = async (req, res) => {
                 CASE WHEN $2::int IS NOT NULL
                     THEN EXISTS(SELECT 1 FROM follows WHERE follower_id = $2 AND followee_id = u.user_id)
                     ELSE false
-                END AS is_following
+                END AS is_following,
+                CASE WHEN $2::int IS NOT NULL
+                    THEN EXISTS(SELECT 1 FROM follows WHERE follower_id = u.user_id AND followee_id = $2)
+                    ELSE false
+                END AS is_followed_by
              FROM users u
              LEFT JOIN follows     f_in  ON f_in.followee_id  = u.user_id
              LEFT JOIN follows     f_out ON f_out.follower_id = u.user_id

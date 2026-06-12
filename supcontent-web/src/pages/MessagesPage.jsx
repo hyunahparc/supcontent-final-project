@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getConversations, getMessagesWithUser, sendMessage } from '../api/messages';
@@ -40,8 +40,11 @@ function Avatar({ user, size = 42 }) {
 export default function MessagesPage() {
     const { user } = useAuth();
     const { t, language } = useLanguage();
+    const location = useLocation();
+    // When opened from a profile's "Message" button, the target user is passed here.
+    const startUser = location.state?.startUser ?? null;
     const [conversations, setConversations] = useState([]);
-    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [selectedUserId, setSelectedUserId] = useState(startUser?.user_id ?? null);
     const [messages, setMessages] = useState([]);
     const [draft, setDraft] = useState('');
     const [canChat, setCanChat] = useState(true);
@@ -53,8 +56,10 @@ export default function MessagesPage() {
     const messagesEndRef = useRef(null);
 
     const selectedContact = useMemo(
-        () => conversations.find(c => c.user_id === selectedUserId),
-        [conversations, selectedUserId]
+        () => conversations.find(c => c.user_id === selectedUserId)
+            // Fall back to the user passed from a profile when no prior conversation exists
+            ?? (startUser && startUser.user_id === selectedUserId ? startUser : null),
+        [conversations, selectedUserId, startUser]
     );
 
     useEffect(() => {
