@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   statValue: {
     color: colors.text,
     fontSize: 22,
-    fontWeight: '400',
+    fontWeight: '900',
     lineHeight: 24,
   },
   emptyText: {

@@ -9,9 +9,15 @@ import { getLibrary } from '../api/collections';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../api/follows';
 import { mediaHref } from '../utils/media';
 import ProfileStatsPanel from '../components/profile/ProfileStatsPanel';
+import { FilmIcon } from '../components/AppIcons';
 
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
+const NARROW_LAYOUT_WIDTH = 768;
+
+function getIsNarrowLayout() {
+    return window.innerWidth < NARROW_LAYOUT_WIDTH;
+}
 
 export default function DashboardPage() {
     const { id } = useParams();
@@ -35,6 +41,7 @@ export default function DashboardPage() {
     const [modal, setModal] = useState(null);
     const [modalUsers, setModalUsers] = useState([]);
     const [modalLoading, setModalLoading] = useState(false);
+    const [isNarrow, setIsNarrow] = useState(getIsNarrowLayout);
 
     useEffect(() => {
         if (!resolvedId) {
@@ -58,6 +65,13 @@ export default function DashboardPage() {
             .catch(() => setError(t('profile_unable_load')))
             .finally(() => setLoading(false));
     }, [resolvedId, isOwnProfile]);
+
+    useEffect(() => {
+        const handleResize = () => setIsNarrow(getIsNarrowLayout());
+        handleResize();
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleFollow = async () => {
         if (!user) return navigate('/login');
@@ -110,7 +124,7 @@ export default function DashboardPage() {
         <div style={s.page}>
 
             {/* Profile card */}
-            <div style={s.profileCard}>
+            <div style={{ ...s.profileCard, ...(isNarrow ? s.profileCardNarrow : {}) }}>
                 <div style={s.avatarWrap}>
                     {profile.avatar ? (
                         <img src={profile.avatar} alt={profile.username} style={s.avatar} />
@@ -121,14 +135,14 @@ export default function DashboardPage() {
                     )}
                 </div>
 
-                <div style={s.profileInfo}>
-                    <h1 style={s.username}>{profile.username}</h1>
-                    {memberSince && <p style={s.memberSince}>{t('profile_member_since')} {memberSince}</p>}
+                <div style={{ ...s.profileInfo, ...(isNarrow ? s.profileInfoNarrow : {}) }}>
+                    <h1 style={{ ...s.username, ...(isNarrow ? s.centerText : {}) }}>{profile.username}</h1>
+                    {memberSince && <p style={{ ...s.memberSince, ...(isNarrow ? s.centerText : {}) }}>{t('profile_member_since')} {memberSince}</p>}
 
                     {profile.bio ? (
-                        <p style={s.bio}>{profile.bio}</p>
+                        <p style={{ ...s.bio, ...(isNarrow ? s.centerText : {}) }}>{profile.bio}</p>
                     ) : (
-                        <p style={{ ...s.bio, ...s.bioEmpty }}>{t('profile_no_bio')}</p>
+                        <p style={{ ...s.bio, ...s.bioEmpty, ...(isNarrow ? s.centerText : {}) }}>{t('profile_no_bio')}</p>
                     )}
 
                     {profile.link && (
@@ -136,13 +150,13 @@ export default function DashboardPage() {
                             href={profile.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={s.profileLink}
+                            style={{ ...s.profileLink, ...(isNarrow ? s.centerText : {}) }}
                         >
                             {profile.link.replace(/^https?:\/\//, '')}
                         </a>
                     )}
 
-                    <div style={s.socialRow}>
+                    <div style={{ ...s.socialRow, ...(isNarrow ? s.socialRowNarrow : {}) }}>
                         <button style={s.socialBtn} onClick={() => openModal('followers')}>
                             <span style={s.socialNumber}>{profile.followers_count ?? 0}</span>
                             <span style={s.socialLabel}>{t('profile_followers')}</span>
@@ -153,13 +167,20 @@ export default function DashboardPage() {
                             <span style={s.socialLabel}>{t('profile_following')}</span>
                         </button>
                     </div>
+
+                    {isOwnProfile && isNarrow && (
+                        <Link to="/settings/profile" style={s.dashboardEditButton}>
+                            {t('profile_edit')}
+                        </Link>
+                    )}
                 </div>
 
-                {/* Own profile: edit button — Other profile: follow/unfollow */}
+                {/* Own profile: edit button (wide only — narrow shows it in the action row) */}
+                {/* Other profile: follow/unfollow */}
                 {isOwnProfile ? (
-                    <Link to="/settings/profile" style={s.editBtn}>{t('profile_edit')}</Link>
+                    !isNarrow && <Link to="/settings/profile" style={s.editBtn}>{t('profile_edit')}</Link>
                 ) : user && (
-                    <div style={s.followWrap}>
+                    <div style={{ ...s.followWrap, ...(isNarrow ? s.followWrapNarrow : {}) }}>
                         {profile.is_following ? (
                             <>
                                 <button onClick={() => setShowUnfollowMenu(v => !v)} disabled={followLoading} style={s.followingBtn}>
@@ -205,7 +226,7 @@ export default function DashboardPage() {
                                     {poster ? (
                                         <img src={`${TMDB_IMG}${poster}`} alt={item.full_data?.title ?? ''} style={s.poster} />
                                     ) : (
-                                        <div style={s.posterFallback}>🎬</div>
+                                        <div style={s.posterFallback}><FilmIcon size={28} /></div>
                                     )}
                                 </Link>
                             );
@@ -321,7 +342,7 @@ const s = {
     page: {
         maxWidth: '900px',
         margin: '0 auto',
-        padding: '48px 32px 80px',
+        padding: 'clamp(28px, 6vw, 48px) clamp(16px, 5vw, 32px) 80px',
         fontFamily: font,
         color: 'var(--text-primary)',
         minHeight: '100vh',
@@ -340,14 +361,20 @@ const s = {
     profileCard: {
         display: 'flex',
         alignItems: 'flex-start',
-        gap: '32px',
+        gap: 'clamp(20px, 5vw, 32px)',
         backgroundColor: 'var(--bg-secondary)',
-        borderRadius: '16px',
-        padding: '36px',
+        borderRadius: '12px',
+        padding: 'clamp(22px, 5vw, 36px)',
         marginBottom: '40px',
         flexWrap: 'wrap',
     },
-    avatarWrap: { flexShrink: 0 },
+    profileCardNarrow: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px',
+        padding: 'clamp(22px, 5vw, 36px) clamp(20px, 5vw, 40px)',
+    },
+    avatarWrap: { flexShrink: 0, display: 'flex', justifyContent: 'center' },
     avatar: {
         width: '120px',
         height: '120px',
@@ -368,8 +395,20 @@ const s = {
         color: 'var(--text-primary)',
         border: '3px solid var(--border)',
     },
-    profileInfo: { flex: 1, minWidth: '200px' },
-    username: { margin: '0 0 4px', fontSize: '32px', fontWeight: '700', letterSpacing: '-0.5px' },
+    profileInfo: {
+        flex: '1 1 240px',
+        minWidth: 0,
+    },
+    profileInfoNarrow: {
+        width: '100%',
+        maxWidth: '560px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+    },
+    centerText: { textAlign: 'center' },
+    username: { margin: '0 0 4px', fontSize: '32px', fontWeight: '700', letterSpacing: '0' },
     memberSince: { margin: '0 0 14px', fontSize: '13px', color: 'var(--text-secondary)' },
     bio: { margin: '0 0 20px', fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6, maxWidth: '480px' },
     bioEmpty: { color: 'var(--text-muted)', fontStyle: 'italic' },
@@ -385,7 +424,8 @@ const s = {
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
     },
-    socialRow: { display: 'flex', alignItems: 'center', gap: '20px' },
+    socialRow: { display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' },
+    socialRowNarrow: { justifyContent: 'center' },
     socialBtn: {
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         background: 'none', border: 'none', cursor: 'pointer', padding: 0, gap: '2px',
@@ -408,12 +448,33 @@ const s = {
         letterSpacing: '0.3px',
         display: 'inline-flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: '6px',
         alignSelf: 'flex-start',
         flexShrink: 0,
         whiteSpace: 'nowrap',
     },
+    // Narrow layout: full-width "Edit profile" pill shown under the social row.
+    dashboardEditButton: {
+        width: '100%',
+        minHeight: '42px',
+        marginTop: '20px',
+        boxSizing: 'border-box',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '9999px',
+        border: '1px solid var(--border-visible)',
+        backgroundColor: 'transparent',
+        color: 'var(--text-primary)',
+        textDecoration: 'none',
+        fontSize: '13px',
+        fontWeight: '700',
+        fontFamily: font,
+        letterSpacing: '0.3px',
+    },
     followWrap: { position: 'relative', alignSelf: 'flex-start', flexShrink: 0 },
+    followWrapNarrow: { alignSelf: 'center' },
     followBtn: {
         padding: '10px 28px', border: 'none', borderRadius: '9999px',
         backgroundColor: 'var(--accent)', color: 'var(--text-inverse)', fontSize: '13px', fontWeight: '700',
@@ -439,7 +500,7 @@ const s = {
     // Sections
     section: { marginBottom: '40px' },
     sectionHeader: {
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', gap: '12px', flexWrap: 'wrap',
     },
     sectionTitle: { margin: 0, fontSize: '20px', fontWeight: '700', color: 'var(--text-primary)' },
     seeAllLink: { fontSize: '13px', color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600' },
@@ -447,11 +508,12 @@ const s = {
 
     // Collection preview
     posterGrid: {
-        display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '10px',
+        display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none',
     },
     posterWrap: {
         borderRadius: '8px', overflow: 'hidden', display: 'block',
         aspectRatio: '2 / 3', backgroundColor: 'var(--bg-elevated)',
+        flex: '0 0 118px',
     },
     poster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     posterFallback: {
@@ -461,13 +523,13 @@ const s = {
     },
 
     // Lists
-    listsGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' },
+    listsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', gap: '16px' },
     listCard: {
         textDecoration: 'none', cursor: 'pointer', display: 'flex',
         flexDirection: 'column', borderRadius: '8px', overflow: 'hidden',
         backgroundColor: 'var(--bg-secondary)',
     },
-    listPosterStack: { position: 'relative', height: '180px', borderRadius: '6px', overflow: 'hidden' },
+    listPosterStack: { position: 'relative', height: 'clamp(150px, 38vw, 180px)', borderRadius: '6px', overflow: 'hidden' },
     listPoster: { width: '100%', height: '100%', objectFit: 'cover', display: 'block' },
     listPosterFallback: { width: '100%', height: '100%', backgroundColor: 'var(--bg-secondary)' },
     listOverlayInner: { display: 'none' },
@@ -503,10 +565,11 @@ const s = {
     overlay: {
         position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.7)',
         display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+        padding: '16px',
     },
     modalBox: {
         backgroundColor: 'var(--bg-secondary)', borderRadius: '16px', padding: '28px',
-        width: '360px', maxHeight: '70vh', overflowY: 'auto',
+        width: 'min(360px, 100%)', maxHeight: '70vh', overflowY: 'auto',
     },
     modalHeader: {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px',

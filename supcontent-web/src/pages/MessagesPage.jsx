@@ -267,7 +267,7 @@ export default function MessagesPage() {
 
 const s = {
     page: {
-        minHeight: 'calc(100vh - 56px)',
+        minHeight: 'calc(100vh - 64px)',
         padding: '28px',
         color: 'var(--text-primary)',
         fontFamily: font,

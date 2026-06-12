@@ -63,7 +63,7 @@ export default function NotFoundPage() {
 const s = {
     page: {
         position: 'relative',
-        minHeight: 'calc(100vh - 56px)',
+        minHeight: 'calc(100vh - 64px)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

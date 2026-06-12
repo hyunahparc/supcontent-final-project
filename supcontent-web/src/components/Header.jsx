@@ -7,6 +7,7 @@ import { getNotifications, getUnreadCount, markAllRead, markOneRead } from '../a
 import { getUnreadMessageCount } from '../api/messages';
 import SearchBar from './SearchBar';
 import { mediaIdHref } from '../utils/media';
+import { MoonIcon, SunIcon } from './AppIcons';
 
 function timeAgo(dateStr) {
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -306,7 +307,7 @@ export default function Header() {
         <header style={{ ...styles.header, padding: isMobile ? '0 16px' : '0 32px' }}>
             <div style={styles.headerInner}>
                 <div style={styles.left}>
-                    <Link to="/" style={styles.logo}>SUPCONTENT</Link>
+                    <Link to="/" style={styles.logo}>moviemovie</Link>
 
                     {!isMobile && (
                         <nav style={styles.mainNav}>
@@ -399,7 +400,7 @@ export default function Header() {
                                     aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
                                     title={isDark ? 'Light mode' : 'Dark mode'}
                                 >
-                                    {isDark ? '☀' : '☾'}
+                                    {isDark ? <SunIcon /> : <MoonIcon />}
                                 </button>
 
                                 <UserAvatar user={user} />
@@ -431,7 +432,7 @@ export default function Header() {
 const styles = {
     header: {
         width: '100%',
-        height: '56px',
+        height: '64px',
         borderBottom: '1px solid var(--border)',
         backgroundColor: 'var(--bg-header)',
         backdropFilter: 'blur(12px)',
@@ -444,6 +445,8 @@ const styles = {
     },
     headerInner: {
         height: '100%',
+        maxWidth: '1200px',
+        margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
         gap: 'clamp(8px, 1.4vw, 16px)',
@@ -456,13 +459,16 @@ const styles = {
         flexShrink: 0,
     },
     logo: {
-        fontSize: '14px',
-        fontWeight: '900',
-        color: 'var(--accent)',
+        fontFamily: "'Fraunces', Georgia, serif",
+        fontSize: '24px',
+        fontWeight: '500',
+        color: 'var(--text-primary)',
         textDecoration: 'none',
-        letterSpacing: '1.5px',
-        textTransform: 'uppercase',
+        letterSpacing: '0',
         flexShrink: 0,
+        // Serif baseline sits a touch low — nudge up to align with the nav links
+        lineHeight: 1,
+        transform: 'translateY(-4px)',
     },
     mainNav: {
         display: 'flex',
@@ -718,7 +724,7 @@ const styles = {
     },
     mobileDropdown: {
         position: 'fixed',
-        top: '56px',
+        top: '64px',
         left: 0,
         right: 0,
         backgroundColor: 'var(--bg-secondary)',

@@ -36,12 +36,6 @@ export default function Footer() {
         },
     ];
 
-    const LEGAL_LINKS = [
-        { label: t('footer_privacy'), to: '/privacy' },
-        { label: t('footer_terms'),   to: '/terms' },
-        { label: t('footer_legal'),   to: '/legal' },
-    ];
-
     useEffect(() => {
         const onResize = () => setIsMobile(window.innerWidth < BREAKPOINT);
         window.addEventListener('resize', onResize);
@@ -52,7 +46,7 @@ export default function Footer() {
         <footer
             style={{
                 ...styles.footer,
-                padding: isMobile ? '40px 16px 24px' : '48px 32px 28px',
+                padding: isMobile ? '24px 16px 18px' : '28px 32px 20px',
             }}
         >
             <div
@@ -64,7 +58,7 @@ export default function Footer() {
             >
                 {/* Brand */}
                 <div style={styles.brand}>
-                    <Link to="/" style={styles.logo}>SUPCONTENT</Link>
+                    <Link to="/" style={styles.logo}>moviemovie</Link>
                     <p style={styles.tagline}>{t('footer_desc')}</p>
                 </div>
 
@@ -107,22 +101,8 @@ export default function Footer() {
                 }}
             >
                 <span style={styles.copyright}>
-                    © {YEAR} Supcontent.
+                    © {YEAR} Moviemovie.
                 </span>
-                <div style={styles.legalLinks}>
-                    {LEGAL_LINKS.map((link, i) => (
-                        <span key={link.to} style={styles.legalItem}>
-                            {i > 0 && <span style={styles.dot} aria-hidden="true">·</span>}
-                            <Link
-                                to={link.to}
-                                className="footer-link"
-                                style={styles.link}
-                            >
-                                {link.label}
-                            </Link>
-                        </span>
-                    ))}
-                </div>
             </div>
         </footer>
     );
@@ -138,7 +118,9 @@ const styles = {
     },
     inner: {
         display: 'flex',
-        marginBottom: '36px',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        marginBottom: '16px',
     },
     brand: {
         flexShrink: 0,
@@ -146,12 +128,12 @@ const styles = {
     },
     logo: {
         display: 'inline-block',
-        fontSize: '13px',
-        fontWeight: '900',
-        color: 'var(--accent)',
+        fontFamily: "'Fraunces', Georgia, serif",
+        fontSize: '22px',
+        fontWeight: '500',
+        color: 'var(--text-primary)',
         textDecoration: 'none',
-        letterSpacing: '1.5px',
-        textTransform: 'uppercase',
+        letterSpacing: '0',
         marginBottom: '10px',
     },
     tagline: {
@@ -195,28 +177,13 @@ const styles = {
     bottom: {
         display: 'flex',
         justifyContent: 'space-between',
-        paddingTop: '20px',
-        borderTop: '1px solid var(--border)',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        paddingTop: '4px',
     },
     copyright: {
         fontSize: '12px',
         color: 'var(--text-muted)',
         fontWeight: '400',
-    },
-    legalLinks: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        flexWrap: 'wrap',
-    },
-    legalItem: {
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '6px',
-    },
-    dot: {
-        fontSize: '12px',
-        color: 'var(--text-muted)',
-        userSelect: 'none',
     },
 };

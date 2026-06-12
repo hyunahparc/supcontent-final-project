@@ -8,6 +8,7 @@ import { getMyLists, addMediaToList, createList } from '../api/lists';
 import ReviewsSection from '../components/ReviewsSection';
 import { mediaIdHref } from '../utils/media';
 import { useLanguage } from '../context/LanguageContext';
+import { StarIcon } from '../components/AppIcons';
 
 // ── Hook: sample backdrop luminosity and return the best title color ──────────
 function useBackdropTextColor(backdropPath, isDark) {
@@ -96,6 +97,7 @@ const STATUS_LABEL_KEYS = {
 };
 const NARROW_LAYOUT_WIDTH = 768;
 const HERO_OVERLAP = 'clamp(120px, 14vw, 180px)';
+const HERO_OVERLAP_NARROW = 'clamp(180px, 34vw, 240px)';
 
 function getIsNarrowLayout() {
     return window.innerWidth < NARROW_LAYOUT_WIDTH;
@@ -246,7 +248,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                             {media.runtime && <><span style={styles.dot}>·</span>{media.runtime} min</>}
                             {media.vote_average && (
                                 <><span style={styles.dot}>·</span>
-                                <span style={styles.rating}>⭐ {media.vote_average.toFixed(1)}</span></>
+                                <span style={styles.rating}><StarIcon size={14} />{media.vote_average.toFixed(1)}</span></>
                             )}
                         </div>
 
@@ -359,7 +361,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
             {media.cast?.length > 0 && (
                 <section style={styles.castSection}>
                     <h2 style={styles.sectionTitle}>{t('media_cast')}</h2>
-                    <div style={styles.castGrid}>
+                    <div style={{ ...styles.castGrid, ...(isNarrow ? styles.castGridNarrow : {}) }}>
                         {media.cast.map(actor => (
                             <div key={actor.id} style={styles.castCard}>
                                 {actor.profile_path ? (
@@ -411,7 +413,7 @@ export default function MediaDetailPage({ mediaType: routeMediaType }) {
                                     )}
                                     <div style={styles.similarTitle}>{m.title}</div>
                                     {m.vote_average && (
-                                        <div style={styles.similarRating}>⭐ {m.vote_average.toFixed(1)}</div>
+                                        <div style={styles.similarRating}><StarIcon size={12} />{m.vote_average.toFixed(1)}</div>
                                     )}
                                 </Link>
                             ))}
@@ -495,7 +497,7 @@ const styles = {
     hero: {
         maxWidth: '1200px',
         margin: '0 auto',
-        padding: `calc(400px - ${HERO_OVERLAP}) 40px 0`,
+        padding: `calc(400px - ${HERO_OVERLAP}) clamp(20px, 5vw, 40px) 0`,
         position: 'relative',
         display: 'flex',
         gap: '40px',
@@ -505,7 +507,7 @@ const styles = {
         flexDirection: 'column',
         alignItems: 'center',
         gap: '24px',
-        padding: `calc(400px - ${HERO_OVERLAP}) 20px 0`,
+        padding: `calc(400px - ${HERO_OVERLAP_NARROW}) 20px 0`,
     },
     poster: {
         width: '350px',
@@ -534,7 +536,7 @@ const styles = {
         margin: '0 0 10px',
         fontSize: '48px',
         fontWeight: '700',
-        letterSpacing: '-0.5px',
+        letterSpacing: '0',
         lineHeight: 1.1,
         transition: 'color 0.3s ease, text-shadow 0.3s ease',
     },
@@ -559,6 +561,9 @@ const styles = {
     },
     rating: {
         color: '#f5c518',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '4px',
     },
     genres: {
         display: 'flex',
@@ -584,7 +589,7 @@ const styles = {
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '11px 28px',
+        padding: '11px clamp(18px, 5vw, 28px)',
         backgroundColor: 'var(--accent)',
         color: 'var(--text-inverse)',
         border: 'none',
@@ -592,9 +597,10 @@ const styles = {
         fontSize: '14px',
         fontWeight: '700',
         cursor: 'pointer',
-        letterSpacing: '1.4px',
+        letterSpacing: '0.6px',
         textTransform: 'uppercase',
         textDecoration: 'none',
+        maxWidth: '100%',
     },
     trailerOverlay: {
         position: 'fixed',
@@ -636,14 +642,15 @@ const styles = {
         display: 'block',
     },
     collectionBtn: {
-        padding: '11px 24px',
+        padding: '11px clamp(16px, 5vw, 24px)',
         border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         fontSize: '14px',
         fontWeight: '700',
-        letterSpacing: '1.4px',
+        letterSpacing: '0.6px',
         textTransform: 'uppercase',
         transition: 'border-color 0.15s',
+        maxWidth: '100%',
     },
     statusMenu: {
         position: 'absolute',
@@ -655,6 +662,7 @@ const styles = {
         overflow: 'hidden',
         zIndex: 100,
         minWidth: '180px',
+        maxWidth: 'calc(100vw - 40px)',
     },
     statusOption: {
         display: 'block',
@@ -678,6 +686,7 @@ const styles = {
     },
     inlineInput: {
         flex: 1,
+        minWidth: 0,
         padding: '6px 10px',
         backgroundColor: 'var(--bg-input)',
         border: '1px solid var(--border-visible)',
@@ -723,7 +732,7 @@ const styles = {
     castSection: {
         maxWidth: '1200px',
         margin: '48px auto 0',
-        padding: '0 40px',
+        padding: '0 clamp(20px, 5vw, 40px)',
     },
     sectionTitle: {
         margin: '0 0 20px',
@@ -736,9 +745,17 @@ const styles = {
         gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))',
         gap: '10px',
     },
+    castGridNarrow: {
+        display: 'flex',
+        gridTemplateColumns: 'none',
+        overflowX: 'auto',
+        scrollbarWidth: 'none',
+        paddingBottom: '4px',
+    },
     castCard: {
         display: 'flex',
         flexDirection: 'column',
+        flex: '0 0 120px',
         backgroundColor: 'var(--bg-elevated)',
         borderRadius: '8px',
         overflow: 'hidden',
@@ -748,6 +765,7 @@ const styles = {
         width: '100%',
         aspectRatio: '3/4',
         objectFit: 'cover',
+        flexShrink: 0,
     },
     castAvatarFallback: {
         width: '100%',
@@ -815,19 +833,20 @@ const styles = {
         textDecoration: 'none',
         cursor: 'pointer',
         flexShrink: 0,
-        width: '160px',
+        width: 'clamp(132px, 38vw, 160px)',
     },
     similarPoster: {
-        width: '160px',
-        height: '240px',
+        width: '100%',
+        aspectRatio: '2 / 3',
+        height: 'auto',
         objectFit: 'cover',
         borderRadius: '6px',
         display: 'block',
         boxShadow: 'var(--shadow) 0px 8px 8px',
     },
     similarPosterFallback: {
-        width: '160px',
-        height: '240px',
+        width: '100%',
+        aspectRatio: '2 / 3',
         backgroundColor: 'var(--bg-elevated)',
         borderRadius: '6px',
     },
@@ -844,5 +863,8 @@ const styles = {
         fontSize: '11px',
         color: 'var(--text-secondary)',
         marginTop: '3px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
     },
 };

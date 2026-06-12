@@ -4,9 +4,42 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { getTrending } from '../api/media';
 import { mediaHref } from '../utils/media';
+import { FilmIcon, GridIcon, SearchIcon, StarIcon } from '../components/AppIcons';
 
 const POSTER_BASE = 'https://image.tmdb.org/t/p/w342';
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
+
+function useCompactViewport(width = 560) {
+  const [isCompact, setIsCompact] = useState(() => window.innerWidth < width);
+
+  useEffect(() => {
+    const handleResize = () => setIsCompact(window.innerWidth < width);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [width]);
+
+  return isCompact;
+}
+
+function getTrendingColumns() {
+  const width = window.innerWidth;
+  if (width < 560) return 2;
+  if (width < 760) return 3;
+  if (width < 1024) return 4;
+  return 6;
+}
+
+function useTrendingColumns() {
+  const [columns, setColumns] = useState(getTrendingColumns);
+
+  useEffect(() => {
+    const handleResize = () => setColumns(getTrendingColumns());
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return columns;
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Hero Section
@@ -16,6 +49,7 @@ function HeroSection() {
   const { user }   = useAuth();
   const navigate   = useNavigate();
   const [query, setQuery] = useState('');
+  const isCompact = useCompactViewport();
 
   function handleSearch(e) {
     e.preventDefault();
@@ -28,7 +62,7 @@ function HeroSection() {
       <div style={s.heroGlow}  aria-hidden="true" />
 
       <div style={s.heroContent}>
-        <h1 style={s.heroTitle}>{t('hero_title')}</h1>
+        <h1 style={{ ...s.heroTitle, ...(isCompact ? s.heroTitleCompact : {}) }}>{t('hero_title')}</h1>
 
         <p style={s.heroSubtitle}>{t('hero_subtitle')}</p>
 
@@ -66,6 +100,7 @@ function HeroSection() {
 // ═══════════════════════════════════════════════════════════════════════════
 function TrendingSection() {
   const { t } = useLanguage();
+  const columns = useTrendingColumns();
   const [activeTab, setActiveTab] = useState('all');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +133,8 @@ function TrendingSection() {
   ];
 
   return (
-    <section style={s.section}>
+    // Halved top padding so "Trending Now" sits closer to the hero search bar
+    <section style={{ ...s.section, paddingTop: 'clamp(26px, 4.5vw, 40px)' }}>
       <div style={s.sectionInner}>
         <div style={s.sectionHeader}>
           <div>
@@ -127,7 +163,7 @@ function TrendingSection() {
           </div>
         )}
 
-        <div style={s.grid}>
+        <div style={{ ...s.grid, gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
           {loading
             ? Array.from({ length: 12 }, (_, i) => <SkeletonCard key={i} />)
             : (data?.map((item) => <MediaCard key={`${item.external_id}-${item.media_type}`} item={item} />) ?? (
@@ -167,14 +203,15 @@ function MediaCard({ item }) {
           />
         ) : (
           <div style={s.cardImgFallback}>
-            <span style={{ fontSize: '32px' }}>🎬</span>
+            <FilmIcon size={32} />
           </div>
         )}
         <span style={{ ...s.typeBadge, ...(item.media_type === 'Series' ? s.typeBadgeSeries : {}) }}>
           {item.media_type === 'Series' ? t('trending_series') : t('trending_movies')}
         </span>
         <div style={s.scoreBadge}>
-          ⭐ {score}
+          <StarIcon size={13} />
+          {score}
         </div>
         <div style={{ ...s.cardOverlay, ...(hovered ? s.cardOverlayVisible : {}) }}>
           <span style={{ ...s.viewBtn, ...(hovered ? { opacity: 1, transform: 'translateY(0)' } : {}) }}>
@@ -211,9 +248,9 @@ function FeaturesSection() {
   const { t } = useLanguage();
 
   const features = [
-    { icon: '🔍', titleKey: 'feature1_title', descKey: 'feature1_desc' },
-    { icon: '⭐', titleKey: 'feature2_title', descKey: 'feature2_desc' },
-    { icon: '🎬', titleKey: 'feature3_title', descKey: 'feature3_desc' },
+    { icon: <SearchIcon />, titleKey: 'feature1_title', descKey: 'feature1_desc' },
+    { icon: <StarIcon size={28} />, titleKey: 'feature2_title', descKey: 'feature2_desc' },
+    { icon: <FilmIcon size={28} />, titleKey: 'feature3_title', descKey: 'feature3_desc' },
     { icon: '📱', titleKey: 'feature4_title', descKey: 'feature4_desc' },
   ];
 
@@ -236,13 +273,14 @@ function FeaturesSection() {
 
 function FeatureCard({ icon, title, desc }) {
   const [hovered, setHovered] = useState(false);
+  const renderedIcon = typeof icon === 'string' ? <GridIcon /> : icon;
   return (
     <div
       style={{ ...s.featureCard, ...(hovered ? s.featureCardHovered : {}) }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <div style={s.featureIcon}>{icon}</div>
+      <div style={s.featureIcon}>{renderedIcon}</div>
       <h3 style={s.featureTitle}>{title}</h3>
       <p  style={s.featureDesc}>{desc}</p>
     </div>
@@ -255,13 +293,14 @@ function FeatureCard({ icon, title, desc }) {
 function CtaSection() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const isCompact = useCompactViewport();
   if (user) return null;
 
   return (
     <section style={s.ctaSection}>
       <div style={s.ctaInner}>
         <div style={s.ctaGlow} aria-hidden="true" />
-        <h2 style={s.ctaTitle}>{t('cta_title')}</h2>
+        <h2 style={{ ...s.ctaTitle, ...(isCompact ? s.ctaTitleCompact : {}) }}>{t('cta_title')}</h2>
         <p style={s.ctaSubtitle}>{t('cta_subtitle')}</p>
         <div style={s.ctaActions}>
           <Link to="/register" style={s.ctaBtnPrimary}>
@@ -297,12 +336,12 @@ const s = {
   // ── Hero ────────────────────────────────────────────────────────────────
   hero: {
     position: 'relative',
-    minHeight: '78vh',
+    minHeight: 'clamp(490px, 70vh, 700px)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '72px 24px 44px',
+    padding: 'clamp(56px, 10vw, 72px) clamp(16px, 5vw, 24px) 38px',
     background: 'var(--hero-bg)',
     overflow: 'hidden',
   },
@@ -353,20 +392,23 @@ const s = {
     animation: 'pulse 2s ease-in-out infinite',
   },
   heroTitle: {
-    fontSize: 'clamp(32px, 5vw, 60px)',
+    fontSize: '60px',
     fontWeight: '800',
     color: 'var(--text-primary)',
     lineHeight: 1.1,
-    letterSpacing: '-1.5px',
+    letterSpacing: '0',
     margin: '0 0 26px',
     fontFamily: font,
+  },
+  heroTitleCompact: {
+    fontSize: '34px',
   },
   heroSubtitle: {
     fontSize: '17px',
     color: 'var(--text-soft)',
     lineHeight: 1.7,
     maxWidth: '520px',
-    margin: '0 auto 44px',
+    margin: '0 auto clamp(28px, 7vw, 44px)',
     fontFamily: font,
   },
 
@@ -375,6 +417,7 @@ const s = {
   searchWrap: {
     display: 'flex',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: '0',
     background: 'var(--glass-bg)',
     border: '1px solid var(--glass-border)',
@@ -392,10 +435,11 @@ const s = {
     color: 'var(--text-primary)',
     padding: '8px 0',
     minWidth: 0,
+    minHeight: '42px',
     fontFamily: font,
   },
   searchBtn: {
-    padding: '10px 20px',
+    padding: '10px 18px',
     background: 'var(--accent)',
     color: 'var(--text-inverse)',
     border: 'none',
@@ -404,6 +448,7 @@ const s = {
     fontWeight: '700',
     cursor: 'pointer',
     flexShrink: 0,
+    minHeight: '42px',
     transition: 'background 0.2s',
     fontFamily: font,
     letterSpacing: '0.3px',
@@ -429,7 +474,7 @@ const s = {
   // ── Sections layout ────────────────────────────────────────────────────
   section: {
     backgroundColor: 'var(--bg-primary)',
-    padding: '80px 0',
+    padding: 'clamp(52px, 9vw, 80px) 0',
   },
   sectionAlt: {
     backgroundColor: 'var(--bg-deep)',
@@ -439,13 +484,13 @@ const s = {
   sectionInner: {
     maxWidth: '1200px',
     margin: '0 auto',
-    padding: '0 24px',
+    padding: '0 clamp(16px, 5vw, 24px)',
   },
   sectionHeader: {
     display: 'flex',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginBottom: '40px',
+    marginBottom: 'clamp(24px, 5vw, 40px)',
     flexWrap: 'wrap',
     gap: '16px',
   },
@@ -462,7 +507,7 @@ const s = {
     fontSize: '28px',
     fontWeight: '800',
     color: 'var(--text-primary)',
-    letterSpacing: '-0.5px',
+    letterSpacing: '0',
     margin: 0,
     fontFamily: font,
   },
@@ -475,9 +520,11 @@ const s = {
     border: '1px solid var(--border-alpha)',
     borderRadius: '10px',
     padding: '4px',
+    overflowX: 'auto',
+    maxWidth: '100%',
   },
   tab: {
-    padding: '6px 16px',
+    padding: '7px 14px',
     fontSize: '13px',
     fontWeight: '600',
     color: 'var(--text-ghost)',
@@ -487,6 +534,7 @@ const s = {
     cursor: 'pointer',
     transition: 'all 0.2s',
     fontFamily: font,
+    whiteSpace: 'nowrap',
   },
   tabActive: {
     background: 'var(--accent)',
@@ -519,7 +567,6 @@ const s = {
   // ── Card grid ─────────────────────────────────────────────────────────
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
     gap: '16px',
   },
 
@@ -589,6 +636,9 @@ const s = {
     fontWeight: '700',
     color: '#ffd700',
     fontFamily: font,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
   },
   cardOverlay: {
     position: 'absolute',
@@ -664,7 +714,7 @@ const s = {
   // ── Features ──────────────────────────────────────────────────────────
   featuresGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))',
     gap: '20px',
   },
   featureCard: {
@@ -676,14 +726,13 @@ const s = {
   },
   featureCardHovered: {
     background: 'rgba(30,215,96,0.04)',
-    borderColor: 'rgba(30,215,96,0.15)',
     transform: 'translateY(-4px)',
     boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
   },
   featureIcon: {
-    fontSize: '28px',
     marginBottom: '16px',
-    display: 'block',
+    display: 'flex',
+    color: 'var(--accent)',
   },
   featureTitle: {
     fontSize: '15px',
@@ -702,7 +751,7 @@ const s = {
 
   // ── CTA ───────────────────────────────────────────────────────────────
   ctaSection: {
-    padding: '100px 24px',
+    padding: 'clamp(64px, 12vw, 100px) clamp(16px, 5vw, 24px)',
     background: 'var(--bg-deep)',
     textAlign: 'center',
   },
@@ -723,12 +772,15 @@ const s = {
   },
   ctaTitle: {
     position: 'relative',
-    fontSize: 'clamp(28px, 4vw, 44px)',
+    fontSize: '44px',
     fontWeight: '800',
     color: 'var(--text-primary)',
-    letterSpacing: '-1px',
+    letterSpacing: '0',
     margin: '0 0 16px',
     fontFamily: font,
+  },
+  ctaTitleCompact: {
+    fontSize: '30px',
   },
   ctaSubtitle: {
     position: 'relative',
@@ -756,6 +808,7 @@ const s = {
     transition: 'background 0.2s, transform 0.2s',
     fontFamily: font,
     letterSpacing: '0.3px',
+    textAlign: 'center',
   },
   ctaBtnGhost: {
     padding: '14px 28px',
@@ -768,5 +821,6 @@ const s = {
     border: '1px solid var(--glass-border)',
     transition: 'all 0.2s',
     fontFamily: font,
+    textAlign: 'center',
   },
 };

@@ -204,6 +204,7 @@ const styles = {
         position:   'relative',
         display:    'flex',
         alignItems: 'center',
+        minWidth:   0,
     },
     searchIcon: {
         position:      'absolute',
@@ -223,6 +224,7 @@ const styles = {
         color:           'var(--text-primary)',
         boxSizing:       'border-box',
         fontFamily:      font,
+        minHeight:       '40px',
     },
     spinner: {
         position: 'absolute',
@@ -242,7 +244,7 @@ const styles = {
         backgroundColor: 'var(--bg-elevated)',
         borderRadius:    '8px',
         boxShadow:       '0 8px 24px rgba(0,0,0,0.5)',
-        maxHeight:       '400px',
+        maxHeight:       'min(400px, 70vh)',
         overflowY:       'auto',
     },
     message: {
@@ -276,12 +278,16 @@ const styles = {
         display:       'flex',
         flexDirection: 'column',
         gap:           '3px',
+        minWidth:      0,
     },
     itemTitle: {
         fontWeight: '700',
         fontSize:   '13px',
         color:      'var(--text-primary)',
         fontFamily: font,
+        overflow:   'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
     },
     itemMeta: {
         fontSize:   '12px',
