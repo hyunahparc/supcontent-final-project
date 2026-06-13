@@ -58,3 +58,11 @@ export function deleteComment(reviewId, commentId, token) {
     token,
   });
 }
+
+export function reportReview(reviewId, reason, token) {
+  return apiRequest('/moderation/reports', {
+    method: 'POST',
+    token,
+    body: JSON.stringify({ review_id: reviewId, reason: reason ?? null }),
+  });
+}

@@ -1,4 +1,6 @@
 import { Link, router } from 'expo-router';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,10 +14,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
+import { exchangeOAuthCode } from '../src/api/auth';
+import { getApiUrl } from '../src/api/client';
 import { colors } from '../src/theme/colors';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function RegisterScreen() {
-  const { signUp } = useAuth();
+  const { signUp, completeOAuth } = useAuth();
   const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const [username, setUsername] = useState('');
@@ -23,6 +29,41 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
+
+  async function handleGoogleSignIn() {
+    setError('');
+    setIsGoogleSubmitting(true);
+
+    try {
+      const redirectUri = Linking.createURL('oauth/callback');
+      const authUrl = `${getApiUrl('/auth/google')}?client=mobile&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri, {
+        preferEphemeralSession: false,
+      });
+
+      if (result.type !== 'success' || !result.url) return;
+
+      await completeOAuthFromUrl(result.url);
+      router.replace('/home');
+    } catch (err) {
+      setError(err.message || t('mob_register_error'));
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
+  }
+
+  async function completeOAuthFromUrl(url) {
+    const parsed = Linking.parse(url);
+    const code = parsed.queryParams?.code;
+
+    if (!code || Array.isArray(code)) {
+      throw new Error(t('mob_register_error'));
+    }
+
+    const data = await exchangeOAuthCode(code);
+    await completeOAuth(data.user, data.token, data.refreshToken);
+  }
 
   async function handleSubmit() {
     setError('');
@@ -103,7 +144,7 @@ export default function RegisterScreen() {
 
           <Pressable
             onPress={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isGoogleSubmitting}
             style={({ pressed }) => [
               styles.button,
               (pressed || isSubmitting) && styles.buttonPressed,
@@ -113,6 +154,30 @@ export default function RegisterScreen() {
               <ActivityIndicator color={colors.accentText} />
             ) : (
               <Text style={styles.buttonText}>{t('register_submit')}</Text>
+            )}
+          </Pressable>
+
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>{t('login_or')}</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          <Pressable
+            onPress={handleGoogleSignIn}
+            disabled={isSubmitting || isGoogleSubmitting}
+            style={({ pressed }) => [
+              styles.googleButton,
+              (pressed || isGoogleSubmitting) && styles.buttonPressed,
+            ]}
+          >
+            {isGoogleSubmitting ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <>
+                <Text style={styles.googleMark}>G</Text>
+                <Text style={styles.googleButtonText}>{t('login_google')}</Text>
+              </>
             )}
           </Pressable>
         </View>
@@ -190,6 +255,43 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: colors.accentText,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginVertical: 4,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  dividerText: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  googleButton: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderRadius: 999,
+    backgroundColor: colors.elevated,
+    borderWidth: 1,
+    borderColor: colors.borderVisible,
+  },
+  googleMark: {
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: '900',
+  },
+  googleButtonText: {
+    color: colors.text,
     fontSize: 15,
     fontWeight: '800',
   },

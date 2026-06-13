@@ -344,8 +344,8 @@ export default function MediaDetailScreen({ mediaType }) {
       </View>
 
       <MediaCastSection cast={media.cast} />
-      <MediaSimilarSection similar={media.similar} mediaType={mediaType} />
       <MediaReviewsSection mediaId={mediaId} mediaType={mediaType} />
+      <MediaSimilarSection similar={media.similar} mediaType={mediaType} />
       </ScrollView>
     </KeyboardAvoidingView>
   );

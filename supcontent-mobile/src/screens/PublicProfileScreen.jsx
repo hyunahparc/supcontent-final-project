@@ -216,22 +216,21 @@ export default function PublicProfileScreen({ profileUserId = null, isTabProfile
         ]}
       >
         <View style={styles.profileCard}>
-          <View style={styles.avatarFallback}>
-            <Text style={styles.avatarInitial}>?</Text>
-          </View>
+          <Image source={require('../../assets/moviemovie-logo.png')} style={styles.guestLogo} resizeMode="contain" />
 
           <View style={styles.profileInfo}>
-            <Text style={styles.username}>{t('profile_guest')}</Text>
-            <Text style={styles.memberSince}>{t('profile_guest_browse')}</Text>
+            <Text style={[styles.username, { marginBottom: 12 }]}>{t('profile_guest')}</Text>
             <Text style={styles.bio}>{t('profile_guest_login_desc')}</Text>
 
-            <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.followButton, pressed && styles.pressed]}>
-              <Text style={styles.followButtonText}>{t('profile_login')}</Text>
-            </Pressable>
+            <View style={styles.guestActions}>
+              <Pressable onPress={() => router.push('/login')} style={({ pressed }) => [styles.followButton, pressed && styles.pressed]}>
+                <Text style={styles.followButtonText}>{t('profile_login')}</Text>
+              </Pressable>
 
-            <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-              <Text style={styles.secondaryButtonText}>{t('profile_create_account')}</Text>
-            </Pressable>
+              <Pressable onPress={() => router.push('/register')} style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
+                <Text style={styles.secondaryButtonText}>{t('profile_create_account')}</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       </View>
@@ -580,9 +579,19 @@ const styles = StyleSheet.create({
     fontSize: 40,
     fontWeight: '800',
   },
+  guestLogo: {
+    width: 104,
+    height: 104,
+  },
   profileInfo: {
     width: '100%',
     alignItems: 'center',
+  },
+  // Guest login/register buttons — spaced apart instead of touching
+  guestActions: {
+    width: '100%',
+    gap: 12,
+    marginTop: 10,
   },
   username: {
     color: colors.text,

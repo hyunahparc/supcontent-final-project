@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import {
     addComment,
     deleteComment,
@@ -9,6 +9,7 @@ import {
     getComments,
     getMyReview,
     getReviews,
+    reportReview,
     toggleLike,
     upsertReview,
 } from '../../api/reviews';
@@ -206,6 +207,44 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
         }
     }
 
+    async function submitReport(reviewId, reason) {
+        try {
+            await reportReview(reviewId, reason, token);
+            Alert.alert('Reported', 'Thanks — our moderators will review it.');
+        } catch (err) {
+            Alert.alert('Error', err.message || 'Unable to report this review.');
+        }
+    }
+
+    function handleReport(reviewId) {
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        // iOS supports a text prompt for the reason; Android falls back to a confirm.
+        if (Platform.OS === 'ios' && Alert.prompt) {
+            Alert.prompt(
+                'Report review',
+                'Why are you reporting this review? (optional)',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Report', style: 'destructive', onPress: (reason) => submitReport(reviewId, reason) },
+                ],
+                'plain-text'
+            );
+        } else {
+            Alert.alert(
+                'Report review',
+                'Report this review to the moderators?',
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Report', style: 'destructive', onPress: () => submitReport(reviewId, null) },
+                ]
+            );
+        }
+    }
+
     async function handleDeleteComment(reviewId, commentId) {
         if (!token) {
             router.push('/login');
@@ -302,9 +341,9 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
                     {reviews.map((review) => (
                         <View key={review.review_id} style={styles.reviewBox}>
                             <View style={styles.reviewHeader}>
-                                <View style={styles.reviewAvatar}>
+                                <Pressable onPress={() => router.push(`/users/${review.user_id}`)} style={({ pressed }) => [styles.reviewAvatar, pressed && styles.pressed]}>
                                     <Text style={styles.reviewAvatarText}>{review.username?.charAt(0)?.toUpperCase()}</Text>
-                                </View>
+                                </Pressable>
                                 <View style={styles.reviewUser}>
                                     <Text style={styles.reviewName} numberOfLines={1}>{review.username}</Text>
                                     {review.rating ? (
@@ -350,6 +389,16 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
                                         {review.comments_count ?? 0}
                                     </Text>
                                 </Pressable>
+
+                                {token && user?.user_id !== review.user_id ? (
+                                    <Pressable
+                                        onPress={() => handleReport(review.review_id)}
+                                        style={({ pressed }) => [styles.reviewActionButton, pressed && styles.pressed]}
+                                    >
+                                        <Ionicons name="flag-outline" size={16} color={colors.danger} />
+                                        <Text style={[styles.reviewActionText, { color: colors.danger }]}>Report</Text>
+                                    </Pressable>
+                                ) : null}
                             </View>
 
                             {openComments[review.review_id] ? (
@@ -360,9 +409,9 @@ export default function MediaReviewsSection({ mediaId, mediaType }) {
 
                                     {(reviewComments[review.review_id] ?? []).map((comment) => (
                                         <View key={comment.comment_id} style={styles.commentRow}>
-                                            <View style={styles.commentAvatar}>
+                                            <Pressable onPress={() => router.push(`/users/${comment.user_id}`)} style={({ pressed }) => [styles.commentAvatar, pressed && styles.pressed]}>
                                                 <Text style={styles.commentAvatarText}>{comment.username?.charAt(0)?.toUpperCase()}</Text>
-                                            </View>
+                                            </Pressable>
                                             <View style={styles.commentContent}>
                                                 <View style={styles.commentHeader}>
                                                     <Text style={styles.commentAuthor}>{comment.username}</Text>
