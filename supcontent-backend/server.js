@@ -4,17 +4,47 @@ const passport = require('passport');
 const swaggerUi = require('swagger-ui-express');
 const yaml = require('js-yaml');
 const fs = require('fs');
+const { createRateLimiter, toPositiveNumber } = require('./src/middleware/rateLimit');
 
 require('./src/config/db');
 require('./src/config/passport');
 
 const app = express();
+app.set('trust proxy', 1);
 
 const cors = require('cors');
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173' }));
 
 app.use(express.json());
 app.use(passport.initialize());
+
+const apiLimiter = createRateLimiter({
+    name: 'api',
+    windowMs: toPositiveNumber(process.env.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+    max: toPositiveNumber(process.env.RATE_LIMIT_MAX, 600),
+    skip: (req) => req.path === '/auth/health',
+});
+
+const expensiveLimiter = createRateLimiter({
+    name: 'expensive',
+    windowMs: toPositiveNumber(process.env.EXPENSIVE_RATE_LIMIT_WINDOW_MS, 60 * 1000),
+    max: toPositiveNumber(process.env.EXPENSIVE_RATE_LIMIT_MAX, 80),
+});
+
+const authLimiter = createRateLimiter({
+    name: 'auth',
+    windowMs: toPositiveNumber(process.env.AUTH_RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+    max: toPositiveNumber(process.env.AUTH_RATE_LIMIT_MAX, 30),
+    message: 'Too many authentication attempts. Please try again later.',
+});
+
+app.use('/api', apiLimiter);
+app.use('/api/search', expensiveLimiter);
+app.use('/api/media', expensiveLimiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/google', authLimiter);
+app.use('/api/auth/oauth/exchange', authLimiter);
 
 // Routes
 const authRouter = require('./src/routes/auth.route');
