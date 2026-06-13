@@ -57,7 +57,7 @@ function HeroSection() {
   }
 
   return (
-    <section style={s.hero}>
+    <section style={{ ...s.hero, ...(isCompact ? s.heroCompact : {}) }}>
       <div style={s.heroGrain} aria-hidden="true" />
       <div style={s.heroGlow}  aria-hidden="true" />
 
@@ -88,7 +88,7 @@ function HeroSection() {
 
       </div>
 
-      <div style={s.scrollHint} aria-hidden="true">
+      <div style={{ ...s.scrollHint, ...(isCompact ? s.scrollHintCompact : {}) }} aria-hidden="true">
         <div style={s.scrollLine} />
       </div>
     </section>
@@ -344,6 +344,10 @@ const s = {
     background: 'var(--hero-bg)',
     overflow: 'hidden',
   },
+  heroCompact: {
+    minHeight: 'clamp(360px, 58vh, 470px)',
+    paddingBottom: '20px',
+  },
   heroGrain: {
     position: 'absolute',
     inset: 0,
@@ -455,13 +459,15 @@ const s = {
 
   // Scroll hint
   scrollHint: {
-    position: 'absolute',
-    bottom: '24px',
-    left: '50%',
-    transform: 'translateX(-50%)',
+    position: 'relative',
+    zIndex: 1,
+    marginTop: 'clamp(26px, 5vh, 48px)',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+  },
+  scrollHintCompact: {
+    marginTop: '24px',
   },
   scrollLine: {
     width: '1px',
