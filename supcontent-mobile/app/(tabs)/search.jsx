@@ -99,6 +99,12 @@ export default function SearchScreen() {
         };
     }, [category, isMediaSearch]);
 
+    // Show popular movies by default when the search screen first opens
+    useEffect(() => {
+        handleSearch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
     async function handleSearch(nextPage = 1) {
         setError('');
 

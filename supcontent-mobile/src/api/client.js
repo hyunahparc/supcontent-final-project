@@ -22,7 +22,8 @@ function buildUrl(path) {
     throw new Error('Missing EXPO_PUBLIC_API_URL. Add it to supcontent-mobile/.env.');
   }
 
-  const normalizedBase = API_URL.replace(/\/$/, '');
+  const trimmedBase = API_URL.replace(/\/$/, '');
+  const normalizedBase = trimmedBase.endsWith('/api') ? trimmedBase : `${trimmedBase}/api`;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
 
   return `${normalizedBase}${normalizedPath}`;
