@@ -171,6 +171,13 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
                     {loadingComments && <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t('review_loading_comments')}</p>}
                     {comments.map(c => (
                         <div key={c.comment_id} style={cardStyles.commentRow}>
+                            <Link to={`/users/${c.user_id}/profile`} style={cardStyles.commentAvatarLink} aria-label={c.username}>
+                                {c.avatar ? (
+                                    <img src={c.avatar} alt={c.username} style={cardStyles.commentAvatar} />
+                                ) : (
+                                    <span style={cardStyles.commentAvatarFallback}>{c.username?.charAt(0).toUpperCase()}</span>
+                                )}
+                            </Link>
                             <span style={cardStyles.commentUser}>{c.username}</span>
                             <span style={cardStyles.commentText}>{c.content}</span>
                             {currentUserId === c.user_id && (
@@ -559,10 +566,35 @@ const cardStyles = {
     },
     commentRow: {
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         gap: '8px',
         fontSize: '13px',
         minWidth: 0,
+    },
+    commentAvatarLink: {
+        flexShrink: 0,
+        display: 'block',
+        textDecoration: 'none',
+        lineHeight: 0,
+    },
+    commentAvatar: {
+        width: '26px',
+        height: '26px',
+        borderRadius: '50%',
+        objectFit: 'cover',
+        display: 'block',
+    },
+    commentAvatarFallback: {
+        width: '26px',
+        height: '26px',
+        borderRadius: '50%',
+        backgroundColor: 'var(--bg-elevated)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '11px',
+        fontWeight: '700',
+        color: 'var(--text-primary)',
     },
     commentUser: {
         fontWeight: '700',
