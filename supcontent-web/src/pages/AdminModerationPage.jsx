@@ -10,7 +10,7 @@ import {
 const font = "'CircularSp', 'Helvetica Neue', helvetica, arial, sans-serif";
 
 export default function AdminModerationPage() {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -51,6 +51,7 @@ export default function AdminModerationPage() {
                     <p style={s.kicker}>Admin</p>
                     <h1 style={s.title}>Moderation reports</h1>
                 </div>
+                <button onClick={logout} style={s.signOutBtn}>Sign out</button>
             </div>
 
             {error && <div style={s.error}>{error}</div>}
@@ -146,15 +147,18 @@ const s = {
         fontSize: '32px',
         fontWeight: 700,
     },
-    backLink: {
+    signOutBtn: {
         color: 'var(--text-secondary)',
-        textDecoration: 'none',
+        backgroundColor: 'transparent',
         fontSize: '13px',
         fontWeight: 700,
+        fontFamily: font,
         padding: '10px 16px',
         border: '1px solid var(--border-visible)',
         borderRadius: '9999px',
         whiteSpace: 'nowrap',
+        cursor: 'pointer',
+        flexShrink: 0,
     },
     error: {
         marginBottom: '16px',

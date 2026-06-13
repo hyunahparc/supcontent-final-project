@@ -158,6 +158,23 @@ canvas {
 .header-nav-link:hover  { color: var(--text-primary) !important; }
 .header-nav-link.active { color: var(--text-primary) !important; }
 
+a,
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus:not(:focus-visible),
+button:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
 .header-avatar-link { transition: opacity 0.15s; }
 .header-avatar-link:hover { opacity: 0.75; }
 
