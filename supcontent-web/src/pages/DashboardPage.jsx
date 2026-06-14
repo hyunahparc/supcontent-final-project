@@ -127,7 +127,7 @@ export default function DashboardPage() {
             <div style={{ ...s.profileCard, ...(isNarrow ? s.profileCardNarrow : {}) }}>
                 <div style={s.avatarWrap}>
                     {profile.avatar ? (
-                        <img src={profile.avatar} alt={profile.username} style={s.avatar} />
+                        <img src={profile.avatar} alt={profile.username} style={s.avatar} referrerPolicy="no-referrer" />
                     ) : (
                         <div style={s.avatarFallback}>
                             {profile.username?.charAt(0).toUpperCase() ?? '?'}
@@ -332,7 +332,7 @@ export default function DashboardPage() {
                                     <li key={u.user_id}>
                                         <Link to={`/users/${u.user_id}/profile`} style={s.userLink} onClick={closeModal}>
                                             {u.avatar ? (
-                                                <img src={u.avatar} alt={u.username} style={s.miniAvatar} />
+                                                <img src={u.avatar} alt={u.username} style={s.miniAvatar} referrerPolicy="no-referrer" />
                                             ) : (
                                                 <div style={s.miniAvatarFallback}>
                                                     {u.username?.charAt(0).toUpperCase()}

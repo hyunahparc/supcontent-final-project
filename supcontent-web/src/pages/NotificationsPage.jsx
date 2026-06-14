@@ -100,7 +100,7 @@ export default function NotificationsPage() {
                                 onClick={e => e.stopPropagation()}
                             >
                                 {n.source_avatar ? (
-                                    <img src={n.source_avatar} alt={n.source_username} style={s.avatar} />
+                                    <img src={n.source_avatar} alt={n.source_username} style={s.avatar} referrerPolicy="no-referrer" />
                                 ) : (
                                     <div style={s.avatarFallback}>
                                         {n.source_username?.charAt(0).toUpperCase() ?? '?'}

@@ -109,7 +109,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
             <div style={cardStyles.header}>
                 <Link to={`/users/${review.user_id}/profile`} style={{ ...cardStyles.avatar, textDecoration: 'none' }} aria-label={review.username}>
                     {review.avatar
-                        ? <img src={review.avatar} alt={review.username} style={cardStyles.avatarImg} />
+                        ? <img src={review.avatar} alt={review.username} style={cardStyles.avatarImg} referrerPolicy="no-referrer" />
                         : <span style={cardStyles.avatarFallback}>{review.username?.charAt(0).toUpperCase()}</span>
                     }
                 </Link>
@@ -173,7 +173,7 @@ function ReviewCard({ review, currentUserId, onLike, onDelete, onEdit, onReport,
                         <div key={c.comment_id} style={cardStyles.commentRow}>
                             <Link to={`/users/${c.user_id}/profile`} style={cardStyles.commentAvatarLink} aria-label={c.username}>
                                 {c.avatar ? (
-                                    <img src={c.avatar} alt={c.username} style={cardStyles.commentAvatar} />
+                                    <img src={c.avatar} alt={c.username} style={cardStyles.commentAvatar} referrerPolicy="no-referrer" />
                                 ) : (
                                     <span style={cardStyles.commentAvatarFallback}>{c.username?.charAt(0).toUpperCase()}</span>
                                 )}
