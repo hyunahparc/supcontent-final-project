@@ -62,9 +62,11 @@ services:
       CLIENT_URL:   ${CLIENT_URL}
 
       # OAuth2 Google
-      GOOGLE_CLIENT_ID:     ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_CALLBACK_URL:  ${GOOGLE_CALLBACK_URL}
+      GOOGLE_CLIENT_ID:           ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET:       ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL:        ${GOOGLE_CALLBACK_URL}
+      # Mobile OAuth callback — needs a PUBLIC https URL (deployed backend or ngrok)
+      GOOGLE_MOBILE_CALLBACK_URL: ${GOOGLE_MOBILE_CALLBACK_URL}
 
       # API TMDB
       TMDB_API_KEY:  ${TMDB_API_KEY}
