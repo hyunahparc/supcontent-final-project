@@ -113,8 +113,33 @@ components:
                     type: string
                 username:
                     type: string
+                avatar:
+                    type: string
+                    nullable: true
+                preferred_language:
+                    type: string
+                    example: en
+                is_admin:
+                    type: boolean
 
 paths:
+    /auth/health:
+        get:
+            tags:
+                - Auth
+            summary: Health check
+            responses:
+                '200':
+                    description: Backend is running
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    status:
+                                        type: string
+                                        example: ok
+
     /auth/register:
         post:
             tags:
@@ -211,9 +236,30 @@ paths:
             tags:
                 - Auth
             summary: Google OAuth callback
+            description: Handles Google's OAuth redirect, creates a one-time OAuth code, then redirects to the web callback or mobile deep link.
+            responses:
+                '302':
+                    description: Redirects to the client with a short-lived one-time code.
+
+    /auth/oauth/exchange:
+        post:
+            tags:
+                - Auth
+            summary: Exchange a one-time OAuth code for tokens
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - code
+                            properties:
+                                code:
+                                    type: string
             responses:
                 '200':
-                    description: Login successful, returns JWT token
+                    description: Token pair issued
                     content:
                         application/json:
                             schema:
@@ -221,8 +267,12 @@ paths:
                                 properties:
                                     token:
                                         type: string
+                                    refreshToken:
+                                        type: string
                                     user:
                                         $ref: '#/components/schemas/User'
+                '400':
+                    description: Invalid or expired OAuth code
 
     /auth/refresh:
         post:
@@ -1225,3 +1275,549 @@ paths:
                     description: Unauthorized
                 '403':
                     description: Users are not mutual followers
+
+    /search/genres:
+        get:
+            tags:
+                - Search
+            summary: Get TMDB genres
+            parameters:
+                - in: query
+                  name: type
+                  schema:
+                      type: string
+                      enum: [movie, tv]
+                      default: movie
+            responses:
+                '200':
+                    description: TMDB genre list
+                    content:
+                        application/json:
+                            schema:
+                                type: array
+                                items:
+                                    type: object
+                                    properties:
+                                        id:
+                                            type: integer
+                                        name:
+                                            type: string
+
+    /search/advanced:
+        get:
+            tags:
+                - Search
+            summary: Advanced TMDB search and discover
+            parameters:
+                - in: query
+                  name: q
+                  schema:
+                      type: string
+                  description: Optional text query. If omitted, the endpoint uses TMDB discover.
+                - in: query
+                  name: type
+                  schema:
+                      type: string
+                      enum: [movie, tv]
+                      default: movie
+                - in: query
+                  name: year
+                  schema:
+                      type: integer
+                      example: 1999
+                - in: query
+                  name: genre
+                  schema:
+                      type: integer
+                  description: TMDB genre ID
+                - in: query
+                  name: sort
+                  schema:
+                      type: string
+                      enum: [popularity.desc, vote_average.desc, primary_release_date.desc, primary_release_date.asc, revenue.desc]
+                      default: popularity.desc
+                - in: query
+                  name: min_rating
+                  schema:
+                      type: number
+                      minimum: 0
+                      maximum: 10
+                - in: query
+                  name: page
+                  schema:
+                      type: integer
+                      default: 1
+            responses:
+                '200':
+                    description: Advanced search results
+                    content:
+                        application/json:
+                            schema:
+                                type: object
+                                properties:
+                                    query:
+                                        type: string
+                                        nullable: true
+                                    type:
+                                        $ref: '#/components/schemas/MediaType'
+                                    page:
+                                        type: integer
+                                    total_pages:
+                                        type: integer
+                                    total_results:
+                                        type: integer
+                                    results:
+                                        type: array
+                                        items:
+                                            $ref: '#/components/schemas/MediaSummary'
+
+    /search/users:
+        get:
+            tags:
+                - Search
+            summary: Search platform users
+            parameters:
+                - in: query
+                  name: q
+                  required: true
+                  schema:
+                      type: string
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 10
+            responses:
+                '200':
+                    description: Matching users
+
+    /search/lists:
+        get:
+            tags:
+                - Search
+            summary: Search public custom lists
+            parameters:
+                - in: query
+                  name: q
+                  required: true
+                  schema:
+                      type: string
+                - in: query
+                  name: limit
+                  schema:
+                      type: integer
+                      default: 10
+            responses:
+                '200':
+                    description: Matching public lists
+
+    /users/me/profile:
+        put:
+            tags:
+                - Users
+            summary: Update current user's profile
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                username:
+                                    type: string
+                                    minLength: 3
+                                    maxLength: 50
+                                bio:
+                                    type: string
+                                    maxLength: 500
+                                link:
+                                    type: string
+                                    format: uri
+                                    nullable: true
+            responses:
+                '200':
+                    description: Updated profile
+                '400':
+                    description: Invalid profile data
+                '401':
+                    description: Unauthorized
+
+    /users/me/language:
+        put:
+            tags:
+                - Users
+            summary: Update current user's preferred language
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - language
+                            properties:
+                                language:
+                                    type: string
+                                    enum: [fr, en]
+            responses:
+                '200':
+                    description: Preferred language updated
+                '400':
+                    description: Unsupported language
+                '401':
+                    description: Unauthorized
+
+    /users/me/avatar:
+        post:
+            tags:
+                - Users
+            summary: Upload current user's avatar
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    multipart/form-data:
+                        schema:
+                            type: object
+                            required:
+                                - avatar
+                            properties:
+                                avatar:
+                                    type: string
+                                    format: binary
+            responses:
+                '200':
+                    description: Avatar uploaded and profile updated
+                '400':
+                    description: Missing or invalid file
+                '401':
+                    description: Unauthorized
+                '503':
+                    description: Upload service not configured
+
+    /users/me/export:
+        get:
+            tags:
+                - Users
+            summary: Export current user's personal data
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: query
+                  name: format
+                  schema:
+                      type: string
+                      enum: [json, csv]
+                      default: json
+            responses:
+                '200':
+                    description: Export file or JSON payload
+                '401':
+                    description: Unauthorized
+
+    /users/me:
+        delete:
+            tags:
+                - Users
+            summary: Delete current user's account
+            security:
+                - BearerAuth: []
+            responses:
+                '200':
+                    description: Account deleted
+                '401':
+                    description: Unauthorized
+
+    /users/{id}/profile:
+        get:
+            tags:
+                - Users
+            summary: Get a public user profile
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Public profile with social counts and follow state
+                '404':
+                    description: User not found
+
+    /users/{id}/stats:
+        get:
+            tags:
+                - Users
+            summary: Get user collection and review statistics
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: User statistics
+                '400':
+                    description: Invalid user ID
+
+    /follows/{id}:
+        post:
+            tags:
+                - Follows
+            summary: Follow a user
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                  description: User to follow
+            responses:
+                '201':
+                    description: Followed successfully
+                '400':
+                    description: Invalid ID or self-follow
+                '401':
+                    description: Unauthorized
+        delete:
+            tags:
+                - Follows
+            summary: Unfollow a user
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+                  description: User to unfollow
+            responses:
+                '200':
+                    description: Unfollowed successfully
+                '401':
+                    description: Unauthorized
+
+    /follows/{id}/followers:
+        get:
+            tags:
+                - Follows
+            summary: Get a user's followers
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Follower list
+
+    /follows/{id}/following:
+        get:
+            tags:
+                - Follows
+            summary: Get users followed by a user
+            parameters:
+                - in: path
+                  name: id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Following list
+
+    /moderation/reports:
+        post:
+            tags:
+                - Moderation
+            summary: Report a review
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - review_id
+                            properties:
+                                review_id:
+                                    type: integer
+                                reason:
+                                    type: string
+                                    maxLength: 255
+            responses:
+                '201':
+                    description: Report saved
+                '400':
+                    description: Invalid report
+                '409':
+                    description: Review already reported by this user
+        get:
+            tags:
+                - Moderation
+            summary: Get moderation reports
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: query
+                  name: status
+                  schema:
+                      type: string
+                      enum: [pending, resolved, rejected]
+                      default: pending
+            responses:
+                '200':
+                    description: Moderation report list
+                '401':
+                    description: Unauthorized
+                '403':
+                    description: Admin only
+
+    /moderation/reports/{report_id}:
+        patch:
+            tags:
+                - Moderation
+            summary: Update moderation report status
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: report_id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - status
+                            properties:
+                                status:
+                                    type: string
+                                    enum: [resolved, rejected]
+            responses:
+                '200':
+                    description: Report status updated
+                '403':
+                    description: Admin only
+                '404':
+                    description: Report not found
+
+    /moderation/reviews/{review_id}:
+        delete:
+            tags:
+                - Moderation
+            summary: Delete a reported review
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Review deleted and reports resolved
+                '403':
+                    description: Admin only
+                '404':
+                    description: Review not found
+
+    /moderation/users/{user_id}/ban:
+        patch:
+            tags:
+                - Moderation
+            summary: Ban or unban a user
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: user_id
+                  required: true
+                  schema:
+                      type: integer
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - banned
+                            properties:
+                                banned:
+                                    type: boolean
+            responses:
+                '200':
+                    description: User ban status updated
+                '403':
+                    description: Admin only
+
+    /moderation/highlights:
+        get:
+            tags:
+                - Moderation
+            summary: Get highlighted reviews
+            responses:
+                '200':
+                    description: Public highlighted review list
+        post:
+            tags:
+                - Moderation
+            summary: Highlight a review
+            security:
+                - BearerAuth: []
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                - review_id
+                            properties:
+                                review_id:
+                                    type: integer
+            responses:
+                '201':
+                    description: Review highlighted
+                '403':
+                    description: Admin only
+
+    /moderation/highlights/{review_id}:
+        delete:
+            tags:
+                - Moderation
+            summary: Remove a review highlight
+            security:
+                - BearerAuth: []
+            parameters:
+                - in: path
+                  name: review_id
+                  required: true
+                  schema:
+                      type: integer
+            responses:
+                '200':
+                    description: Highlight removed
+                '403':
+                    description: Admin only
+                '404':
+                    description: Highlight not found
