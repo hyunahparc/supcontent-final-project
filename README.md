@@ -313,7 +313,12 @@ supcontent-final-project/
 
 ## 📚 Documentation
 
-Full technical documentation and the user manual live in [`docs/`](docs/), including installation & prerequisites (how to obtain a TMDB API key), deployment guide, technology-choice justification, UML diagrams (use cases, TMDB interaction sequence) and the database schema.
+- 📄 [Technical documentation](docs/documentation_technique.pdf)
+- 📘 [User manual](docs/manuel_utilisateur.pdf)
+
+The technical documentation includes the installation procedure and prerequisites, how to obtain a TMDB API key, deployment guide, technology choices, UML diagrams (use cases and TMDB interaction sequence), and the database schema.
+
+The database source schema is also available in [`supcontent-backend/db/cine.sql`](supcontent-backend/db/cine.sql), with the ERD source file in [`supcontent-backend/db/cine.erd`](supcontent-backend/db/cine.erd).
 
 ---
 
