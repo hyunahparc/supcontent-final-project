@@ -78,6 +78,7 @@ export default function FeedPage() {
                                             src={activity.actor_avatar}
                                             alt={activity.actor_username}
                                             style={styles.avatar}
+                                            referrerPolicy="no-referrer"
                                         />
                                     ) : (
                                         <div style={styles.avatarFallback}>

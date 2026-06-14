@@ -184,7 +184,7 @@ export default function ProfileSettingsPage() {
                         type="button"
                     >
                         {displayedAvatar ? (
-                            <img src={displayedAvatar} alt="Avatar" style={s.avatar} />
+                            <img src={displayedAvatar} alt="Avatar" style={s.avatar} referrerPolicy="no-referrer" />
                         ) : (
                             <div style={s.avatarFallback}>
                                 {user.username?.charAt(0).toUpperCase() ?? '?'}

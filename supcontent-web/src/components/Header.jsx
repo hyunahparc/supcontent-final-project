@@ -88,7 +88,7 @@ function NotifDropdown({ notifications, loading, onNotifClick, onMarkAll, t, isM
                             onClick={() => onNotifClick(n)}
                         >
                             {n.source_avatar ? (
-                                <img src={n.source_avatar} alt={n.source_username} style={styles.notifAvatar} />
+                                <img src={n.source_avatar} alt={n.source_username} style={styles.notifAvatar} referrerPolicy="no-referrer" />
                             ) : (
                                 <div style={styles.notifAvatarFallback}>
                                     {n.source_username?.[0]?.toUpperCase()}
@@ -118,7 +118,7 @@ function UserAvatar({ user }) {
     return (
         <Link to={destination} className="header-avatar-link" style={styles.avatarLink}>
             {user.avatar ? (
-                <img src={user.avatar} alt={user.username} style={styles.avatar} />
+                <img src={user.avatar} alt={user.username} style={styles.avatar} referrerPolicy="no-referrer" />
             ) : (
                 <div style={styles.avatarFallback}>
                     {user.username?.[0]?.toUpperCase()}

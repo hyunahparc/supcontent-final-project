@@ -66,7 +66,7 @@ These are deployed services or local-only clients — not part of the interactiv
 - **Smart caching**: recently-loaded media is served from our DB (7-day TTL) to avoid redundant TMDB calls and latency.
 
 #### Personal Collection & Lists
-- Quick status actions on any movie or series: **To watch**, **In progress**, **Finished**, **Abandoned**.
+- Quick status actions on any movie or series: **To watch**, **Watching**, **Completed**, **Dropped**.
 - View your own collection filtered by status.
 - **Custom thematic lists** (e.g. "Halloween horror") with add/remove titles, rename and delete.
 - **Privacy flag** per list: private (only you) or public (shown on your profile).

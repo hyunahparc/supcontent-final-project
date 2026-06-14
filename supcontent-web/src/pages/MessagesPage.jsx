@@ -27,7 +27,7 @@ function Avatar({ user, size = 42 }) {
     const style = { width: size, height: size };
 
     if (user?.avatar) {
-        return <img src={user.avatar} alt={user.username} style={{ ...s.avatar, ...style }} />;
+        return <img src={user.avatar} alt={user.username} style={{ ...s.avatar, ...style }} referrerPolicy="no-referrer" />;
     }
 
     return (

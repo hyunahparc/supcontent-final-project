@@ -46,7 +46,7 @@ function UserCard({ user }) {
             onMouseLeave={() => setHovered(false)}
         >
             {user.avatar ? (
-                <img src={user.avatar} alt={user.username} style={s.userAvatar} />
+                <img src={user.avatar} alt={user.username} style={s.userAvatar} referrerPolicy="no-referrer" />
             ) : (
                 <div style={s.userAvatarFallback}>{user.username?.[0]?.toUpperCase() ?? '?'}</div>
             )}
